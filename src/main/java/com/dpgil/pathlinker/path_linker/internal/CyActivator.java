@@ -33,15 +33,20 @@ public class CyActivator
         CyTableManager tableManager = getService(context, CyTableManager.class);
 
         // sets up the pathlinker menu option
-        RunPathLinkerMenuAction rplaction =
-            new RunPathLinkerMenuAction(
-                cyApplicationManager,
-                "Run PathLinker",
-                tableFactory,
-                tableManager);
+        RunPathLinkerMenuAction rplaction = new RunPathLinkerMenuAction(
+            cyApplicationManager,
+            "Run PathLinker",
+            tableFactory,
+            tableManager);
+
+        // sets up the graph initialization menu option
+        InitializeGraphMenuAction igmaction = new InitializeGraphMenuAction(
+            cyApplicationManager,
+            "Initialize Graph");
 
         // registers the services
         Properties properties = new Properties();
         registerAllServices(context, rplaction, properties);
+        registerAllServices(context, igmaction, properties);
     }
 }

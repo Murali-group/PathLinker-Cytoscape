@@ -1,6 +1,7 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import javax.swing.JOptionPane;
 import com.dpgil.pathlinker.path_linker.internal.Algorithms;
 import java.util.ArrayList;
@@ -79,8 +80,8 @@ public class RunPathLinkerMenuAction
 
         // sets up the table
         table.createColumn("k", Integer.class, false);
-        table.createColumn("Source", String.class, false);
-        table.createColumn("Target", String.class, false);
+//        table.createColumn("Source", String.class, false);
+//        table.createColumn("Target", String.class, false);
         table.createColumn("Length", Integer.class, false);
 // table.createColumn("Distance", Integer.class, false);
         table.createColumn("Path", String.class, false);
@@ -96,13 +97,18 @@ public class RunPathLinkerMenuAction
             JOptionPane
                 .showInputDialog("Enter the names of the targets separated by spaces (ex. T1 T2 T3)");
 
-
         // init and store a list of all the nodes' names
+        HashMap<String, CyNode> idToCyNode = new HashMap<String, CyNode>();
         ArrayList<String> nodeNames = new ArrayList<String>();
         for (CyNode node : network.getNodeList())
         {
-            nodeNames.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+            String nodeName = network.getRow(node).get(CyNetwork.NAME, String.class);
+            nodeNames.add(nodeName);
+            idToCyNode.put(nodeName, node);
         }
+
+        CyNode superSource = network.addNode();
+        CyNode superTarget = network.addNode();
 
         String[] sourceArray = sourceArrayString.split(" ");
         String[] targetArray = targetArrayString.split(" ");
@@ -119,6 +125,10 @@ public class RunPathLinkerMenuAction
             if (!nodeNames.contains(srcName))
             {
                 srcNotInNet.append(srcName).append(" ");
+            }
+            else
+            {
+                network.addEdge(superSource, idToCyNode.get(srcName), true);
             }
         }
         if (srcNotInNet.length() > 0)
@@ -139,6 +149,10 @@ public class RunPathLinkerMenuAction
             {
                 targNotInNet.append(targName).append(" ");
             }
+            else
+            {
+                network.addEdge(idToCyNode.get(targName), superTarget, true);
+            }
         }
         if (targNotInNet.length() > 0)
         {
@@ -150,12 +164,12 @@ public class RunPathLinkerMenuAction
             }
         }
 
-        int num = 0;
         int k;
         String kInput = JOptionPane.showInputDialog("Enter k to compute up to k-shortest paths.");
 
         // takes in k as input
-        try {
+        try
+        {
             k = Integer.parseInt(kInput);
         }
         catch (NumberFormatException exception)
@@ -166,64 +180,37 @@ public class RunPathLinkerMenuAction
 
         long startTime = System.currentTimeMillis();
 
-        // goes through every s/t pair
-        for (CyNode source : network.getNodeList())
+        ArrayList<ArrayList<CyNode>> paths = Algorithms.ksp(table, network, superSource, superTarget, k);
+
+        // TODO fix this so the i < k check isn't necessary
+        for (int i = 0; i < paths.size() && i < k; i++)
         {
-            String sourceName =
-                network.getRow(source).get(CyNetwork.NAME, String.class);
-
-            // makes sure it's a source
-            if (!sources.contains(sourceName)) {
+            // empty path TODO should never happen
+            if (paths.get(i).size() == 0)
                 continue;
-            }
 
-            for (CyNode target : network.getNodeList())
+            CyRow row = table.getRow(i+1);
+
+            // builds the path string
+            StringBuilder currPath = new StringBuilder();
+            for (int j = 1; j < paths.get(i).size() - 1; j++)
             {
-                String targetName =
-                    network.getRow(target).get(CyNetwork.NAME, String.class);
-
-                if (!targets.contains(targetName)) {
-                    continue;
-                }
-
-                if (!source.equals(target))
-                {
-                    ArrayList<ArrayList<CyNode>> paths =
-                        Algorithms.ksp(table, network, source, target, k);
-
-                    // TODO fix this so the i < k check isn't necessary
-                    for (int i = 0; i < paths.size() && i < k; i++)
-                    {
-                        // empty path
-                        if (paths.get(i).size() == 0)
-                            continue;
-
-                        CyRow row = table.getRow(num++);
-
-                        String currPath = "";
-                        for (CyNode node : paths.get(i))
-                        {
-                            currPath +=
-                                network.getRow(node).get(
-                                    CyNetwork.NAME,
-                                    String.class)
-                                    + " ";
-                        }
-                        row.set("k", i+1);
-                        row.set("Source", sourceName);
-                        row.set("Target", targetName);
-                        row.set("Length", paths.get(i).size()-1);
-                        row.set("Path", currPath);
-                    }
-                }
+                currPath.append(network.getRow(paths.get(i).get(j)).get(CyNetwork.NAME, String.class) + "|");
             }
+            currPath.setLength(currPath.length() - 1);
+
+            // sets all the values
+            row.set("k", i+1);
+            // SS|A|B|ST = length 1 path-size 4
+            row.set("Length", paths.get(i).size()-3);
+            row.set("Path", currPath.toString());
         }
 
-//        Algorithms.prepareNetForKSP(
-//            network,
-//            new ArrayList<CyNode>(),
-//            new ArrayList<CyNode>(),
-//            new ArrayList<Integer>());
+        boolean containsSS = network.containsNode(superSource);
+        network.removeNodes(new ArrayList<CyNode>(Arrays.asList(superSource, superTarget)));
+        boolean containsSSafter = network.containsNode(superSource);
+
+        JOptionPane.showMessageDialog(null, "Contains before: "+containsSS+" \nContains after: "+containsSSafter);
 
         networkView.updateView();
 

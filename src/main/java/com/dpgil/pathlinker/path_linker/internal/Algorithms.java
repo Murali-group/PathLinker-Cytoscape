@@ -174,19 +174,9 @@ public class Algorithms
     {
         // list of paths to store all k-shortest paths
         ArrayList<ArrayList<CyNode>> A = new ArrayList<ArrayList<CyNode>>(K);
-// JOptionPane.showMessageDialog(null, "line 137");
 
         // A[0] = dijkstra(source, sink)
         ArrayList<CyNode> ssd = ssd2(table, network, source, target, 0, false);
-
-        // for debugging
-        String sp = "Shortest path: ";
-        for (CyNode s : ssd)
-        {
-            sp += network.getRow(s).get(CyNetwork.NAME, String.class) + " ";
-        }
-// JOptionPane.showMessageDialog(null, sp);
-
         A.add(ssd);
 
         // initialize the heap to store the potential shortest paths
@@ -205,36 +195,13 @@ public class Algorithms
                 // k − 1.
                 CyNode spurNode = A.get(k - 1).get(i);
 
-                // for debugging
-// String spurNodeName =
-// "Spur node (k="
-// + (k - 1)
-// + ", i="
-// + i
-// + "): "
-// + network.getRow(spurNode).get(
-// CyNetwork.NAME,
-// String.class);
-// JOptionPane.showMessageDialog(null, spurNodeName);
-
                 // The sequence of nodes from the source to the spur node of
-// the
-// previous k-shortest path.
+                // the previous k-shortest path.
                 ArrayList<CyNode> rootPath = new ArrayList<CyNode>();
                 for (int j = 0; j < i; j++)
                 {
                     rootPath.add(A.get(k - 1).get(j));
                 }
-
-                // for debugging
-// String p = "Root path: ";
-// for (CyNode rp : rootPath)
-// {
-// p +=
-// network.getRow(rp).get(CyNetwork.NAME, String.class)
-// + " ";
-// }
-// JOptionPane.showMessageDialog(null, p);
 
                 for (ArrayList<CyNode> path : A)
                 {
@@ -255,61 +222,55 @@ public class Algorithms
                                         CyEdge.Type.DIRECTED);
 
                                 // if the sources don't match - remove the edge
-                                if (connect.size() > 1)
+                                if (connect.size() >= 3)
                                 {
-                                    if (!connect.get(0).getSource()
-                                        .equals(path.get(i)))
-                                    {
-                                        connect.remove(0);
+                                    StringBuilder temp = new StringBuilder();
+                                    for (CyEdge e : connect) {
+                                        String sn = network.getRow(e.getSource())
+                                            .get(CyNetwork.NAME, String.class);
+                                        String tn = network.getRow(e.getTarget()).get(CyNetwork.NAME, String.class);
+                                        temp.append(sn+" : "+tn+"\n");
                                     }
-                                    else
-                                    {
-                                        connect.remove(1);
-                                    }
+                                    JOptionPane.showMessageDialog(null, temp.toString());
                                 }
 
                                 if (connect.size() > 1)
                                 {
-                                    JOptionPane
-                                        .showMessageDialog(null, "Uh oh what");
+                                    StringBuilder temp = new StringBuilder();
+                                    for (CyEdge e : connect) {
+                                        String sn = network.getRow(e.getSource())
+                                            .get(CyNetwork.NAME, String.class);
+                                        String tn = network.getRow(e.getTarget()).get(CyNetwork.NAME, String.class);
+                                        temp.append(sn+" : "+tn+"\n");
+                                    }
+//                                    JOptionPane.showMessageDialog(null, temp.toString());
+                                }
+
+                                CyEdge toRemove = connect.get(0);
+                                if (connect.size() > 1)
+                                {
+                                    if (!connect.get(0).getSource().equals(path.get(i)))
+                                    {
+                                        toRemove = connect.get(1);
+                                    }
                                 }
 
                                 RemovedEdge remE = new RemovedEdge(
-                                    connect.get(0).getSource(),
-                                    connect.get(0).getTarget());
+                                    toRemove.getSource(),
+                                    toRemove.getTarget());
                                 remEdges.add(remE);
 
-                                network.removeEdges(connect);
+                                network.removeEdges(new ArrayList<CyEdge>(Arrays.asList(toRemove)));
                             }
                         }
                     }
                 }
-
-                // FOR DEBUGGING CAN REMOVE after tests
-                StringBuilder resb = new StringBuilder();
-                resb.append("k=").append(k).append(" i=").append(i).append("\n")
-                    .append("Removed edges:\n");
-                for (RemovedEdge re : remEdges)
-                {
-
-                    String n1n = network.getRow(re.node1)
-                        .get(CyNetwork.NAME, String.class);
-                    String n2n = network.getRow(re.node2)
-                        .get(CyNetwork.NAME, String.class);
-
-                    resb.append(n1n).append("->").append(n2n).append("\n");
-                }
-// JOptionPane.showMessageDialog(null, resb.toString());
-                resb.setLength(0);
-
-// JOptionPane.showMessageDialog(null, "line 237");
 
                 // removes all nodes in rootPath except spurNode from graph
                 ArrayList<CyNode> rootPathWithoutSpurNode =
                     new ArrayList<CyNode>();
                 // copies the root path
                 // TODO source does not fit in dest
-// Collections.copy(rootPathWithoutSpurNode, rootPath);
                 for (int j = 0; j < rootPath.size(); j++)
                 {
                     rootPathWithoutSpurNode.add(rootPath.get(j));
@@ -318,7 +279,6 @@ public class Algorithms
                 rootPathWithoutSpurNode.remove(spurNode);
                 // removes all nodes in rootPath except spurNode from graph
                 // TODO may need to actually remove
-// network.removeNodes(rootPathWithoutSpurNode);
                 removedNodes.addAll(rootPathWithoutSpurNode);
 
                 // Calculate the spur path from the spur node to the sink
@@ -343,18 +303,17 @@ public class Algorithms
                 }
 
                 // Add back the edges that were removed
-                resb.append("Restored edges:\n");
+//                resb.append("Restored edges:\n");
                 for (RemovedEdge removedEdge : remEdges)
                 {
-
                     network.addEdge(removedEdge.node1, removedEdge.node2, true);
 
                     String n1n = network.getRow(removedEdge.node1)
                         .get(CyNetwork.NAME, String.class);
                     String n2n = network.getRow(removedEdge.node2)
                         .get(CyNetwork.NAME, String.class);
-                    resb.append("Restoring ").append(n1n).append("->")
-                        .append(n2n).append("\n");
+//                    resb.append("Restoring ").append(n1n).append("->")
+//                        .append(n2n).append("\n");
 
                 }
 // JOptionPane.showMessageDialog(null, resb.toString());
@@ -397,22 +356,6 @@ public class Algorithms
             // Add the lowest cost path becomes the k-shortest path.
             // TODO may not be efficient
             A.add(B.remove(0));
-
-            String sourceName =
-                network.getRow(source).get(CyNetwork.NAME, String.class);
-            String targetName =
-                network.getRow(target).get(CyNetwork.NAME, String.class);
-
-// String message =
-// k + "-th shortest path from " + sourceName + " to "
-// + targetName + ": ";
-// for (CyNode node : A.get(k))
-// {
-// String nodeName =
-// network.getRow(node).get(CyNetwork.NAME, String.class);
-// message += nodeName + " ";
-// }
-// JOptionPane.showMessageDialog(null, message);
         }
 
         // sorts a's paths by cost
