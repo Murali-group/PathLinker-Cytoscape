@@ -2,12 +2,14 @@ package com.dpgil.pathlinker.path_linker.internal;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Properties;
 import javax.swing.JOptionPane;
 import com.dpgil.pathlinker.path_linker.internal.Algorithms;
 import java.util.ArrayList;
 import java.awt.event.ActionEvent;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
@@ -15,6 +17,7 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
+import org.osgi.framework.BundleContext;
 
 /**
  * // -------------------------------------------------------------------------
@@ -30,7 +33,7 @@ public class RunPathLinkerMenuAction
     private final CyApplicationManager applicationManager;
     private final CyTableFactory       tableFactory;
     private final CyTableManager       tableManager;
-
+    private final PromptCytoPanel      panel;
 
     /**
      * Constructor for the PathLinker Menu action.
@@ -48,6 +51,7 @@ public class RunPathLinkerMenuAction
      *            active tables
      */
     public RunPathLinkerMenuAction(
+        PromptCytoPanel panel,
         CyApplicationManager applicationManager,
         final String menuTitle,
         CyTableFactory tableFactory,
@@ -60,6 +64,7 @@ public class RunPathLinkerMenuAction
         this.applicationManager = applicationManager;
         this.tableFactory = tableFactory;
         this.tableManager = tableManager;
+        this.panel = panel;
     }
 
 
@@ -80,10 +85,11 @@ public class RunPathLinkerMenuAction
 
         // sets up the table
         table.createColumn("k", Integer.class, false);
-//        table.createColumn("Source", String.class, false);
-//        table.createColumn("Target", String.class, false);
+
+        table.createColumn("Source", String.class, false);
+        table.createColumn("Target", String.class, false);
+
         table.createColumn("Length", Integer.class, false);
-// table.createColumn("Distance", Integer.class, false);
         table.createColumn("Path", String.class, false);
 
         // adds the table to cytoscape
@@ -180,9 +186,9 @@ public class RunPathLinkerMenuAction
 
         long startTime = System.currentTimeMillis();
 
-        ArrayList<ArrayList<CyNode>> paths = Algorithms.ksp(table, network, superSource, superTarget, k);
+        ArrayList<ArrayList<CyNode>> paths = Algorithms.ksp(network, superSource, superTarget, k);
 
-        // TODO fix this so the i < k check isn't necessary
+        // updates the table's values
         for (int i = 0; i < paths.size() && i < k; i++)
         {
             // empty path TODO should never happen
@@ -191,7 +197,7 @@ public class RunPathLinkerMenuAction
 
             CyRow row = table.getRow(i+1);
 
-            // builds the path string
+            // builds the path string without supersource/supertarget [1,len-1]
             StringBuilder currPath = new StringBuilder();
             for (int j = 1; j < paths.get(i).size() - 1; j++)
             {
@@ -202,15 +208,13 @@ public class RunPathLinkerMenuAction
             // sets all the values
             row.set("k", i+1);
             // SS|A|B|ST = length 1 path-size 4
+
             row.set("Length", paths.get(i).size()-3);
             row.set("Path", currPath.toString());
         }
 
-        boolean containsSS = network.containsNode(superSource);
+        // removes the supersource and supetarget
         network.removeNodes(new ArrayList<CyNode>(Arrays.asList(superSource, superTarget)));
-        boolean containsSSafter = network.containsNode(superSource);
-
-        JOptionPane.showMessageDialog(null, "Contains before: "+containsSS+" \nContains after: "+containsSSafter);
 
         networkView.updateView();
 

@@ -1,18 +1,10 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.PriorityQueue;
 import java.util.Arrays;
-import java.util.ArrayDeque;
-import java.util.Queue;
-import org.cytoscape.model.CyRow;
-import org.cytoscape.model.CyTable;
-import javax.swing.JOptionPane;
 import java.util.List;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
@@ -21,891 +13,330 @@ import org.cytoscape.model.CyNetwork;
 /**
  * // -------------------------------------------------------------------------
  * /** Algorithms class for the PathLinker plugin. Contains all the algorithms
- * (Floyd-Warshall, Dijkstra's, Yen's KSP) used in PathLinker. TODO there is
- * inconsistency between methods and what writes to tables and what doesn't
+ * (Dijkstra's, Yen's KSP) used in PathLinker.
  *
  * @author Daniel Gil
  * @version Apr 23, 2015
  */
 public class Algorithms
 {
-    static int pairNum = 0;
-
-
     /**
-     * Runs the floyd warshall algorithm and writes the results to a table
+     * Runs Yen's k-shortest paths algorithm on the supplied network given a
+     * source, target, and k
      *
      * @param network
-     *            the network to run the algorithm on
-     * @param table
-     *            the table to write to
-     */
-    public static void runFloydWarshall(CyNetwork network, CyTable table)
-    {
-        // create a column for the sources
-        table.createColumn("Source", String.class, false);
-        // create a column for the targets
-        table.createColumn("Target", String.class, false);
-        // create a column for the distances
-        table.createColumn("Distance", Integer.class, false);
-
-        int[][] adjacencyMatrix =
-            new int[network.getNodeCount()][network.getNodeCount()];
-
-        // set all edges to weight "infinity"
-        for (int i = 0; i < adjacencyMatrix.length; i++)
-        {
-            for (int j = 0; j < adjacencyMatrix.length; j++)
-            {
-                adjacencyMatrix[i][j] = 1000000;
-            }
-        }
-
-        // fills in the adjacency matrix
-        List<CyNode> nodes = network.getNodeList();
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            CyNode node1 = nodes.get(i);
-
-            for (int j = 0; j < nodes.size(); j++)
-            {
-                CyNode node2 = nodes.get(j);
-
-                // there is a connection between them
-                // TODO adjust for directed graphs
-                if (network.getConnectingEdgeList(node1, node2, CyEdge.Type.ANY)
-                    .size() > 0)
-                {
-                    adjacencyMatrix[i][j] = 1;
-                }
-            }
-        }
-
-        // floyd warshall
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            for (int j = 0; j < nodes.size(); j++)
-            {
-                for (int k = 0; k < nodes.size(); k++)
-                {
-                    adjacencyMatrix[j][k] = Math.min(
-                        adjacencyMatrix[j][k],
-                        adjacencyMatrix[j][i] + adjacencyMatrix[i][k]);
-                }
-            }
-        }
-
-        // print the results
-        pairNum = 0;
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            CyNode node1 = nodes.get(i);
-            String node1Name =
-                network.getRow(node1).get(CyNetwork.NAME, String.class);
-            for (int j = 0; j < nodes.size(); j++)
-            {
-                CyNode node2 = nodes.get(j);
-                String node2Name =
-                    network.getRow(node2).get(CyNetwork.NAME, String.class);
-                if (i != j)
-                {
-                    CyRow row = table.getRow(pairNum++);
-
-                    row.set("Source", node1Name);
-                    row.set("Target", node2Name);
-                    row.set("Distance", adjacencyMatrix[i][j]);
-                }
-            }
-        }
-    }
-
-
-    /**
-     * Runs dijkstra for each source
-     *
-     * @param network
-     *            the network to run the algorithm on
-     * @param table
-     *            the table to write to
-     */
-    public static void runDijkstra(CyNetwork network, CyTable table)
-    {
-        JOptionPane.showMessageDialog(null, "PathLinker is running.");
-        // create a column for the sources
-        table.createColumn("Source", String.class, false);
-        // create a column for the targets
-        table.createColumn("Target", String.class, false);
-        // create a column for the distances
-        table.createColumn("Distance", Integer.class, false);
-
-        List<CyNode> nodes = network.getNodeList();
-        pairNum = 0;
-
-        // runs dijkstra for each source
-        for (CyNode node : nodes)
-        {
-            dijkstra(table, network, node);
-        }
-    }
-
-
-    /**
-     * Runs Yen's KSP algorithm and returns a list of the k shortest paths
-     *
-     * @param table
-     *            the table to write to. TODO make this not require table
-     * @param network
-     *            the network to run ksp on
+     *            the supplied network
      * @param source
      *            the source node
      * @param target
      *            the target node
-     * @param K
-     *            the number of shortest paths to compute
-     * @return a list of paths (each path is a list of cynodes)
+     * @param maxK
+     *            the number of shortest paths
+     * @return a list of k-shortest paths in sorted order by cost
      */
-    @SuppressWarnings("unchecked")
     public static ArrayList<ArrayList<CyNode>> ksp(
-        CyTable table,
         CyNetwork network,
         CyNode source,
         CyNode target,
-        int K)
+        int maxK)
     {
-        // list of paths to store all k-shortest paths
-        ArrayList<ArrayList<CyNode>> A = new ArrayList<ArrayList<CyNode>>(K);
+        // the list of shortest paths
+        ArrayList<ArrayList<CyNode>> A = new ArrayList<ArrayList<CyNode>>();
 
-        // A[0] = dijkstra(source, sink)
-        ArrayList<CyNode> ssd = ssd2(table, network, source, target, 0, false);
-        A.add(ssd);
+        // A[0] = shortest path
+        ArrayList<CyNode> shortestPath = dijkstra(network, source, target);
 
-        // initialize the heap to store the potential shortest paths
+        // there is no path from source to target
+        if (shortestPath == null)
+            return A;
+
+        A.add(shortestPath);
+
+        // B = []; the heap
         ArrayList<ArrayList<CyNode>> B = new ArrayList<ArrayList<CyNode>>();
 
-        for (int k = 1; k <= K; k++)
+        // for k in range(1, max_k)
+        for (int k = 1; k < maxK; k++)
         {
-            // The spur node ranges from the first node to the next to last
-            // node in the previous k-shortest path
-            for (int i = 0; i < A.get(k - 1).size() - 1; i++)
+            // for i in range(0, len(A[-1]['path]) - 1
+            ArrayList<CyNode> latestPath = A.get(A.size() - 1);
+            for (int i = 0; i < latestPath.size() - 1; i++)
             {
-                ArrayList<CyNode> removedNodes = new ArrayList<CyNode>();
-                ArrayList<RemovedEdge> remEdges = new ArrayList<RemovedEdge>();
+                // node_spur = A[-1]['path'][i]
+                CyNode nodeSpur = latestPath.get(i);
+                // path_root = A[-1]['path'][:i+1]
+                List<CyNode> pathRoot = latestPath.subList(0, i + 1);
 
-                // Spur node is retrieved from the previous k-shortest path,
-                // k − 1.
-                CyNode spurNode = A.get(k - 1).get(i);
-
-                // The sequence of nodes from the source to the spur node of
-                // the previous k-shortest path.
-                ArrayList<CyNode> rootPath = new ArrayList<CyNode>();
-                for (int j = 0; j < i; j++)
+                // edges_removed = []
+                ArrayList<RemovedEdge> edgesRemoved =
+                    new ArrayList<RemovedEdge>();
+                // for path_k in A:
+                for (ArrayList<CyNode> currPath : A)
                 {
-                    rootPath.add(A.get(k - 1).get(j));
-                }
-
-                for (ArrayList<CyNode> path : A)
-                {
-                    // root path is equal to p.nodes(0, i)
-                    if (path.size() >= i && rootPath.equals(path.subList(0, i)))
+                    // if len(curr_path) > i and path_root == curr_path[:i+1]:
+                    // TODO make sure .equals on CyNodes works
+                    if (currPath.size() > i
+                        && pathRoot.equals(currPath.subList(0, i + 1)))
                     {
-                        // Remove the links that are part of the previous
-                        // shortest paths which share the same root path.
-                        if (i + 1 < path.size())
-                        {
-                            if (network
-                                .containsEdge(path.get(i), path.get(i + 1)))
-                            {
-                                List<CyEdge> connect =
-                                    network.getConnectingEdgeList(
-                                        path.get(i),
-                                        path.get(i + 1),
-                                        CyEdge.Type.DIRECTED);
+                        // cost = graph.remove_edge(curr_path[i],
+                        // curr_path[i+1])
+                        CyEdge toRemove = getEdge(
+                            network,
+                            currPath.get(i),
+                            currPath.get(i + 1));
 
-                                // if the sources don't match - remove the edge
-                                if (connect.size() >= 3)
-                                {
-                                    StringBuilder temp = new StringBuilder();
-                                    for (CyEdge e : connect) {
-                                        String sn = network.getRow(e.getSource())
-                                            .get(CyNetwork.NAME, String.class);
-                                        String tn = network.getRow(e.getTarget()).get(CyNetwork.NAME, String.class);
-                                        temp.append(sn+" : "+tn+"\n");
-                                    }
-                                    JOptionPane.showMessageDialog(null, temp.toString());
-                                }
+                        // if cost == -1: continue
+                        if (toRemove == null)
+                            continue;
 
-                                if (connect.size() > 1)
-                                {
-                                    StringBuilder temp = new StringBuilder();
-                                    for (CyEdge e : connect) {
-                                        String sn = network.getRow(e.getSource())
-                                            .get(CyNetwork.NAME, String.class);
-                                        String tn = network.getRow(e.getTarget()).get(CyNetwork.NAME, String.class);
-                                        temp.append(sn+" : "+tn+"\n");
-                                    }
-//                                    JOptionPane.showMessageDialog(null, temp.toString());
-                                }
-
-                                CyEdge toRemove = connect.get(0);
-                                if (connect.size() > 1)
-                                {
-                                    if (!connect.get(0).getSource().equals(path.get(i)))
-                                    {
-                                        toRemove = connect.get(1);
-                                    }
-                                }
-
-                                RemovedEdge remE = new RemovedEdge(
-                                    toRemove.getSource(),
-                                    toRemove.getTarget());
-                                remEdges.add(remE);
-
-                                network.removeEdges(new ArrayList<CyEdge>(Arrays.asList(toRemove)));
-                            }
-                        }
+                        // edges_removed.append([curr_path[i], curr_path[i+1],
+                        // cost])
+                        network.removeEdges(Arrays.asList(toRemove));
+                        edgesRemoved.add(
+                            new RemovedEdge(
+                                currPath.get(i),
+                                currPath.get(i + 1)));
                     }
                 }
 
-                // removes all nodes in rootPath except spurNode from graph
-                ArrayList<CyNode> rootPathWithoutSpurNode =
-                    new ArrayList<CyNode>();
-                // copies the root path
-                // TODO source does not fit in dest
-                for (int j = 0; j < rootPath.size(); j++)
-                {
-                    rootPathWithoutSpurNode.add(rootPath.get(j));
-                }
-                // removes spur node
-                rootPathWithoutSpurNode.remove(spurNode);
-                // removes all nodes in rootPath except spurNode from graph
-                // TODO may need to actually remove
-                removedNodes.addAll(rootPathWithoutSpurNode);
+                // path_spur = dijkstra(graph, node_spur, node_end)
+                ArrayList<CyNode> pathSpur =
+                    dijkstra(network, nodeSpur, target);
 
-                // Calculate the spur path from the spur node to the sink
-                // TODO use A* instead
-                ArrayList<CyNode> spurPath = ssd2WithRemovals(
-                    table,
-                    network,
-                    spurNode,
-                    target,
-                    removedNodes,
-                    0,
-                    false);
-
-                if (spurPath.size() > 0)
+                // if path_spur['path']:
+                if (pathSpur != null)
                 {
-                    // Entire path is made up of the root path and spur path
-                    ArrayList<CyNode> totalPath = new ArrayList<CyNode>();
-                    totalPath.addAll(rootPath);
-                    totalPath.addAll(spurPath);
-                    // Add the potential k-shortest path to the heap
-                    B.add(totalPath);
+                    // path_total = path_root[:-1] + path_spur['path']
+                    ArrayList<CyNode> pathTotal = new ArrayList<CyNode>(
+                        pathRoot.subList(0, pathRoot.size() - 1));
+                    pathTotal.addAll(pathSpur);
+
+                    // dist_total = distances[node_spur] + path_spur['cost']
+
+                    // potential_k = {'cost': dist_total, 'path':
+                    // path_total}
+
+                    // if not (potential_k in B):
+                    if (!B.contains(pathTotal))
+                    {
+                        // B.append(potential_k)
+                        B.add(pathTotal);
+                    }
                 }
 
-                // Add back the edges that were removed
-//                resb.append("Restored edges:\n");
-                for (RemovedEdge removedEdge : remEdges)
+                // for edge in edges_removed:
+                // graph.add_edge(edge[0], edge[1], edge[2])
+                for (RemovedEdge removed : edgesRemoved)
                 {
-                    network.addEdge(removedEdge.node1, removedEdge.node2, true);
-
-                    String n1n = network.getRow(removedEdge.node1)
-                        .get(CyNetwork.NAME, String.class);
-                    String n2n = network.getRow(removedEdge.node2)
-                        .get(CyNetwork.NAME, String.class);
-//                    resb.append("Restoring ").append(n1n).append("->")
-//                        .append(n2n).append("\n");
-
+                    network.addEdge(removed.source, removed.target, true);
                 }
-// JOptionPane.showMessageDialog(null, resb.toString());
 
             }
 
-            if (B.isEmpty())
+            // if len(B):
+            if (B.size() > 0)
             {
-                // This handles the case of there being no spur paths, or no
-                // spur paths left. This could happen if the spur paths have
-                // already been exhausted (added to A), or there are no spur
-                // paths at all - such as when both the source and sink vertices
-                // lie along a "dead end".
+                // B = sorted(B, key=itemgetter('cost'))
+                Collections.sort(B, new Comparator<ArrayList<CyNode>>() {
+
+                    @Override
+                    public int compare(
+                        ArrayList<CyNode> path1,
+                        ArrayList<CyNode> path2)
+                    {
+                        return Integer.compare(path1.size(), path2.size());
+                    }
+
+                });
+
+                // A.append(B[0])
+                // B.pop(0)
+                A.add(B.remove(0));
+            }
+            else
+            {
                 break;
             }
-
-            // Sort the potential k-shortest paths by cost.
-            Collections.sort(B, new Comparator() {
-                @Override
-                public int compare(Object t1, Object t2)
-                {
-                    if (t1 == null || t2 == null)
-                    {
-                        return 0;
-                    }
-
-                    if (t1 == t2)
-                    {
-                        return 0;
-                    }
-
-                    ArrayList<CyNode> a1 = (ArrayList<CyNode>)t1;
-                    ArrayList<CyNode> a2 = (ArrayList<CyNode>)t2;
-
-                    return Integer.compare(a1.size(), a2.size());
-                }
-            });
-// JOptionPane.showMessageDialog(null, "line 280");
-
-            // Add the lowest cost path becomes the k-shortest path.
-            // TODO may not be efficient
-            A.add(B.remove(0));
         }
-
-        // sorts a's paths by cost
-        // Sort the potential k-shortest paths by cost.
-        Collections.sort(A, new Comparator() {
-            @Override
-            public int compare(Object t1, Object t2)
-            {
-                if (t1 == null || t2 == null)
-                {
-                    return 0;
-                }
-
-                if (t1 == t2)
-                {
-                    return 0;
-                }
-
-                ArrayList<CyNode> a1 = (ArrayList<CyNode>)t1;
-                ArrayList<CyNode> a2 = (ArrayList<CyNode>)t2;
-
-                if (a1.size() == a2.size())
-                {
-                    return 0;
-                }
-
-// return a1.size() < a2.size() ? 1 : -1;
-// original one below
-                return a1.size() < a2.size() ? -1 : 1;
-            }
-        });
 
         return A;
     }
 
 
-    static class RemovedEdge
+    /**
+     * Computes the shortest path from a source to a sink in the supplied
+     * network
+     *
+     * @param network
+     *            the network
+     * @param source
+     *            the source node of the graph
+     * @param target
+     *            the target node of the graph
+     * @return list of nodes that make up the path from source to target
+     */
+    public static ArrayList<CyNode> dijkstra(
+        CyNetwork network,
+        CyNode source,
+        CyNode target)
     {
-        private CyNode node1;
-        private CyNode node2;
+        final int INFINITY = Integer.MAX_VALUE;
 
+        HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
+        HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
+        ArrayList<CyNode> pq = new ArrayList<CyNode>();
 
-        public RemovedEdge(CyNode n1, CyNode n2)
+        // intializes distances
+        for (CyNode v : network.getNodeList())
         {
-            node1 = n1;
-            node2 = n2;
+            distances.put(v, INFINITY);
+            previous.put(v, null);
         }
+        distances.put(source, 0);
+        pq.add(source);
+
+        while (!pq.isEmpty())
+        {
+            CyNode current = pq.remove(0);
+
+            // short circuit
+            if (current.equals(target))
+            {
+                // return path reconstructed
+                break;
+            }
+
+            // goes through the neighbors
+            for (CyNode neighbor : network
+                .getNeighborList(current, CyEdge.Type.OUTGOING))
+            {
+                int edgeWeight = 1;
+                int newCost = distances.get(current) + edgeWeight;
+
+                if (newCost < distances.get(neighbor))
+                {
+                    distances.put(neighbor, newCost);
+                    previous.put(neighbor, current);
+
+                    // Q[u] = cost_vu
+                    // add to priority queue
+                    pq.remove(neighbor);
+                    for (int i = 0; i < pq.size(); i++)
+                    {
+                        if (distances.get(neighbor) < distances.get(pq.get(i)))
+                        {
+                            pq.add(i, neighbor);
+                            break;
+                        }
+                    }
+                    if (!pq.contains(neighbor))
+                        pq.add(neighbor);
+                }
+            }
+        }
+
+        if (distances.get(target) == INFINITY)
+        {
+            // unreachable node
+            return null;
+        }
+
+        // return constructed path
+        return constructPath(previous, source, target);
     }
 
 
     /**
-     * Performs single source dijkstra's ignoring all nodes that were removed in
-     * Yen's KSP
+     * Returns an edge that connects source to target if it exists, null
+     * otherwise
      *
-     * @param table
-     *            the table to write to
      * @param network
-     *            the cy network
+     *            the network
      * @param source
-     *            the source node
+     *            the source of the edge
      * @param target
-     *            the target node
-     * @param removedNodes
-     *            the nodes that were removed from the network
-     * @param pair
-     *            the pair number (k)
-     * @param print
-     *            whether or not to print to the table
-     * @return ArrayList<CyNode> the path from source to target
+     *            the target of the edge
+     * @return the edge connecting source and target, null otherwise
      */
-    public static ArrayList<CyNode> ssd2WithRemovals(
-        CyTable table,
+    private static CyEdge getEdge(
         CyNetwork network,
         CyNode source,
-        CyNode target,
-        ArrayList<CyNode> removedNodes,
-        int pair,
-        boolean print)
+        CyNode target)
     {
-        // distance from the source to the specified CyNode
-        HashMap<CyNode, Integer> dist = new HashMap<CyNode, Integer>();
-        HashMap<CyNode, CyNode> pred = new HashMap<CyNode, CyNode>();
-        List<CyNode> nodes = network.getNodeList();
+        List<CyEdge> connections =
+            network.getConnectingEdgeList(source, target, CyEdge.Type.DIRECTED);
 
-        final int INFINITY = 1000000;
-        // give the the distance to every node "infinite" weight
-        for (CyNode node : nodes)
+        for (CyEdge edge : connections)
         {
-            dist.put(node, INFINITY);
-        }
-        // distance from the source to itself is 0
-        dist.put(source, 0);
-
-        ArrayList<CyNode> pq = new ArrayList<CyNode>();
-        pq.add(source);
-
-        while (!pq.isEmpty())
-        {
-            CyNode current = pq.remove(0);
-
-            // short circuit single source single target
-            if (current.equals(target))
+            if (edge.getSource().equals(source)
+                && edge.getTarget().equals(target))
             {
-                // don't need path to self or unreachable node
-                if (dist.get(target) == 0 || dist.get(target) == INFINITY)
-                {
-                    return new ArrayList<CyNode>();
-                }
-
-                // print all the pairs and their distances
-                String sourceName =
-                    network.getRow(source).get(CyNetwork.NAME, String.class);
-                String targetName =
-                    network.getRow(target).get(CyNetwork.NAME, String.class);
-
-                // constructs the path traveled
-                CyNode iter = target;
-                ArrayList<String> nodeNamePath = new ArrayList<String>();
-                ArrayList<CyNode> nodePath = new ArrayList<CyNode>();
-                do
-                {
-                    String srcName =
-                        network.getRow(iter).get(CyNetwork.NAME, String.class);
-                    nodeNamePath.add(srcName);
-                    // TODO might be a huge problem with assigning references
-                    nodePath.add(iter);
-                }
-                while (!(iter = pred.get(iter)).equals(source));
-                nodeNamePath.add(sourceName);
-                nodePath.add(source);
-
-                Collections.reverse(nodeNamePath);
-                Collections.reverse(nodePath);
-
-                if (print)
-                {
-                    StringBuilder pathBuilder = new StringBuilder();
-                    for (String nodeName : nodeNamePath)
-                    {
-                        pathBuilder.append(nodeName).append(" ");
-                    }
-
-                    CyRow row = table.getRow(pair);
-
-                    row.set("Source", sourceName);
-                    row.set("Target", targetName);
-                    row.set("Distance", dist.get(target));
-                    row.set("Path", pathBuilder.toString());
-                }
-
-                return nodePath;
-            }
-
-            // iterate over node's neighbors
-            List<CyNode> neighbors =
-                network.getNeighborList(current, CyEdge.Type.OUTGOING);
-// neighbors.removeAll(removedNodes);
-
-            for (CyNode neighbor : neighbors)
-            {
-                // simulates removed nodes TODO
-                if (removedNodes.contains(neighbor))
-                    continue;
-                // TODO the 1 could be replaced with the weight of edge from
-                // current->neighbor
-                int distanceThroughU = dist.get(current) + 1;
-
-                if (distanceThroughU < dist.get(neighbor))
-                {
-                    pq.remove(neighbor);
-                    dist.put(neighbor, distanceThroughU);
-
-                    // priority queue add
-                    for (int i = 0; i < pq.size(); i++)
-                    {
-                        if (dist.get(neighbor) < dist.get(pq.get(i)))
-                        {
-                            pq.add(i, neighbor);
-                            break;
-                        }
-                    }
-                    if (!pq.contains(neighbor))
-                        pq.add(neighbor);
-                    // queue.add(neighbor);
-                    pred.put(neighbor, current);
-                }
+                return edge;
             }
         }
 
-        // don't need path to self or unreachable node
-        if (dist.get(target) == 0 || dist.get(target) == INFINITY)
-        {
-            return new ArrayList<CyNode>();
-        }
+        return null;
+    }
 
-        // print all the pairs and their distances
-        String sourceName =
-            network.getRow(source).get(CyNetwork.NAME, String.class);
-        String targetName =
-            network.getRow(target).get(CyNetwork.NAME, String.class);
 
-        // constructs the path traveled
+    /**
+     * Finds a path from a source to a sink using a supplied previous node list
+     *
+     * @param previous
+     *            a map of node predecessors
+     * @param source
+     *            the source node of the graph
+     * @param target
+     *            the target node of the graph
+     * @return list of nodes in the path
+     */
+    public static ArrayList<CyNode> constructPath(
+        HashMap<CyNode, CyNode> previous,
+        CyNode source,
+        CyNode target)
+    {
+        ArrayList<CyNode> path = new ArrayList<CyNode>();
+
+        // constructs the path
         CyNode iter = target;
-        ArrayList<String> nodeNamePath = new ArrayList<String>();
-        ArrayList<CyNode> nodePath = new ArrayList<CyNode>();
         do
         {
-            String srcName =
-                network.getRow(iter).get(CyNetwork.NAME, String.class);
-            nodeNamePath.add(srcName);
-            // TODO might be a huge problem with assigning references
-            nodePath.add(iter);
+            path.add(iter);
         }
-        while (!(iter = pred.get(iter)).equals(source));
-        nodeNamePath.add(sourceName);
-        nodePath.add(source);
+        while (!(iter = previous.get(iter)).equals(source));
 
-        Collections.reverse(nodeNamePath);
-        Collections.reverse(nodePath);
+        path.add(source);
 
-        if (print)
-        {
-            StringBuilder pathBuilder = new StringBuilder();
-            for (String nodeName : nodeNamePath)
-            {
-                pathBuilder.append(nodeName).append(" ");
-            }
+        Collections.reverse(path);
 
-            CyRow row = table.getRow(pair);
-
-            row.set("Source", sourceName);
-            row.set("Target", targetName);
-            row.set("Distance", dist.get(target));
-            row.set("Path", pathBuilder.toString());
-        }
-
-        return nodePath;
+        return path;
     }
 
 
-    public static ArrayList<CyNode> ssd2(
-        CyTable table,
-        CyNetwork network,
-        CyNode source,
-        CyNode target,
-        int pair,
-        boolean print)
+    /**
+     * Represents a removed edge so it can be restored to a CyNetwork
+     *
+     * @author Daniel
+     * @version Sep 10, 2015
+     */
+    static class RemovedEdge
     {
-        // distance from the source to the specified CyNode
-        HashMap<CyNode, Integer> dist = new HashMap<CyNode, Integer>();
-        HashMap<CyNode, CyNode> pred = new HashMap<CyNode, CyNode>();
-        List<CyNode> nodes = network.getNodeList();
+        private CyNode source;
+        private CyNode target;
 
-        final int INFINITY = 1000000;
-        // give the the distance to every node "infinite" weight
-        for (CyNode node : nodes)
+
+        /**
+         * Constructor for removed edge
+         *
+         * @param source
+         *            the source of the edge
+         * @param target
+         *            the target of the edge
+         */
+        public RemovedEdge(CyNode source, CyNode target)
         {
-            dist.put(node, INFINITY);
-        }
-        // distance from the source to itself is 0
-        dist.put(source, 0);
-
-        ArrayList<CyNode> pq = new ArrayList<CyNode>();
-        pq.add(source);
-
-        while (!pq.isEmpty())
-        {
-            CyNode current = pq.remove(0);
-
-            // short circuit single source single target
-            if (current.equals(target))
-            {
-                // don't need path to self or unreachable node
-                if (dist.get(target) == 0 || dist.get(target) == INFINITY)
-                {
-                    return new ArrayList<CyNode>();
-                }
-
-                // print all the pairs and their distances
-                String sourceName =
-                    network.getRow(source).get(CyNetwork.NAME, String.class);
-                String targetName =
-                    network.getRow(target).get(CyNetwork.NAME, String.class);
-
-                // constructs the path traveled
-                CyNode iter = target;
-                ArrayList<String> nodeNamePath = new ArrayList<String>();
-                ArrayList<CyNode> nodePath = new ArrayList<CyNode>();
-                do
-                {
-                    String srcName =
-                        network.getRow(iter).get(CyNetwork.NAME, String.class);
-                    nodeNamePath.add(srcName);
-                    // TODO might be a huge problem with assigning references
-                    nodePath.add(iter);
-                }
-                while (!(iter = pred.get(iter)).equals(source));
-                nodeNamePath.add(sourceName);
-                nodePath.add(source);
-
-                Collections.reverse(nodeNamePath);
-                Collections.reverse(nodePath);
-
-                if (print)
-                {
-                    StringBuilder pathBuilder = new StringBuilder();
-                    for (String nodeName : nodeNamePath)
-                    {
-                        pathBuilder.append(nodeName).append(" ");
-                    }
-
-                    CyRow row = table.getRow(pair);
-
-                    row.set("Source", sourceName);
-                    row.set("Target", targetName);
-                    row.set("Distance", dist.get(target));
-                    row.set("Path", pathBuilder.toString());
-                }
-
-                return nodePath;
-            }
-
-            // iterate over node's neighbors
-            List<CyNode> neighbors =
-                network.getNeighborList(current, CyEdge.Type.OUTGOING);
-
-            for (CyNode neighbor : neighbors)
-            {
-                // TODO the 1 could be replaced with the weight of edge from
-                // current->neighbor
-                int distanceThroughU = dist.get(current) + 1;
-
-                if (distanceThroughU < dist.get(neighbor))
-                {
-                    pq.remove(neighbor);
-                    dist.put(neighbor, distanceThroughU);
-
-                    // priority queue add
-                    for (int i = 0; i < pq.size(); i++)
-                    {
-                        if (dist.get(neighbor) < dist.get(pq.get(i)))
-                        {
-                            pq.add(i, neighbor);
-                            break;
-                        }
-                    }
-                    if (!pq.contains(neighbor))
-                        pq.add(neighbor);
-                    // queue.add(neighbor);
-                    pred.put(neighbor, current);
-                }
-            }
-        }
-
-        // don't need path to self or unreachable node
-        if (dist.get(target) == 0 || dist.get(target) == INFINITY)
-        {
-            return new ArrayList<CyNode>();
-        }
-
-        // print all the pairs and their distances
-        String sourceName =
-            network.getRow(source).get(CyNetwork.NAME, String.class);
-        String targetName =
-            network.getRow(target).get(CyNetwork.NAME, String.class);
-
-        // constructs the path traveled
-        CyNode iter = target;
-        ArrayList<String> nodeNamePath = new ArrayList<String>();
-        ArrayList<CyNode> nodePath = new ArrayList<CyNode>();
-        do
-        {
-            String srcName =
-                network.getRow(iter).get(CyNetwork.NAME, String.class);
-            nodeNamePath.add(srcName);
-            // TODO might be a huge problem with assigning references
-            nodePath.add(iter);
-        }
-        while (!(iter = pred.get(iter)).equals(source));
-        nodeNamePath.add(sourceName);
-        nodePath.add(source);
-
-        Collections.reverse(nodeNamePath);
-        Collections.reverse(nodePath);
-
-        if (print)
-        {
-            StringBuilder pathBuilder = new StringBuilder();
-            for (String nodeName : nodeNamePath)
-            {
-                pathBuilder.append(nodeName).append(" ");
-            }
-
-            CyRow row = table.getRow(pair);
-
-            row.set("Source", sourceName);
-            row.set("Target", targetName);
-            row.set("Distance", dist.get(target));
-            row.set("Path", pathBuilder.toString());
-        }
-
-        return nodePath;
-    }
-
-
-    public static void dijkstra(CyTable table, CyNetwork network, CyNode source)
-    {
-        // distance from the source to the specified CyNode
-        HashMap<CyNode, Integer> dist = new HashMap<CyNode, Integer>();
-        List<CyNode> nodes = network.getNodeList();
-
-        final int INFINITY = 1000000;
-        // give the the distance to every node "infinite" weight
-        for (CyNode node : nodes)
-        {
-            dist.put(node, INFINITY);
-        }
-        // distance from the source to itself is 0
-        dist.put(source, 0);
-
-        Queue<CyNode> queue = new ArrayDeque<CyNode>();
-        queue.add(source);
-
-        while (!queue.isEmpty())
-        {
-            CyNode current = queue.poll();
-
-            // TODO add polling for shortest dist cynode
-            // TODO change for directed edges
-            // iterate over node's neighbors
-            List<CyNode> neighbors =
-                network.getNeighborList(current, CyEdge.Type.OUTGOING);
-            for (CyNode neighbor : neighbors)
-            {
-                int distanceThroughU = dist.get(current) + 1;
-
-                if (distanceThroughU < dist.get(neighbor))
-                {
-                    queue.remove(neighbor);
-                    dist.put(neighbor, distanceThroughU);
-                    queue.add(neighbor);
-                }
-            }
-        }
-
-        // print all the pairs and their distances
-        String sourceName =
-            network.getRow(source).get(CyNetwork.NAME, String.class);
-        for (CyNode node : nodes)
-        {
-            String nodeName =
-                network.getRow(node).get(CyNetwork.NAME, String.class);
-
-            if (!node.equals(source))
-            {
-                CyRow row = table.getRow(pairNum++);
-
-                row.set("Source", sourceName);
-                row.set("Target", nodeName);
-                row.set("Distance", dist.get(node));
-            }
-        }
-    }
-
-
-    public static void prepareNetForKSP(
-        CyNetwork network,
-        ArrayList<CyNode> sources,
-        ArrayList<CyNode> targets,
-        ArrayList<Integer> nodeWeights)
-    {
-        // adds sources and targets to the list
-        // TODO get a better way to distinguish between them
-        for (CyNode node : network.getNodeList())
-        {
-            String name =
-                network.getRow(node).get(CyNetwork.NAME, String.class);
-            if (name.charAt(0) == 'S')
-            {
-                sources.add(node);
-            }
-            if (name.charAt(0) == 'T')
-            {
-                targets.add(node);
-            }
-        }
-
-        // removes all edges entering a source
-        for (CyNode source : sources)
-        {
-            network.removeEdges(
-                network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
-        }
-        // removes all edges leaving a target
-        for (CyNode target : targets)
-        {
-            network.removeEdges(
-                network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
-        }
-
-        int[][] currWeight =
-            new int[network.getNodeCount()][network.getNodeCount()];
-        // assign EdgeFlux scores to the edges
-        // currWeight[(u,v)] = nodeWeights[u] *
-// net[u][v]['weight']/net.out_degree(u, 'weight')
-        for (CyEdge edge : network.getEdgeList())
-        {
-            CyNode s = edge.getSource();
-        }
-    }
-
-
-    private void KShortestPathsYen(
-        CyNetwork network,
-        CyNode source,
-        CyNode target,
-        int k)
-    {
-        Path[] A = new Path[k];
-    }
-
-
-    private class Path
-    {
-        private ArrayList<CyNode> path;
-
-
-        public Path()
-        {
-            path = new ArrayList<CyNode>();
-        }
-
-
-        // add a node to the path
-        public void append(CyNode node)
-        {
-            path.add(node);
-        }
-
-
-        // access the i-th node in a path
-        public CyNode node(int i)
-        {
-            return path.get(i);
-        }
-
-
-        public ArrayList<CyNode> getPath()
-        {
-            return path;
+            this.source = source;
+            this.target = target;
         }
     }
 }

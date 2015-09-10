@@ -4,6 +4,7 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyTableFactory;
 import java.util.Properties;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.osgi.framework.BundleContext;
 
@@ -32,21 +33,18 @@ public class CyActivator
         CyTableFactory tableFactory = getService(context, CyTableFactory.class);
         CyTableManager tableManager = getService(context, CyTableManager.class);
 
+        PromptCytoPanel panel = new PromptCytoPanel();
+
         // sets up the pathlinker menu option
         RunPathLinkerMenuAction rplaction = new RunPathLinkerMenuAction(
+            panel,
             cyApplicationManager,
             "Run PathLinker",
             tableFactory,
             tableManager);
 
-        // sets up the graph initialization menu option
-        InitializeGraphMenuAction igmaction = new InitializeGraphMenuAction(
-            cyApplicationManager,
-            "Initialize Graph");
-
         // registers the services
-        Properties properties = new Properties();
-        registerAllServices(context, rplaction, properties);
-        registerAllServices(context, igmaction, properties);
+        registerAllServices(context, rplaction, new Properties());
+        registerService(context, panel, CytoPanelComponent.class, new Properties());
     }
 }
