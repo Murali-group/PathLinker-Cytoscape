@@ -57,7 +57,6 @@ public class RunPathLinkerMenuAction
         CyTableFactory tableFactory,
         CyTableManager tableManager)
     {
-
         super(menuTitle, applicationManager, null, null);
         setPreferredMenu("Apps");
 
@@ -70,6 +69,8 @@ public class RunPathLinkerMenuAction
 
     public void actionPerformed(ActionEvent e)
     {
+        panel.setVisible(false);
+
         CyTable table =
             tableFactory.createTable(
                 "PathLinker ",
@@ -85,9 +86,6 @@ public class RunPathLinkerMenuAction
 
         // sets up the table
         table.createColumn("k", Integer.class, false);
-
-        table.createColumn("Source", String.class, false);
-        table.createColumn("Target", String.class, false);
 
         table.createColumn("Length", Integer.class, false);
         table.createColumn("Path", String.class, false);

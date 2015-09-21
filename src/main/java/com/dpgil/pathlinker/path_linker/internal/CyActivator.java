@@ -1,11 +1,16 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import java.util.Properties;
+import javax.swing.JOptionPane;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -33,18 +38,29 @@ public class CyActivator
         CyTableFactory tableFactory = getService(context, CyTableFactory.class);
         CyTableManager tableManager = getService(context, CyTableManager.class);
 
-        PromptCytoPanel panel = new PromptCytoPanel();
+        PromptCytoPanel panel = new PromptCytoPanel(cyApplicationManager, tableFactory, tableManager);
+
+        CyNetworkFactory networkFactory = getService(context, CyNetworkFactory.class);
+        CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
+        CyNetworkViewFactory networkViewFactory = getService(context, CyNetworkViewFactory.class);
+        CyNetworkViewManager networkViewManager = getService(context, CyNetworkViewManager.class);
+        panel.initialize(networkFactory, networkManager, networkViewFactory, networkViewManager);
 
         // sets up the pathlinker menu option
-        RunPathLinkerMenuAction rplaction = new RunPathLinkerMenuAction(
-            panel,
-            cyApplicationManager,
-            "Run PathLinker",
-            tableFactory,
-            tableManager);
+//        RunPathLinkerMenuAction rplaction = new RunPathLinkerMenuAction(
+//            panel,
+//            cyApplicationManager,
+//            "PathLinker",
+//            tableFactory,
+//            tableManager);
+
+        OpenPathLinkerMenuAction oplaction = new OpenPathLinkerMenuAction(panel, cyApplicationManager);
+        ClosePathLinkerMenuAction cplaction = new ClosePathLinkerMenuAction(panel, cyApplicationManager);
 
         // registers the services
-        registerAllServices(context, rplaction, new Properties());
+//        registerAllServices(context, rplaction, new Properties());
+        registerAllServices(context, oplaction, new Properties());
+        registerAllServices(context, cplaction, new Properties());
         registerService(context, panel, CytoPanelComponent.class, new Properties());
     }
 }
