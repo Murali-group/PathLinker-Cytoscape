@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1441907972130
+Bnd-LastModified: 1442937878327
 Build-Jdk: 1.7.0_51
 Built-By: Daniel
 Bundle-Activator: com.dpgil.pathlinker.path_linker.internal.CyActivator
@@ -8,8 +8,9 @@ Bundle-Name: com.dpgil.pathlinker.path_linker
 Bundle-SymbolicName: com.dpgil.pathlinker.path_linker
 Bundle-Version: 0.0.1.SNAPSHOT
 Created-By: Apache Maven Bundle Plugin
-Import-Package: javax.swing,org.cytoscape.application;version="[3.2,4)",
- org.cytoscape.application.swing;version="[3.2,4)",org.cytoscape.model;v
- ersion="[3.2,4)",org.cytoscape.service.util;version="[3.2,4)",org.cytos
- cape.view.model;version="[3.2,4)",org.osgi.framework;version="[1.5,2)"
+Import-Package: javax.swing,javax.swing.border,org.cytoscape.application
+ ;version="[3.2,4)",org.cytoscape.application.swing;version="[3.2,4)",or
+ g.cytoscape.model;version="[3.2,4)",org.cytoscape.service.util;version=
+ "[3.2,4)",org.cytoscape.view.model;version="[3.2,4)",org.osgi.framework
+ ;version="[1.5,2)"
 Tool: Bnd-1.50.0

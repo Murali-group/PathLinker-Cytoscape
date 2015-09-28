@@ -95,9 +95,33 @@ public class Algorithms
         // B = []; the heap
         ArrayList<ArrayList<CyNode>> B = new ArrayList<ArrayList<CyNode>>();
 
+        // prefixCache = defaultdict(list)
+        // A cache mapping prefixes of accepted paths to the next node after
+        // the prefix. Used to avoid scanning all previous paths many time,
+        // which otherwise dominates runtime.
+        HashMap<ArrayList<CyNode>, ArrayList<CyNode>> prefixCache =
+            new HashMap<ArrayList<CyNode>, ArrayList<CyNode>>();
+        for (int i = 1; i < shortestPath.size(); i++)
+        {
+            ArrayList<CyNode> subPath =
+                new ArrayList<CyNode>(shortestPath.subList(0, i));
+            CyNode node = shortestPath.get(i);
+
+            if (prefixCache.containsKey(subPath))
+            {
+                prefixCache.get(subPath).add(node);
+            }
+            else
+            {
+                prefixCache
+                    .put(subPath, new ArrayList<CyNode>(Arrays.asList(node)));
+            }
+        }
+
         // for k in range(1, max_k)
         for (int k = 1; k < maxK; k++)
         {
+            // edges_removed = []
             ArrayList<RemovedEdge> edgesRemoved = new ArrayList<RemovedEdge>();
 
             // for i in range(0, len(A[-1]['path]) - 1)
@@ -109,51 +133,69 @@ public class Algorithms
                 // path_root = A[-1]['path'][:i+1]
                 List<CyNode> pathRoot = latestPath.subList(0, i + 1);
 
-                // edges_removed = []
-//                ArrayList<RemovedEdge> edgesRemoved =
-//                    new ArrayList<RemovedEdge>();
-
                 // to avoid cycles
-                List<CyEdge> inEdges = network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
+                List<CyEdge> inEdges =
+                    network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
-                    edgesRemoved.add(new RemovedEdge(inEdge.getSource(), inEdge.getTarget()));
+                    edgesRemoved.add(
+                        new RemovedEdge(
+                            inEdge.getSource(),
+                            inEdge.getTarget()));
                 }
                 network.removeEdges(inEdges);
 
-                // for path_k in A:
-                for (ArrayList<CyNode> currPath : A)
+//                # for each previously-found shortest path P_j with the same first i nodes as
+//                # the first i nodes of prevPath, hide the edge from x to the i+1 node in P_j
+//                # to ensure we don't re-find a previously found path.
+//                # Lookup the prefixes in a cache to disallow them. Requires more memory
+//                # to store the cache, but saves scanning the list of found paths
+                for (CyNode repNode : prefixCache.get(latestPath.subList(0, i+1)))
                 {
-                    // if len(curr_path) > i and path_root == curr_path[:i+1]:
-                    if (currPath.size() > i
-                        && pathRoot.equals(currPath.subList(0, i + 1)))
+                    CyEdge repEdge = getEdge(network, nodeSpur, repNode);
+                    if (repEdge != null)
                     {
-                        // cost = graph.remove_edge(curr_path[i],
-                        // curr_path[i+1])
-                        CyEdge toRemove = getEdge(
-                            network,
-                            currPath.get(i),
-                            currPath.get(i + 1));
-
-                        // if cost == -1: continue
-                        if (toRemove == null)
-                            continue;
-
-                        // edges_removed.append([curr_path[i], curr_path[i+1],
-                        // cost])
-                        network.removeEdges(Arrays.asList(toRemove));
-                        edgesRemoved.add(
-                            new RemovedEdge(
-                                currPath.get(i),
-                                currPath.get(i + 1)));
+                        edgesRemoved.add(new RemovedEdge(nodeSpur, repNode));
+                        network.removeEdges(Arrays.asList(repEdge));
                     }
                 }
 
-                // path_spur = dijkstra(graph, node_spur, node_end)
-//                ArrayList<CyNode> pathSpur =
-//                    dijkstra(network, nodeSpur, target);
-                ArrayList<CyNode> pathSpur = shortestPathAStar(network, nodeSpur, target, minDists, false);
+//                // scans all previous paths
+//                // for path_k in A:
+//                for (ArrayList<CyNode> currPath : A)
+//                {
+//                    // if len(curr_path) > i and path_root == curr_path[:i+1]:
+//                    if (currPath.size() > i
+//                        && pathRoot.equals(currPath.subList(0, i + 1)))
+//                    {
+//                        // cost = graph.remove_edge(curr_path[i],
+//                        // curr_path[i+1])
+//                        CyEdge toRemove = getEdge(
+//                            network,
+//                            currPath.get(i),
+//                            currPath.get(i + 1));
+//
+//                        // if cost == -1: continue
+//                        if (toRemove == null)
+//                            continue;
+//
+//                        // edges_removed.append([curr_path[i], curr_path[i+1],
+//                        // cost])
+//                        network.removeEdges(Arrays.asList(toRemove));
+//                        edgesRemoved.add(
+//                            new RemovedEdge(
+//                                currPath.get(i),
+//                                currPath.get(i + 1)));
+//                    }
+//                }
 
+                // path_spur = a_star(graph, node_spur, node_end)
+                ArrayList<CyNode> pathSpur = shortestPathAStar(
+                    network,
+                    nodeSpur,
+                    target,
+                    minDists,
+                    false);
 
                 // if path_spur['path']:
                 if (pathSpur != null)
@@ -175,16 +217,9 @@ public class Algorithms
                         B.add(pathTotal);
                     }
                 }
-
-                // for edge in edges_removed:
-                // graph.add_edge(edge[0], edge[1], edge[2])
-//                for (RemovedEdge removed : edgesRemoved)
-//                {
-//                    network.addEdge(removed.source, removed.target, true);
-//                }
-
             }
 
+            // restores removed edges
             for (RemovedEdge removed : edgesRemoved)
             {
                 network.addEdge(removed.source, removed.target, true);
@@ -206,9 +241,24 @@ public class Algorithms
 
                 });
 
+                ArrayList<CyNode> newShortest = B.remove(0);
+
+                for (int i = 1; i < newShortest.size(); i++)
+                {
+                    CyNode currNode = newShortest.get(i);
+                    ArrayList<CyNode> subPath = new ArrayList<CyNode>(newShortest.subList(0, i));
+
+                    if (!prefixCache.containsKey(subPath))
+                        prefixCache.put(subPath, new ArrayList<CyNode>());
+
+                    ArrayList<CyNode> cachedPath = prefixCache.get(subPath);
+                    if (!cachedPath.contains(currNode))
+                        cachedPath.add(currNode);
+                }
+
                 // A.append(B[0])
                 // B.pop(0)
-                A.add(B.remove(0));
+                A.add(newShortest);
             }
             else
             {
@@ -263,7 +313,8 @@ public class Algorithms
 
         // if source==target:
         // return ({source:0}, {source:[source]})
-        if (source.equals(target)) {
+        if (source.equals(target))
+        {
             if (print)
                 JOptionPane.showMessageDialog(null, "source equals target");
             return path;
@@ -351,9 +402,11 @@ public class Algorithms
                     {
                         // raise ValueError('Contradictory search path:', 'bad
                         // heuristic? negative weights?')
-//                        throw new Exception(
-//                            "Contradictory search path: bad heuristic? negative weights?");
-                        JOptionPane.showMessageDialog(null, "Contradictory search path. Bad heuristic? Negative weights?");
+// throw new Exception(
+// "Contradictory search path: bad heuristic? negative weights?");
+                        JOptionPane.showMessageDialog(
+                            null,
+                            "Contradictory search path. Bad heuristic? Negative weights?");
                         return null;
                     }
                 }
