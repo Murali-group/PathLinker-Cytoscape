@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -24,7 +25,7 @@ import org.cytoscape.model.CyNetwork;
 public class Algorithms
 {
     private static final int INFINITY = Integer.MAX_VALUE;
-
+    private static HashMap<String, Long> timeSpent = new HashMap<String, Long>();
 
     /**
      * Reverses all the edges in a CyNetwork by removing all and then readding
@@ -35,21 +36,32 @@ public class Algorithms
      */
     public static void reverseNetwork(CyNetwork network)
     {
+        long startTime = System.currentTimeMillis();
+
         List<CyEdge> edges = network.getEdgeList();
         network.removeEdges(edges);
         for (CyEdge edge : edges)
             network.addEdge(edge.getTarget(), edge.getSource(), true);
+
+        long endTime = System.currentTimeMillis();
+        long difference = endTime - startTime;
+        timeSpent.put("reverseNetwork", (timeSpent.containsKey("reverseNetwork") ? timeSpent.get("reverseNetwork") : 0) + difference);
     }
 
 
     public static int heuristicF(HashMap<CyNode, Integer> minDists, CyNode node)
     {
+        long startTime = System.currentTimeMillis();
+
         if (minDists.containsKey(node))
             return minDists.get(node);
         else
             return INFINITY;
     }
 
+
+static HashSet<CyEdge> hiddenEdges;
+static int aStarContinues = 0;
 
     /**
      * Runs Yen's k-shortest paths algorithm on the supplied network given a
@@ -72,19 +84,31 @@ public class Algorithms
         CyNode target,
         int maxK)
     {
+timeSpent.clear();
+aStarContinues = 0;
+
+long startSection1 = System.currentTimeMillis();
+
         // the list of shortest paths
         ArrayList<ArrayList<CyNode>> A = new ArrayList<ArrayList<CyNode>>();
 
+long startDijkstras = System.currentTimeMillis();
+
         // network.reverse();
-        reverseNetwork(network);
+        //reverseNetwork(network);
         // minDists = single_source_dijkstra(network, target);
         HashMap<CyNode, Integer> minDists =
-            singleSourceDijkstra(network, target);
+            reverseSingleSourceDijkstra(network, target);
         // network.reverse();
-        reverseNetwork(network);
+        //reverseNetwork(network);
 
         // A[0] = shortest path
         ArrayList<CyNode> shortestPath = dijkstra(network, source, target);
+
+long endDijkstras = System.currentTimeMillis();
+long differenceDijkstras = endDijkstras - startDijkstras;
+timeSpent.put("bothDijsktras", (timeSpent.containsKey("bothDijsktras") ? timeSpent.get("bothDijsktras") : 0) + differenceDijkstras);
+
 
         // there is no path from source to target
         if (shortestPath == null)
@@ -118,11 +142,16 @@ public class Algorithms
             }
         }
 
+long endSection1 = System.currentTimeMillis();
+long differenceSection1 = endSection1 - startSection1;
+timeSpent.put("kspSection1", (timeSpent.containsKey("kspSection1") ? timeSpent.get("kspSection1") : 0) + differenceSection1);
+
         // for k in range(1, max_k)
         for (int k = 1; k < maxK; k++)
         {
             // edges_removed = []
             ArrayList<RemovedEdge> edgesRemoved = new ArrayList<RemovedEdge>();
+            hiddenEdges = new HashSet<CyEdge>();
 
             // for i in range(0, len(A[-1]['path]) - 1)
             ArrayList<CyNode> latestPath = A.get(A.size() - 1);
@@ -138,64 +167,48 @@ public class Algorithms
                     network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
-                    edgesRemoved.add(
-                        new RemovedEdge(
-                            inEdge.getSource(),
-                            inEdge.getTarget()));
+                    hiddenEdges.add(inEdge);
                 }
-                network.removeEdges(inEdges);
+
+long startSection3 = System.currentTimeMillis();
+
+long startRepNode = System.currentTimeMillis();
 
 //                # for each previously-found shortest path P_j with the same first i nodes as
 //                # the first i nodes of prevPath, hide the edge from x to the i+1 node in P_j
 //                # to ensure we don't re-find a previously found path.
 //                # Lookup the prefixes in a cache to disallow them. Requires more memory
-//                # to store the cache, but saves scanning the list of found paths
+//                # to store the cache, but saves scanning the list of found paths,
+//                # which otherwise dominates runtime
                 for (CyNode repNode : prefixCache.get(latestPath.subList(0, i+1)))
                 {
                     CyEdge repEdge = getEdge(network, nodeSpur, repNode);
+
                     if (repEdge != null)
                     {
-                        edgesRemoved.add(new RemovedEdge(nodeSpur, repNode));
-                        network.removeEdges(Arrays.asList(repEdge));
+                        hiddenEdges.add(repEdge);
                     }
                 }
 
-//                // scans all previous paths
-//                // for path_k in A:
-//                for (ArrayList<CyNode> currPath : A)
-//                {
-//                    // if len(curr_path) > i and path_root == curr_path[:i+1]:
-//                    if (currPath.size() > i
-//                        && pathRoot.equals(currPath.subList(0, i + 1)))
-//                    {
-//                        // cost = graph.remove_edge(curr_path[i],
-//                        // curr_path[i+1])
-//                        CyEdge toRemove = getEdge(
-//                            network,
-//                            currPath.get(i),
-//                            currPath.get(i + 1));
-//
-//                        // if cost == -1: continue
-//                        if (toRemove == null)
-//                            continue;
-//
-//                        // edges_removed.append([curr_path[i], curr_path[i+1],
-//                        // cost])
-//                        network.removeEdges(Arrays.asList(toRemove));
-//                        edgesRemoved.add(
-//                            new RemovedEdge(
-//                                currPath.get(i),
-//                                currPath.get(i + 1)));
-//                    }
-//                }
+long endRepNode = System.currentTimeMillis();
+long differenceRepNode = endRepNode - startRepNode;
+timeSpent.put("repNode", (timeSpent.containsKey("repNode") ? timeSpent.get("repNode") : 0) + differenceRepNode);
+
+long startAStar = System.currentTimeMillis();
 
                 // path_spur = a_star(graph, node_spur, node_end)
                 ArrayList<CyNode> pathSpur = shortestPathAStar(
                     network,
                     nodeSpur,
                     target,
-                    minDists,
-                    false);
+                    minDists);
+//                ArrayList<CyNode> pathSpur = dijkstraHiddenEdges(network, nodeSpur, target);
+
+long endAStar = System.currentTimeMillis();
+long differenceAStar = endAStar - startAStar;
+timeSpent.put("AStar", (timeSpent.containsKey("AStar") ? timeSpent.get("AStar") : 0) + differenceAStar);
+
+long startPathSpur = System.currentTimeMillis();
 
                 // if path_spur['path']:
                 if (pathSpur != null)
@@ -217,6 +230,16 @@ public class Algorithms
                         B.add(pathTotal);
                     }
                 }
+
+long endPathSpur = System.currentTimeMillis();
+long differencePathSpur = endPathSpur - startPathSpur;
+timeSpent.put("pathSpur", (timeSpent.containsKey("pathSpur") ? timeSpent.get("pathSpur") : 0) + differencePathSpur);
+
+
+long endSection3 = System.currentTimeMillis();
+long differenceSection3 = endSection3 - startSection3;
+timeSpent.put("kspSection3", (timeSpent.containsKey("kspSection3") ? timeSpent.get("kspSection3") : 0) + differenceSection3);
+
             }
 
             // restores removed edges
@@ -224,6 +247,7 @@ public class Algorithms
             {
                 network.addEdge(removed.source, removed.target, true);
             }
+
 
             // if len(B):
             if (B.size() > 0)
@@ -266,6 +290,14 @@ public class Algorithms
             }
         }
 
+StringBuilder profileResult = new StringBuilder();
+for (String key : timeSpent.keySet())
+{
+    profileResult.append(key).append(": ").append(timeSpent.get(key)).append("\n");
+}
+profileResult.append("AStarContinues: ").append(aStarContinues).append("\n");
+JOptionPane.showMessageDialog(null, profileResult.toString());
+
         return A;
     }
 
@@ -285,7 +317,6 @@ public class Algorithms
         }
     }
 
-
     /**
      * Finds the shortest path between source and target using the A* algorithm
      *
@@ -303,20 +334,14 @@ public class Algorithms
         CyNetwork network,
         CyNode source,
         CyNode target,
-        final HashMap<CyNode, Integer> minDists,
-        boolean print)
+        final HashMap<CyNode, Integer> minDists)
     {
-        if (print)
-            JOptionPane.showMessageDialog(null, "line 257");
-
         ArrayList<CyNode> path = new ArrayList<CyNode>();
 
         // if source==target:
         // return ({source:0}, {source:[source]})
         if (source.equals(target))
         {
-            if (print)
-                JOptionPane.showMessageDialog(null, "source equals target");
             return path;
         }
 
@@ -327,9 +352,6 @@ public class Algorithms
         // seen = {source:0} | map of seen nodes and their dists
         HashMap<CyNode, Integer> seen = new HashMap<CyNode, Integer>();
         seen.put(source, 0);
-
-        if (print)
-            JOptionPane.showMessageDialog(null, "line 276");
 
         // fringe = [] | heap of nodes on the border to process, keyed by
         // heuristic distance
@@ -342,9 +364,6 @@ public class Algorithms
                 }
 
             });
-
-        if (print)
-            JOptionPane.showMessageDialog(null, "line 290");
 
         // heapq.heappush(fringe, (heuristicF(source), (source, 0)))
         fringe.add(new AStarData(heuristicF(minDists, source), source, 0));
@@ -371,15 +390,21 @@ public class Algorithms
                 break;
 
             // currEdges = iter(net[currNode].items())
-            List<CyNode> neighbors =
-                network.getNeighborList(currNode, CyEdge.Type.OUTGOING);
-
-            if (print)
-                JOptionPane.showMessageDialog(null, "line 320");
+            //List<CyNode> neighbors =
+                //network.getNeighborList(currNode, CyEdge.Type.OUTGOING);
+            List<CyEdge> neighbors = network.getAdjacentEdgeList(currNode, CyEdge.Type.OUTGOING);
 
             // for nextNode, edgedata in currEdges
-            for (CyNode nextNode : neighbors)
+            for (CyEdge nextEdge : neighbors)
             {
+                if (hiddenEdges.contains(nextEdge))
+                {
+                    aStarContinues++;
+                    continue;
+                }
+
+                CyNode nextNode = nextEdge.getTarget();
+
                 // nextActDist = actualDist + edgedata.get(weight, 1)
                 int edgeWeight = 1;
                 int nextActDist = currData.actDist + edgeWeight;
@@ -390,9 +415,6 @@ public class Algorithms
                 // if isinf(nextHeurDist): continue
                 if (heuristicF(minDists, nextNode) == INFINITY)
                     continue;
-
-                if (print)
-                    JOptionPane.showMessageDialog(null, "line 336");
 
                 // if nextNode in dist
                 if (distances.containsKey(nextNode))
@@ -423,17 +445,9 @@ public class Algorithms
                     // preds[nextNode] = currNode
                     preds.put(nextNode, currNode);
                 }
-
-                if (print)
-                    JOptionPane.showMessageDialog(null, "line 366");
             }
-
-            if (print)
-                JOptionPane.showMessageDialog(null, "line 369");
         }
 
-        if (print)
-            JOptionPane.showMessageDialog(null, "line 372");
         return constructPath(preds, source, target);
     }
 
@@ -555,6 +569,68 @@ public class Algorithms
         return path;
     }
 
+    /**
+     * Computes the shortest distance from a source to every node in the graph
+     *
+     * @param network
+     *            the supplied network
+     * @param source
+     *            the source
+     * @return a map of nodes and their distances from the source
+     */
+    public static HashMap<CyNode, Integer> reverseSingleSourceDijkstra(
+        CyNetwork network,
+        CyNode source)
+    {
+        final HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
+        HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
+        PriorityQueue<CyNode> pq = new PriorityQueue<CyNode>(10, new Comparator<CyNode>()
+            {
+                @Override
+                public int compare(CyNode o1, CyNode o2)
+                {
+                    return Integer.compare(distances.get(o1), distances.get(o2));
+                }
+            });
+
+        // intializes distances
+        for (CyNode v : network.getNodeList())
+        {
+            distances.put(v, INFINITY);
+            previous.put(v, null);
+        }
+        distances.put(source, 0);
+        pq.add(source);
+
+        while (!pq.isEmpty())
+        {
+            CyNode current = pq.poll();
+
+            // goes through incoming neighbors because we are finding the paths that lead to the target
+            // however, we don't want to reverse the network and call a normal SSD because
+            // reversing the network dominates runtime in Cytoscape
+            for (CyNode neighbor : network
+                .getNeighborList(current, CyEdge.Type.INCOMING))
+            {
+                int edgeWeight = 1;
+                int newCost = distances.get(current) + edgeWeight;
+
+                if (newCost < distances.get(neighbor))
+                {
+                    distances.put(neighbor, newCost);
+                    previous.put(neighbor, current);
+
+                    // Q[u] = cost_vu
+                    // re-add to priority queue
+                    pq.remove(neighbor);
+                    pq.add(neighbor);
+                }
+            }
+        }
+
+        return distances;
+    }
+
 
     /**
      * Computes the shortest distance from a source to every node in the graph
@@ -569,7 +645,7 @@ public class Algorithms
         CyNetwork network,
         CyNode source)
     {
-        final int INFINITY = Integer.MAX_VALUE;
+long startTime = System.currentTimeMillis();
 
         HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
         HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
@@ -617,6 +693,10 @@ public class Algorithms
             }
         }
 
+long endTime = System.currentTimeMillis();
+long difference = endTime - startTime;
+timeSpent.put("singleSourceDijkstra", (timeSpent.containsKey("singleSourceDijkstra") ? timeSpent.get("singleSourceDijkstra") : 0) + difference);
+
         return distances;
     }
 
@@ -638,11 +718,19 @@ public class Algorithms
         CyNode source,
         CyNode target)
     {
-        final int INFINITY = Integer.MAX_VALUE;
+long startTime = System.currentTimeMillis();
 
-        HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
+        final HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
         HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
-        ArrayList<CyNode> pq = new ArrayList<CyNode>();
+//        ArrayList<CyNode> pq = new ArrayList<CyNode>();
+        PriorityQueue<CyNode> pq = new PriorityQueue<CyNode>(10, new Comparator<CyNode>()
+            {
+                @Override
+                public int compare(CyNode o1, CyNode o2)
+                {
+                    return Integer.compare(distances.get(o1), distances.get(o2));
+                }
+            });
 
         // intializes distances
         for (CyNode v : network.getNodeList())
@@ -655,7 +743,8 @@ public class Algorithms
 
         while (!pq.isEmpty())
         {
-            CyNode current = pq.remove(0);
+//            CyNode current = pq.remove(0);
+            CyNode current = pq.poll();
 
             // short circuit
             if (current.equals(target))
@@ -679,16 +768,17 @@ public class Algorithms
                     // Q[u] = cost_vu
                     // add to priority queue
                     pq.remove(neighbor);
-                    for (int i = 0; i < pq.size(); i++)
-                    {
-                        if (distances.get(neighbor) < distances.get(pq.get(i)))
-                        {
-                            pq.add(i, neighbor);
-                            break;
-                        }
-                    }
-                    if (!pq.contains(neighbor))
-                        pq.add(neighbor);
+//                    for (int i = 0; i < pq.size(); i++)
+//                    {
+//                        if (distances.get(neighbor) < distances.get(pq.get(i)))
+//                        {
+//                            pq.add(i, neighbor);
+//                            break;
+//                        }
+//                    }
+//                    if (!pq.contains(neighbor))
+//                        pq.add(neighbor);
+                    pq.add(neighbor);
                 }
             }
         }
@@ -698,6 +788,11 @@ public class Algorithms
             // unreachable node
             return null;
         }
+
+long endTime = System.currentTimeMillis();
+long difference = endTime - startTime;
+timeSpent.put("dijkstra", (timeSpent.containsKey("dijkstra") ? timeSpent.get("dijkstra") : 0) + difference);
+
 
         // return constructed path
         return constructPath(previous, source, target);
@@ -729,6 +824,7 @@ public class Algorithms
             if (edge.getSource().equals(source)
                 && edge.getTarget().equals(target))
             {
+
                 return edge;
             }
         }

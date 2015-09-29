@@ -24,5 +24,6 @@ public class OpenPathLinkerMenuAction extends AbstractCyAction
     {
         JOptionPane.showMessageDialog(null, "Opening PathLinker");
         panel.setVisible(true);
+
     }
 }
