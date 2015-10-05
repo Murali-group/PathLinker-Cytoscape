@@ -25,7 +25,7 @@ import org.cytoscape.model.CyNetwork;
 public class Algorithms
 {
     private static final int INFINITY = Integer.MAX_VALUE;
-    private static HashMap<String, Long> timeSpent = new HashMap<String, Long>();
+    private static HashSet<CyEdge> pathHiddenEdges;
 
     /**
      * Reverses all the edges in a CyNetwork by removing all and then readding
@@ -36,31 +36,20 @@ public class Algorithms
      */
     public static void reverseNetwork(CyNetwork network)
     {
-        long startTime = System.currentTimeMillis();
-
         List<CyEdge> edges = network.getEdgeList();
         network.removeEdges(edges);
         for (CyEdge edge : edges)
             network.addEdge(edge.getTarget(), edge.getSource(), true);
-
-        long endTime = System.currentTimeMillis();
-        long difference = endTime - startTime;
-        timeSpent.put("reverseNetwork", (timeSpent.containsKey("reverseNetwork") ? timeSpent.get("reverseNetwork") : 0) + difference);
     }
 
 
-    public static int heuristicF(HashMap<CyNode, Integer> minDists, CyNode node)
+    private static int heuristicF(HashMap<CyNode, Integer> minDists, CyNode node)
     {
-        long startTime = System.currentTimeMillis();
-
         if (minDists.containsKey(node))
             return minDists.get(node);
         else
             return INFINITY;
     }
-
-static HashSet<CyEdge> pathHiddenEdges;
-static int aStarContinues = 0;
 
     /**
      * Runs Yen's k-shortest paths algorithm on the supplied network given a
@@ -75,7 +64,6 @@ static int aStarContinues = 0;
      * @param maxK
      *            the number of shortest paths
      * @return a list of k-shortest paths in sorted order by cost
-     * @throws Exception
      */
     public static ArrayList<ArrayList<CyNode>> ksp(
         CyNetwork network,
@@ -83,31 +71,14 @@ static int aStarContinues = 0;
         CyNode target,
         int maxK)
     {
-timeSpent.clear();
-aStarContinues = 0;
-
-long startSection1 = System.currentTimeMillis();
-
         // the list of shortest paths
         ArrayList<ArrayList<CyNode>> A = new ArrayList<ArrayList<CyNode>>();
 
-long startDijkstras = System.currentTimeMillis();
-
-        // network.reverse();
-        //reverseNetwork(network);
-        // minDists = single_source_dijkstra(network, target);
         HashMap<CyNode, Integer> minDists =
             reverseSingleSourceDijkstra(network, target);
-        // network.reverse();
-        //reverseNetwork(network);
 
         // A[0] = shortest path
         ArrayList<CyNode> shortestPath = dijkstra(network, source, target);
-
-long endDijkstras = System.currentTimeMillis();
-long differenceDijkstras = endDijkstras - startDijkstras;
-timeSpent.put("bothDijsktras", (timeSpent.containsKey("bothDijsktras") ? timeSpent.get("bothDijsktras") : 0) + differenceDijkstras);
-
 
         // there is no path from source to target
         if (shortestPath == null)
@@ -141,10 +112,6 @@ timeSpent.put("bothDijsktras", (timeSpent.containsKey("bothDijsktras") ? timeSpe
             }
         }
 
-long endSection1 = System.currentTimeMillis();
-long differenceSection1 = endSection1 - startSection1;
-timeSpent.put("kspSection1", (timeSpent.containsKey("kspSection1") ? timeSpent.get("kspSection1") : 0) + differenceSection1);
-
         // for k in range(1, max_k)
         for (int k = 1; k < maxK; k++)
         {
@@ -168,16 +135,12 @@ timeSpent.put("kspSection1", (timeSpent.containsKey("kspSection1") ? timeSpent.g
                     pathHiddenEdges.add(inEdge);
                 }
 
-long startSection3 = System.currentTimeMillis();
-
-long startRepNode = System.currentTimeMillis();
-
-//                # for each previously-found shortest path P_j with the same first i nodes as
-//                # the first i nodes of prevPath, hide the edge from x to the i+1 node in P_j
-//                # to ensure we don't re-find a previously found path.
-//                # Lookup the prefixes in a cache to disallow them. Requires more memory
-//                # to store the cache, but saves scanning the list of found paths,
-//                # which otherwise dominates runtime
+                // for each previously-found shortest path P_j with the same first i nodes as
+                // the first i nodes of prevPath, hide the edge from x to the i+1 node in P_j
+                // to ensure we don't re-find a previously found path.
+                // Lookup the prefixes in a cache to disallow them. Requires more memory
+                // to store the cache, but saves scanning the list of found paths,
+                // which otherwise dominates runtime
                 for (CyNode repNode : prefixCache.get(latestPath.subList(0, i+1)))
                 {
                     CyEdge repEdge = getEdge(network, nodeSpur, repNode);
@@ -188,25 +151,12 @@ long startRepNode = System.currentTimeMillis();
                     }
                 }
 
-long endRepNode = System.currentTimeMillis();
-long differenceRepNode = endRepNode - startRepNode;
-timeSpent.put("repNode", (timeSpent.containsKey("repNode") ? timeSpent.get("repNode") : 0) + differenceRepNode);
-
-long startAStar = System.currentTimeMillis();
-
                 // path_spur = a_star(graph, node_spur, node_end)
                 ArrayList<CyNode> pathSpur = shortestPathAStar(
                     network,
                     nodeSpur,
                     target,
                     minDists);
-//                ArrayList<CyNode> pathSpur = dijkstraHiddenEdges(network, nodeSpur, target);
-
-long endAStar = System.currentTimeMillis();
-long differenceAStar = endAStar - startAStar;
-timeSpent.put("AStar", (timeSpent.containsKey("AStar") ? timeSpent.get("AStar") : 0) + differenceAStar);
-
-long startPathSpur = System.currentTimeMillis();
 
                 // if path_spur['path']:
                 if (pathSpur != null)
@@ -228,16 +178,6 @@ long startPathSpur = System.currentTimeMillis();
                         B.add(pathTotal);
                     }
                 }
-
-long endPathSpur = System.currentTimeMillis();
-long differencePathSpur = endPathSpur - startPathSpur;
-timeSpent.put("pathSpur", (timeSpent.containsKey("pathSpur") ? timeSpent.get("pathSpur") : 0) + differencePathSpur);
-
-
-long endSection3 = System.currentTimeMillis();
-long differenceSection3 = endSection3 - startSection3;
-timeSpent.put("kspSection3", (timeSpent.containsKey("kspSection3") ? timeSpent.get("kspSection3") : 0) + differenceSection3);
-
             }
 
             // if len(B):
@@ -280,14 +220,6 @@ timeSpent.put("kspSection3", (timeSpent.containsKey("kspSection3") ? timeSpent.g
                 break;
             }
         }
-
-StringBuilder profileResult = new StringBuilder();
-for (String key : timeSpent.keySet())
-{
-    profileResult.append(key).append(": ").append(timeSpent.get(key)).append("\n");
-}
-profileResult.append("AStarContinues: ").append(aStarContinues).append("\n");
-JOptionPane.showMessageDialog(null, profileResult.toString());
 
         return A;
     }
@@ -390,7 +322,6 @@ JOptionPane.showMessageDialog(null, profileResult.toString());
             {
                 if (pathHiddenEdges.contains(nextEdge))
                 {
-                    aStarContinues++;
                     continue;
                 }
 
@@ -440,124 +371,6 @@ JOptionPane.showMessageDialog(null, profileResult.toString());
         }
 
         return constructPath(preds, source, target);
-    }
-
-
-    public static ArrayList<CyNode> shortestPathAStarFirst(
-        CyNetwork network,
-        CyNode source,
-        CyNode target,
-        final HashMap<CyNode, Integer> minDists)
-            throws Exception
-    {
-        ArrayList<CyNode> path = new ArrayList<CyNode>();
-
-        // if source==target:
-        // return ({source:0}, {source:[source]})
-        if (source.equals(target))
-            return path;
-
-        // dist = {} | dictionary of final distances
-        HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
-        // preds = {source:None} | dictionary of paths
-        HashMap<CyNode, CyNode> preds = new HashMap<CyNode, CyNode>();
-        // seen = {source:0} | map of seen nodes and their dists
-        HashMap<CyNode, Integer> seen = new HashMap<CyNode, Integer>();
-        seen.put(source, 0);
-
-        HashMap<CyNode, Integer> sortingDists = new HashMap<CyNode, Integer>();
-        sortingDists.put(source, 0);
-
-        // fringe = [] | heap of nodes on the border to process, keyed by
-        // heuristic distance
-        PriorityQueue<CyNode> fringe =
-            new PriorityQueue<CyNode>(0, new Comparator<CyNode>() {
-                @Override
-                public int compare(CyNode node1, CyNode node2)
-                {
-                    return Integer.compare(
-                        heuristicF(minDists, node1),
-                        heuristicF(minDists, node2));
-// return Integer.compare(sortingDists.get(node1), sortingDists.get(node2));
-                }
-
-            });
-
-        // heapq.heappush(fringe, (heuristicF(source), (source, 0)))
-        fringe.add(source);
-
-        // REL_EPS = 1e-10
-        final double REL_EPS = 1E-10;
-
-        // while fringe:
-        while (fringe.size() > 0)
-        {
-            // (heurDist, (currNode, actualDist)) = heapq.heappop(fringe)
-            CyNode currNode = fringe.poll();
-// int actualDist = seen.get(currNode);
-            int actualDist = sortingDists.get(currNode);
-
-            // if currNode in dist: continue
-            if (distances.containsKey(currNode))
-                continue;
-
-            // dist[currNode] = actualDist
-            distances.put(currNode, actualDist);
-
-            // if currNode == target: break
-            if (currNode.equals(target))
-                break;
-
-            // currEdges = iter(net[currNode].items())
-            List<CyNode> neighbors =
-                network.getNeighborList(currNode, CyEdge.Type.OUTGOING);
-            // for nextNode, edgedata in currEdges
-            for (CyNode nextNode : neighbors)
-            {
-                // nextActDist = actualDist + edgedata.get(weight, 1)
-                int edgeWeight = 1;
-                int nextActDist = actualDist + edgeWeight;
-
-                // nextHeurDist = nextActDist + heuristicF(nextNode)
-                int nextHeurDist = nextActDist + heuristicF(minDists, nextNode);
-
-                // if isinf(nextHeurDist): continue
-                if (heuristicF(minDists, nextNode) == INFINITY)
-                    continue;
-
-                // if nextNode in dist
-                if (distances.containsKey(nextNode))
-                {
-                    // if (nextActDist * (1+REL_EPS)) < dist[nextNode]:
-                    if ((nextActDist * (1 + REL_EPS)) < distances.get(nextNode))
-                    {
-                        // raise ValueError('Contradictory search path:', 'bad
-                        // heuristic? negative weights?')
-                        throw new Exception(
-                            "Contradictory search path: bad heuristic? negative weights?");
-                    }
-                }
-                // elif nextNode not in seen or nextActDist < seen[nextNode]:
-                else if (!seen.containsKey(nextNode)
-                    || nextActDist < seen.get(nextNode))
-                {
-                    // TODO might need to sort the stuff by dist + heuristicF
-                    // TODO instead of just heuristicF
-
-                    // seen[nextNode] = nextActDist
-                    seen.put(nextNode, nextActDist);
-                    // TODO sortingDists.put(?, ?);
-                    sortingDists.put(nextNode, nextHeurDist);
-                    // heapq.heappush(fringe, (nextHeurDist, (nextNode,
-                    // nextActDist)))
-                    fringe.add(nextNode);
-                    // preds[nextNode] = currNode
-                    preds.put(nextNode, currNode);
-                }
-            }
-        }
-
-        return path;
     }
 
     /**
@@ -636,8 +449,6 @@ JOptionPane.showMessageDialog(null, profileResult.toString());
         CyNetwork network,
         CyNode source)
     {
-long startTime = System.currentTimeMillis();
-
         HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
         HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
         ArrayList<CyNode> pq = new ArrayList<CyNode>();
@@ -684,10 +495,6 @@ long startTime = System.currentTimeMillis();
             }
         }
 
-long endTime = System.currentTimeMillis();
-long difference = endTime - startTime;
-timeSpent.put("singleSourceDijkstra", (timeSpent.containsKey("singleSourceDijkstra") ? timeSpent.get("singleSourceDijkstra") : 0) + difference);
-
         return distances;
     }
 
@@ -709,8 +516,6 @@ timeSpent.put("singleSourceDijkstra", (timeSpent.containsKey("singleSourceDijkst
         CyNode source,
         CyNode target)
     {
-long startTime = System.currentTimeMillis();
-
         final HashMap<CyNode, Integer> distances = new HashMap<CyNode, Integer>();
         HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
 //        ArrayList<CyNode> pq = new ArrayList<CyNode>();
@@ -779,11 +584,6 @@ long startTime = System.currentTimeMillis();
             // unreachable node
             return null;
         }
-
-long endTime = System.currentTimeMillis();
-long difference = endTime - startTime;
-timeSpent.put("dijkstra", (timeSpent.containsKey("dijkstra") ? timeSpent.get("dijkstra") : 0) + difference);
-
 
         // return constructed path
         return constructPath(previous, source, target);
@@ -858,33 +658,5 @@ timeSpent.put("dijkstra", (timeSpent.containsKey("dijkstra") ? timeSpent.get("di
         Collections.reverse(path);
 
         return path;
-    }
-
-
-    /**
-     * Represents a removed edge so it can be restored to a CyNetwork
-     *
-     * @author Daniel
-     * @version Sep 10, 2015
-     */
-    static class RemovedEdge
-    {
-        private CyNode source;
-        private CyNode target;
-
-
-        /**
-         * Constructor for removed edge
-         *
-         * @param source
-         *            the source of the edge
-         * @param target
-         *            the target of the edge
-         */
-        public RemovedEdge(CyNode source, CyNode target)
-        {
-            this.source = source;
-            this.target = target;
-        }
     }
 }
