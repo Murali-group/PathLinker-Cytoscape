@@ -59,8 +59,7 @@ public class Algorithms
             return INFINITY;
     }
 
-
-static HashSet<CyEdge> hiddenEdges;
+static HashSet<CyEdge> pathHiddenEdges;
 static int aStarContinues = 0;
 
     /**
@@ -150,8 +149,7 @@ timeSpent.put("kspSection1", (timeSpent.containsKey("kspSection1") ? timeSpent.g
         for (int k = 1; k < maxK; k++)
         {
             // edges_removed = []
-            ArrayList<RemovedEdge> edgesRemoved = new ArrayList<RemovedEdge>();
-            hiddenEdges = new HashSet<CyEdge>();
+            pathHiddenEdges = new HashSet<CyEdge>();
 
             // for i in range(0, len(A[-1]['path]) - 1)
             ArrayList<CyNode> latestPath = A.get(A.size() - 1);
@@ -167,7 +165,7 @@ timeSpent.put("kspSection1", (timeSpent.containsKey("kspSection1") ? timeSpent.g
                     network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
-                    hiddenEdges.add(inEdge);
+                    pathHiddenEdges.add(inEdge);
                 }
 
 long startSection3 = System.currentTimeMillis();
@@ -186,7 +184,7 @@ long startRepNode = System.currentTimeMillis();
 
                     if (repEdge != null)
                     {
-                        hiddenEdges.add(repEdge);
+                        pathHiddenEdges.add(repEdge);
                     }
                 }
 
@@ -241,13 +239,6 @@ long differenceSection3 = endSection3 - startSection3;
 timeSpent.put("kspSection3", (timeSpent.containsKey("kspSection3") ? timeSpent.get("kspSection3") : 0) + differenceSection3);
 
             }
-
-            // restores removed edges
-            for (RemovedEdge removed : edgesRemoved)
-            {
-                network.addEdge(removed.source, removed.target, true);
-            }
-
 
             // if len(B):
             if (B.size() > 0)
@@ -397,7 +388,7 @@ JOptionPane.showMessageDialog(null, profileResult.toString());
             // for nextNode, edgedata in currEdges
             for (CyEdge nextEdge : neighbors)
             {
-                if (hiddenEdges.contains(nextEdge))
+                if (pathHiddenEdges.contains(nextEdge))
                 {
                     aStarContinues++;
                     continue;

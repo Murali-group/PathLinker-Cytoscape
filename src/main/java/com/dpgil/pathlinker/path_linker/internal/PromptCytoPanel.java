@@ -300,22 +300,52 @@ public class PromptCytoPanel
         // sets up the super source/super target
         CyNode superSource = network.addNode();
         CyNode superTarget = network.addNode();
+        ArrayList<CyEdge> sourceInEdges = new ArrayList<CyEdge>();
+        ArrayList<CyEdge> targetOutEdges = new ArrayList<CyEdge>();
         for (String sourceName : sourceNames)
         {
             if (idToCyNode.containsKey(sourceName))
-                network.addEdge(superSource, idToCyNode.get(sourceName), true);
+            {
+                CyNode sourceNode = idToCyNode.get(sourceName);
+                for (CyEdge inEdge : network.getAdjacentEdgeIterable(sourceNode, CyEdge.Type.INCOMING))
+                {
+                    sourceInEdges.add(inEdge);
+                }
+                network.addEdge(superSource, sourceNode, true);
+            }
         }
         for (String targetName : targetNames)
         {
             if (idToCyNode.containsKey(targetName))
-                network.addEdge(idToCyNode.get(targetName), superTarget, true);
+            {
+                CyNode targetNode = idToCyNode.get(targetName);
+                for (CyEdge outEdge : network.getAdjacentEdgeIterable(targetNode, CyEdge.Type.OUTGOING))
+                {
+                    targetOutEdges.add(outEdge);
+                }
+                network.addEdge(targetNode, superTarget, true);
+            }
         }
+        long startTime = System.currentTimeMillis();
+
+        network.removeEdges(sourceInEdges);
+        network.removeEdges(targetOutEdges);
 
         // runs the ksp
-        long startTime = System.currentTimeMillis();
         ArrayList<ArrayList<CyNode>> paths =
             Algorithms.ksp(network, superSource, superTarget, k);
+
+        // restore source in/target out edges
+        for (CyEdge edge : sourceInEdges)
+        {
+            network.addEdge(edge.getSource(), edge.getTarget(), true);
+        }
+        for (CyEdge edge : targetOutEdges)
+        {
+            network.addEdge(edge.getSource(), edge.getTarget(), true);
+        }
         long endTime = System.currentTimeMillis();
+
 
         network.removeNodes(Arrays.asList(superSource, superTarget));
 
