@@ -1,5 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
+import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -121,7 +122,7 @@ public class PromptCytoPanel
      * Generates a subgraph of the user supplied graph that contains only the
      * nodes and edges that are in the k shortest paths
      */
-    private void createKSPSubgraph(ArrayList<ArrayList<CyNode>> paths)
+    private void createKSPSubgraph(ArrayList<Path> paths)
     {
         // TODO create another panel that takes in paths
         CyNetwork kspSubgraph = networkFactory.createNetwork();
@@ -131,13 +132,13 @@ public class PromptCytoPanel
 
         HashMap<String, CyNode> subIdToCyNode = new HashMap<String, CyNode>();
 
-        for (ArrayList<CyNode> path : paths)
+        for (Path currPath : paths)
         {
             // excluding supersource and supertarget
-            for (int i = 1; i < path.size() - 2; i++)
+            for (int i = 1; i < currPath.size() - 2; i++)
             {
-                CyNode node1 = path.get(i);
-                CyNode node2 = path.get(i + 1);
+                CyNode node1 = currPath.get(i);
+                CyNode node2 = currPath.get(i + 1);
 
                 String node1Name =
                     network.getRow(node1).get(CyNetwork.NAME, String.class);
@@ -216,7 +217,7 @@ public class PromptCytoPanel
             .createTable("PathLinker ", "#", Integer.class, true, true);
         // sets up the table
         table.createColumn("k", Integer.class, false);
-        table.createColumn("Length", Integer.class, false);
+        table.createColumn("Length", Double.class, false);
         table.createColumn("Path", String.class, false);
         // adds the table to cytoscape
         applicationManager.setCurrentTable(table);
@@ -332,7 +333,7 @@ public class PromptCytoPanel
         network.removeEdges(targetOutEdges);
 
         // runs the ksp
-        ArrayList<ArrayList<CyNode>> paths =
+        ArrayList<Path> paths =
             Algorithms.ksp(network, superSource, superTarget, k);
 
         // restore source in/target out edges
@@ -363,7 +364,7 @@ public class PromptCytoPanel
     }
 
 
-    private void writeResults(ArrayList<ArrayList<CyNode>> paths)
+    private void writeResults(ArrayList<Path> paths)
     {
         if (paths.size() == 0)
         {
@@ -394,7 +395,7 @@ public class PromptCytoPanel
             row.set("k", i + 1);
             // SS|A|B|ST = length 1 path-size 4
 
-            row.set("Length", paths.get(i).size() - 3);
+            row.set("Length", paths.get(i).weight);
             row.set("Path", currPath.toString());
         }
     }
