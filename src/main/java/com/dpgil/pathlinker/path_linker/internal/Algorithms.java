@@ -24,7 +24,8 @@ import org.cytoscape.model.CyNetwork;
 public class Algorithms
 {
     private static final double    INFINITY = Integer.MAX_VALUE;
-    private static HashSet<CyEdge> pathHiddenEdges;
+//    private static HashSet<CyEdge> pathHiddenEdges;
+    private static HashSet<CyEdge> hiddenEdges;
 
 
     private static double heuristicF(
@@ -175,7 +176,7 @@ public class Algorithms
         for (int k = 1; k < maxK; k++)
         {
             // edges_removed = []
-            pathHiddenEdges = new HashSet<CyEdge>();
+            HashSet<CyEdge> pathHiddenEdges = new HashSet<CyEdge>();
 
             // for i in range(0, len(A[-1]['path]) - 1)
             Path latestPath = A.get(A.size() - 1);
@@ -191,6 +192,7 @@ public class Algorithms
                     network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
+                    hiddenEdges.add(inEdge);
                     pathHiddenEdges.add(inEdge);
                 }
 
@@ -211,6 +213,7 @@ public class Algorithms
 
                     if (repEdge != null)
                     {
+                        hiddenEdges.add(repEdge);
                         pathHiddenEdges.add(repEdge);
                     }
                 }
@@ -242,6 +245,8 @@ public class Algorithms
                     }
                 }
             }
+
+            hiddenEdges.removeAll(pathHiddenEdges);
 
             // if len(B):
             if (B.size() > 0)
@@ -386,7 +391,7 @@ public class Algorithms
             // for nextNode, edgedata in currEdges
             for (CyEdge nextEdge : neighbors)
             {
-                if (pathHiddenEdges.contains(nextEdge))
+                if (hiddenEdges.contains(nextEdge))
                 {
                     continue;
                 }
@@ -753,6 +758,12 @@ public class Algorithms
     private static boolean isInf(double value)
     {
         return Math.abs(value - INFINITY) < 0.1;
+    }
+
+    public static void initializeHiddenEdges(HashSet<CyEdge> edges)
+    {
+        hiddenEdges = new HashSet<CyEdge>();
+        hiddenEdges.addAll(edges);
     }
 
 

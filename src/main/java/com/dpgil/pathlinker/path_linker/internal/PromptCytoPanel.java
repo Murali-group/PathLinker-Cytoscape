@@ -301,8 +301,10 @@ public class PromptCytoPanel
         // sets up the super source/super target
         CyNode superSource = network.addNode();
         CyNode superTarget = network.addNode();
-        ArrayList<CyEdge> sourceInEdges = new ArrayList<CyEdge>();
-        ArrayList<CyEdge> targetOutEdges = new ArrayList<CyEdge>();
+
+        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
+        ArrayList<CyEdge> superEdges = new ArrayList<CyEdge>();
+
         for (String sourceName : sourceNames)
         {
             if (idToCyNode.containsKey(sourceName))
@@ -310,9 +312,10 @@ public class PromptCytoPanel
                 CyNode sourceNode = idToCyNode.get(sourceName);
                 for (CyEdge inEdge : network.getAdjacentEdgeIterable(sourceNode, CyEdge.Type.INCOMING))
                 {
-                    sourceInEdges.add(inEdge);
+                    hiddenEdges.add(inEdge);
                 }
-                network.addEdge(superSource, sourceNode, true);
+                CyEdge superEdge = network.addEdge(superSource, sourceNode, true);
+                superEdges.add(superEdge);
             }
         }
         for (String targetName : targetNames)
@@ -322,32 +325,23 @@ public class PromptCytoPanel
                 CyNode targetNode = idToCyNode.get(targetName);
                 for (CyEdge outEdge : network.getAdjacentEdgeIterable(targetNode, CyEdge.Type.OUTGOING))
                 {
-                    targetOutEdges.add(outEdge);
+                    hiddenEdges.add(outEdge);
                 }
-                network.addEdge(targetNode, superTarget, true);
+                CyEdge superEdge = network.addEdge(targetNode, superTarget, true);
+                superEdges.add(superEdge);
             }
         }
         long startTime = System.currentTimeMillis();
 
-        network.removeEdges(sourceInEdges);
-        network.removeEdges(targetOutEdges);
-
+        Algorithms.initializeHiddenEdges(hiddenEdges);
         // runs the ksp
         ArrayList<Path> paths =
             Algorithms.ksp(network, superSource, superTarget, k);
 
-        // restore source in/target out edges
-        for (CyEdge edge : sourceInEdges)
-        {
-            network.addEdge(edge.getSource(), edge.getTarget(), true);
-        }
-        for (CyEdge edge : targetOutEdges)
-        {
-            network.addEdge(edge.getSource(), edge.getTarget(), true);
-        }
         long endTime = System.currentTimeMillis();
 
-
+        // removes supernodes and their edges
+        network.removeEdges(superEdges);
         network.removeNodes(Arrays.asList(superSource, superTarget));
 
         // updates the results
