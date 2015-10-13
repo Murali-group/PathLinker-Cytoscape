@@ -178,23 +178,10 @@ public class PromptCytoPanel
             }
         }
 
-//        networkManager.addNetwork(kspSubgraph);
-//        CyNetworkView kspSubgraphView =
-//            networkViewFactory.createNetworkView(kspSubgraph);
-//        networkViewManager.addNetworkView(kspSubgraphView);
-    }
-
-
-    private void createTestNetwork()
-    {
-        CyNetwork myNet = networkFactory.createNetwork();
-        CyNode a = myNet.addNode();
-        CyNode b = myNet.addNode();
-        myNet.addEdge(a, b, true);
-        networkManager.addNetwork(myNet);
-        CyNetworkView myView = networkViewFactory.createNetworkView(myNet);
-        // Add view to Cytoscape
-        networkViewManager.addNetworkView(myView);
+// networkManager.addNetwork(kspSubgraph);
+// CyNetworkView kspSubgraphView =
+// networkViewFactory.createNetworkView(kspSubgraph);
+// networkViewManager.addNetworkView(kspSubgraphView);
     }
 
 
@@ -298,43 +285,49 @@ public class PromptCytoPanel
             }
         }
 
+        ArrayList<CyNode> sources = stringsToNodes(sourceNames);
+        ArrayList<CyNode> targets = stringsToNodes(targetNames);
+
+        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
+
+        // hides all incoming edges to source nodes
+        for (CyNode source : sources)
+        {
+            hiddenEdges.addAll(
+                network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
+        }
+        // hides all outgoing edges from target nodes
+        for (CyNode target : targets)
+        {
+            hiddenEdges.addAll(
+                network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+        }
+
         // sets up the super source/super target
         CyNode superSource = network.addNode();
         CyNode superTarget = network.addNode();
-
-        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
         ArrayList<CyEdge> superEdges = new ArrayList<CyEdge>();
 
-        for (String sourceName : sourceNames)
+        // attaches super source to all sources
+        for (CyNode source : sources)
         {
-            if (idToCyNode.containsKey(sourceName))
-            {
-                CyNode sourceNode = idToCyNode.get(sourceName);
-                for (CyEdge inEdge : network.getAdjacentEdgeIterable(sourceNode, CyEdge.Type.INCOMING))
-                {
-                    hiddenEdges.add(inEdge);
-                }
-                CyEdge superEdge = network.addEdge(superSource, sourceNode, true);
-                superEdges.add(superEdge);
-            }
+            CyEdge superEdge = network.addEdge(superSource, source, true);
+            network.getRow(superEdge).set("edge_weight", 1.); // TODO EXPLAIN
+            superEdges.add(superEdge);
         }
-        for (String targetName : targetNames)
+        // attaches all targets to super target
+        for (CyNode target : targets)
         {
-            if (idToCyNode.containsKey(targetName))
-            {
-                CyNode targetNode = idToCyNode.get(targetName);
-                for (CyEdge outEdge : network.getAdjacentEdgeIterable(targetNode, CyEdge.Type.OUTGOING))
-                {
-                    hiddenEdges.add(outEdge);
-                }
-                CyEdge superEdge = network.addEdge(targetNode, superTarget, true);
-                superEdges.add(superEdge);
-            }
+            CyEdge superEdge = network.addEdge(target, superTarget, true);
+            network.getRow(superEdge).set("edge_weight", 1.); // TODO EXPLAIN
+            superEdges.add(superEdge);
         }
+
         long startTime = System.currentTimeMillis();
 
-        Algorithms.initializeHiddenEdges(hiddenEdges);
         // runs the ksp
+//        Algorithms.setWeighted(weighted);
+        Algorithms.initializeHiddenEdges(hiddenEdges);
         ArrayList<Path> paths =
             Algorithms.ksp(network, superSource, superTarget, k);
 
@@ -348,7 +341,7 @@ public class PromptCytoPanel
         writeResults(paths);
 
         // generates subgraphs
-        createKSPSubgraph(paths);
+// createKSPSubgraph(paths);
 
         // notifies user of time taken
         long totalTimeMs = endTime - startTime;
@@ -358,6 +351,29 @@ public class PromptCytoPanel
     }
 
 
+    /**
+     * Converts an array of node names to a list of the actual corresponding
+     * nodes
+     */
+    private ArrayList<CyNode> stringsToNodes(String[] strings)
+    {
+        ArrayList<CyNode> nodes = new ArrayList<CyNode>();
+
+        for (String name : strings)
+        {
+            if (idToCyNode.containsKey(name))
+            {
+                nodes.add(idToCyNode.get(name));
+            }
+        }
+
+        return nodes;
+    }
+
+
+    /**
+     * Writes the ksp results to a table
+     */
     private void writeResults(ArrayList<Path> paths)
     {
         if (paths.size() == 0)
@@ -369,7 +385,7 @@ public class PromptCytoPanel
         // updates the table's values
         for (int i = 0; i < paths.size(); i++)
         {
-            // empty path TODO should never happen
+            // empty path; should never happen
             if (paths.get(i).size() == 0)
                 continue;
 
@@ -389,7 +405,7 @@ public class PromptCytoPanel
             row.set("k", i + 1);
             // SS|A|B|ST = length 1 path-size 4
 
-            row.set("Length", paths.get(i).weight);
+            row.set("Length", paths.get(i).weight - 2);
             row.set("Path", currPath.toString());
         }
     }
@@ -474,7 +490,6 @@ public class PromptCytoPanel
     @Override
     public Icon getIcon()
     {
-        // TODO Auto-generated method stub
         return null;
     }
 

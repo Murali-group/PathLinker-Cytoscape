@@ -26,6 +26,7 @@ public class Algorithms
     private static final double    INFINITY = Integer.MAX_VALUE;
 //    private static HashSet<CyEdge> pathHiddenEdges;
     private static HashSet<CyEdge> hiddenEdges;
+    private static boolean weighted;
 
 
     private static double heuristicF(
@@ -676,6 +677,9 @@ public class Algorithms
      */
     public static double getWeight(CyNetwork network, CyEdge edge)
     {
+        if (!weighted)
+            return 1.;
+
         Double entry = network.getRow(edge).get("edge_weight", Double.class);
         return entry != null ? entry.doubleValue() : 1;
     }
@@ -780,10 +784,7 @@ public class Algorithms
 
             CyEdge edge = Algorithms.getEdge(network, eSource, eTarget);
 
-            Double entry =
-                network.getRow(edge).get("edge_weight", Double.class);
-            double edgeWeight = entry != null ? entry.doubleValue() : 1;
-            sum += edgeWeight;
+            sum += getWeight(network, edge);
         }
 
         return sum;

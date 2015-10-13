@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1444756766454
+Bnd-LastModified: 1444757907513
 Build-Jdk: 1.7.0_51
 Built-By: Daniel
 Bundle-Activator: com.dpgil.pathlinker.path_linker.internal.CyActivator
