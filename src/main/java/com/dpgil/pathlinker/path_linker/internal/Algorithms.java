@@ -24,9 +24,9 @@ import org.cytoscape.model.CyNetwork;
 public class Algorithms
 {
     private static final double    INFINITY = Integer.MAX_VALUE;
-//    private static HashSet<CyEdge> pathHiddenEdges;
+    private static HashSet<CyEdge> initialHiddenEdges;
     private static HashSet<CyEdge> hiddenEdges;
-    private static boolean weighted;
+    private static boolean         weighted;
 
 
     private static double heuristicF(
@@ -43,9 +43,6 @@ public class Algorithms
     /**
      * Represents a pathway. Stores the list of nodes in order in the path and
      * the weight of the path
-     *
-     * @author Daniel
-     * @version Oct 9, 2015
      */
     public static class Path
     {
@@ -93,6 +90,7 @@ public class Algorithms
             return nodeList.get(i);
         }
 
+
         @Override
         public boolean equals(Object o)
         {
@@ -103,6 +101,7 @@ public class Algorithms
 
             return this.nodeList.equals(p.nodeList);
         }
+
 
         @Override
         public int hashCode()
@@ -177,7 +176,7 @@ public class Algorithms
         for (int k = 1; k < maxK; k++)
         {
             // edges_removed = []
-            HashSet<CyEdge> pathHiddenEdges = new HashSet<CyEdge>();
+//            HashSet<CyEdge> pathHiddenEdges = new HashSet<CyEdge>();
 
             // for i in range(0, len(A[-1]['path]) - 1)
             Path latestPath = A.get(A.size() - 1);
@@ -194,7 +193,7 @@ public class Algorithms
                 for (CyEdge inEdge : inEdges)
                 {
                     hiddenEdges.add(inEdge);
-                    pathHiddenEdges.add(inEdge);
+//                    pathHiddenEdges.add(inEdge);
                 }
 
                 // for each previously-found shortest path P_j with the same
@@ -215,7 +214,7 @@ public class Algorithms
                     if (repEdge != null)
                     {
                         hiddenEdges.add(repEdge);
-                        pathHiddenEdges.add(repEdge);
+//                        pathHiddenEdges.add(repEdge);
                     }
                 }
 
@@ -247,7 +246,8 @@ public class Algorithms
                 }
             }
 
-            hiddenEdges.removeAll(pathHiddenEdges);
+            resetHiddenEdges();
+//            hiddenEdges.removeAll(pathHiddenEdges);
 
             // if len(B):
             if (B.size() > 0)
@@ -256,9 +256,7 @@ public class Algorithms
                 Collections.sort(B, new Comparator<Path>() {
 
                     @Override
-                    public int compare(
-                        Path path1,
-                        Path path2)
+                    public int compare(Path path1, Path path2)
                     {
                         return Double.compare(path1.weight, path2.weight);
                     }
@@ -270,8 +268,8 @@ public class Algorithms
                 for (int i = 1; i < newShortest.size(); i++)
                 {
                     CyNode currNode = newShortest.get(i);
-                    ArrayList<CyNode> subPath =
-                        new ArrayList<CyNode>(newShortest.nodeList.subList(0, i));
+                    ArrayList<CyNode> subPath = new ArrayList<CyNode>(
+                        newShortest.nodeList.subList(0, i));
 
                     if (!prefixCache.containsKey(subPath))
                         prefixCache.put(subPath, new ArrayList<CyNode>());
@@ -295,11 +293,14 @@ public class Algorithms
     }
 
 
+    /**
+     * Used to store data about a node while performing A*
+     */
     private static class AStarData
     {
-        public double    heurDist;
-        public CyNode    node;
-        public double    actDist;
+        public double heurDist;
+        public CyNode node;
+        public double actDist;
 
 
         public AStarData(double heurDist, CyNode node, double actDist)
@@ -308,6 +309,12 @@ public class Algorithms
             this.node = node;
             this.actDist = actDist;
         }
+    }
+
+    private static void resetHiddenEdges()
+    {
+        hiddenEdges.clear();
+        hiddenEdges.addAll(initialHiddenEdges);
     }
 
 
@@ -384,8 +391,6 @@ public class Algorithms
                 break;
 
             // currEdges = iter(net[currNode].items())
-            // List<CyNode> neighbors =
-            // network.getNeighborList(currNode, CyEdge.Type.OUTGOING);
             List<CyEdge> neighbors =
                 network.getAdjacentEdgeList(currNode, CyEdge.Type.OUTGOING);
 
@@ -400,11 +405,12 @@ public class Algorithms
                 CyNode nextNode = nextEdge.getTarget();
 
                 // nextActDist = actualDist + edgedata.get(weight, 1)
-//                int edgeWeight = 1;
-                double nextActDist = currData.actDist + getWeight(network, nextEdge);
+                double nextActDist =
+                    currData.actDist + getWeight(network, nextEdge);
 
                 // nextHeurDist = nextActDist + heuristicF(nextNode)
-                double nextHeurDist = nextActDist + heuristicF(minDists, nextNode);
+                double nextHeurDist =
+                    nextActDist + heuristicF(minDists, nextNode);
 
                 // if isinf(nextHeurDist): continue
                 if (isInf(heuristicF(minDists, nextNode)))
@@ -416,10 +422,6 @@ public class Algorithms
                     // if (nextActDist * (1+REL_EPS)) < dist[nextNode]:
                     if ((nextActDist * (1 + REL_EPS)) < distances.get(nextNode))
                     {
-                        // raise ValueError('Contradictory search path:', 'bad
-                        // heuristic? negative weights?')
-// throw new Exception(
-// "Contradictory search path: bad heuristic? negative weights?");
                         JOptionPane.showMessageDialog(
                             null,
                             "Contradictory search path. Bad heuristic? Negative weights?");
@@ -443,7 +445,8 @@ public class Algorithms
         }
 
         ArrayList<CyNode> nodeList = constructNodeList(preds, source, target);
-        if (nodeList == null) return null;
+        if (nodeList == null)
+            return null;
 
         return new Path(nodeList, distances.get(target));
     }
@@ -462,16 +465,14 @@ public class Algorithms
         CyNetwork network,
         CyNode source)
     {
-        final HashMap<CyNode, Double> distances =
-            new HashMap<CyNode, Double>();
+        final HashMap<CyNode, Double> distances = new HashMap<CyNode, Double>();
         HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
         PriorityQueue<CyNode> pq =
             new PriorityQueue<CyNode>(10, new Comparator<CyNode>() {
                 @Override
                 public int compare(CyNode o1, CyNode o2)
                 {
-                    return Double
-                        .compare(distances.get(o1), distances.get(o2));
+                    return Double.compare(distances.get(o1), distances.get(o2));
                 }
             });
 
@@ -498,8 +499,8 @@ public class Algorithms
             {
                 CyNode neighbor = neighborEdge.getSource();
 
-//                int edgeWeight = 1;
-                double newCost = distances.get(current) + getWeight(network, neighborEdge);
+                double newCost =
+                    distances.get(current) + getWeight(network, neighborEdge);
 
                 if (newCost < distances.get(neighbor))
                 {
@@ -554,8 +555,8 @@ public class Algorithms
             {
                 CyNode neighbor = neighborEdge.getTarget();
 
-// int edgeWeight = 1;
-                double newCost = distances.get(current) + getWeight(network, neighborEdge);
+                double newCost =
+                    distances.get(current) + getWeight(network, neighborEdge);
 
                 if (newCost < distances.get(neighbor))
                 {
@@ -593,7 +594,7 @@ public class Algorithms
      *            the source node of the graph
      * @param target
      *            the target node of the graph
-     * @return list of nodes that make up the path from source to target
+     * @return the path from source to target
      */
     public static Path dijkstra(CyNetwork network, CyNode source, CyNode target)
     {
@@ -634,8 +635,8 @@ public class Algorithms
             {
                 CyNode neighbor = neighborEdge.getTarget();
 
-// int edgeWeight = 1;
-                double newCost = distances.get(current) + getWeight(network, neighborEdge);
+                double newCost =
+                    distances.get(current) + getWeight(network, neighborEdge);
 
                 if (newCost < distances.get(neighbor))
                 {
@@ -758,19 +759,54 @@ public class Algorithms
 
     /**
      * Returns if a value is within an epsilon of INFINITY
+     *
+     * @param value
+     *            the value to check
+     * @return true if the value is INFINITY, false otherwise
      */
     private static boolean isInf(double value)
     {
         return Math.abs(value - INFINITY) < 0.1;
     }
 
+
+    /**
+     * Initializes the set of hidden edges. Used to start out the algorithm
+     * hiding all source in edges and target out edges.
+     *
+     * @param edges
+     *            the initial hidden edges
+     */
     public static void initializeHiddenEdges(HashSet<CyEdge> edges)
     {
+        initialHiddenEdges = new HashSet<CyEdge>();
+        initialHiddenEdges.addAll(edges);
+
         hiddenEdges = new HashSet<CyEdge>();
         hiddenEdges.addAll(edges);
     }
 
 
+    /**
+     * Sets the weighted option for KSP
+     *
+     * @param option
+     *            to use weighted edges or not
+     */
+    public static void setWeighted(boolean option)
+    {
+        Algorithms.weighted = option;
+    }
+
+
+    /**
+     * Computes the weight of a given path
+     *
+     * @param network
+     *            the supplied network
+     * @param nodeList
+     *            the list of nodes that make up the path, in order
+     */
     private static double computePathDist(
         CyNetwork network,
         ArrayList<CyNode> nodeList)

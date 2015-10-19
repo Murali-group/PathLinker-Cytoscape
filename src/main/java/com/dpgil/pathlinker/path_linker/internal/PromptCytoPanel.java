@@ -11,15 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -54,6 +46,10 @@ public class PromptCytoPanel
     private JTextField kTextField;
 
     private JButton submitButton;
+
+    private ButtonGroup  group;
+    private JRadioButton weightedOption;
+    private JRadioButton unweightedOption;
 
     private CyApplicationManager applicationManager;
     private CyTableFactory       tableFactory;
@@ -216,12 +212,16 @@ public class PromptCytoPanel
 
     private void runKSP()
     {
+        // grabs the values in the source and target text fields
         String sourcesTextFieldValue = sourcesTextField.getText();
         String targetsTextFieldValue = targetsTextField.getText();
 
+        // splits them by spaces
         String[] sourceNames = sourcesTextFieldValue.split(" ");
         String[] targetNames = targetsTextFieldValue.split(" ");
 
+        // stores the sources/targets that were inputted but are not actually in
+        // the network, may have been mistyped. Warns the user about them
         ArrayList<String> sourcesNotInNet = new ArrayList<String>();
         ArrayList<String> targetsNotInNet = new ArrayList<String>();
 
@@ -288,6 +288,37 @@ public class PromptCytoPanel
         ArrayList<CyNode> sources = stringsToNodes(sourceNames);
         ArrayList<CyNode> targets = stringsToNodes(targetNames);
 
+        // TODO say something if there are no sources or no targets
+        boolean weighted = false;
+
+        // error checking on the weighted option
+        if (weightedOption.isSelected())
+        {
+            weighted = true;
+
+            if (network.getEdgeCount() == 0)
+            {
+                // TODO warn the user
+                JOptionPane.showMessageDialog(
+                    null,
+                    "There are no edges in the graph. How do you expect the k-shortest paths to be found?!?!");
+                return;
+            }
+            else
+            {
+                CyEdge representativeEdge = network.getEdgeList().get(0);
+                if (network.getRow(representativeEdge)
+                    .get("edge_weight", Double.class) == null)
+                {
+                    // weighted option selected but no weights in the graph
+                    JOptionPane.showMessageDialog(
+                        null,
+                        "Weighted option selected but no values found for edge attribute edge_weight");
+                    return;
+                }
+            }
+        }
+
         HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
 
         // hides all incoming edges to source nodes
@@ -326,7 +357,7 @@ public class PromptCytoPanel
         long startTime = System.currentTimeMillis();
 
         // runs the ksp
-//        Algorithms.setWeighted(weighted);
+        Algorithms.setWeighted(weighted);
         Algorithms.initializeHiddenEdges(hiddenEdges);
         ArrayList<Path> paths =
             Algorithms.ksp(network, superSource, superTarget, k);
@@ -421,15 +452,23 @@ public class PromptCytoPanel
             new Dimension(
                 Integer.MAX_VALUE,
                 sourcesTextField.getPreferredSize().height));
+
         targetsLabel = new JLabel("Targets separated by spaces ex. T1 T2 T3");
         targetsTextField = new JTextField(20);
         targetsTextField.setMaximumSize(
             new Dimension(
                 Integer.MAX_VALUE,
                 targetsTextField.getPreferredSize().height));
+
         kLabel = new JLabel("k (shortest paths)");
         kTextField = new JTextField(4);
         kTextField.setMaximumSize(kTextField.getPreferredSize());
+
+        weightedOption = new JRadioButton("Weighted");
+        unweightedOption = new JRadioButton("Unweighted");
+        group = new ButtonGroup();
+        group.add(weightedOption);
+        group.add(unweightedOption);
 
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
@@ -450,6 +489,14 @@ public class PromptCytoPanel
         kPanel.add(kLabel);
         kPanel.add(kTextField);
         this.add(kPanel);
+
+        JPanel graphPanel = new JPanel();
+        graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
+        TitledBorder graphBorder = BorderFactory.createTitledBorder("Graph");
+        graphPanel.setBorder(graphBorder);
+        graphPanel.add(weightedOption);
+        graphPanel.add(unweightedOption);
+        this.add(graphPanel);
 
         submitButton = new JButton("Submit");
         submitButton.addActionListener(new SubmitButtonListener());
