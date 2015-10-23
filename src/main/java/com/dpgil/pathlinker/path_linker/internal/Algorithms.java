@@ -112,8 +112,17 @@ public class Algorithms
 
 
     /**
-     * Runs Yen's k-shortest paths algorithm on the supplied network given a
-     * source, target, and k
+     * Computes the k shortest acyclic paths in the supplied network using Yen's
+     * algorithm. Assumes that this is NOT a multigraph (there is at most one
+     * edge between any two nodes).
+     *
+     * A* is used as the pathfinding subroutine,
+     * with the distances in the input graph as a heuristic. Because the
+     * algorithm computes paths over subsets of the initial heuristic is valid
+     * and effective.
+     *
+     * If the graph contains n < k paths, n paths will be
+     * returned.
      *
      * @param network
      *            the supplied network
@@ -134,10 +143,12 @@ public class Algorithms
         // the list of shortest paths
         ArrayList<Path> A = new ArrayList<Path>();
 
+        // compute the original distance from the soruce to use for the
+        // heuristic function
         HashMap<CyNode, Double> minDists =
             reverseSingleSourceDijkstra(network, target);
 
-        // A[0] = shortest path
+        // compute the initial shortest path to initialize Yen's
         Path shortestPath = dijkstra(network, source, target);
 
         // there is no path from source to target
@@ -146,12 +157,11 @@ public class Algorithms
 
         A.add(shortestPath);
 
-        // B = []; the heap
+        // the heap, stores the potential k shortest paths
         ArrayList<Path> B = new ArrayList<Path>();
 
-        // prefixCache = defaultdict(list)
         // A cache mapping prefixes of accepted paths to the next node after
-        // the prefix. Used to avoid scanning all previous paths many time,
+        // the prefix. Used to avoid scanning all previous paths many times,
         // which otherwise dominates runtime.
         HashMap<ArrayList<CyNode>, ArrayList<CyNode>> prefixCache =
             new HashMap<ArrayList<CyNode>, ArrayList<CyNode>>();
@@ -172,40 +182,37 @@ public class Algorithms
             }
         }
 
-        // for k in range(1, max_k)
         for (int k = 1; k < maxK; k++)
         {
-            // edges_removed = []
-//            HashSet<CyEdge> pathHiddenEdges = new HashSet<CyEdge>();
-
-            // for i in range(0, len(A[-1]['path]) - 1)
+            // previously computed shortest path
             Path latestPath = A.get(A.size() - 1);
+
+            // process each node of the most recently found path, computing the
+            // shortest path that deviates at that node and adding it to the
+            // candidate heap
             for (int i = 0; i < latestPath.size() - 1; i++)
             {
-                // node_spur = A[-1]['path'][i]
                 CyNode nodeSpur = latestPath.get(i);
-                // path_root = A[-1]['path'][:i+1]
                 List<CyNode> pathRoot = latestPath.nodeList.subList(0, i + 1);
 
-                // to avoid cycles
+                // hide edges incoming to x until iteration k is over to avoid
+                // finding cycles. note that this effect is cumulative, meaning
+                // that while processing the current node in the path, all
+                // incoming edges to this node and all previous nodes have
+                // been hidden
                 List<CyEdge> inEdges =
                     network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
                     hiddenEdges.add(inEdge);
-//                    pathHiddenEdges.add(inEdge);
                 }
 
                 // for each previously-found shortest path P_j with the same
-                // first i nodes as
-                // the first i nodes of prevPath, hide the edge from x to the
-                // i+1 node in P_j
-                // to ensure we don't re-find a previously found path.
-                // Lookup the prefixes in a cache to disallow them. Requires
-                // more memory
-                // to store the cache, but saves scanning the list of found
-                // paths,
-                // which otherwise dominates runtime
+                // first i nodes as the first i nodes of prevPath, hide the
+                // edge from x to the i+1 node in P_j to ensure we don't
+                // re-find a previously found path. Lookup the prefixes in a
+                // cache to disallow them. Requires more memory to store the
+                // cache, but saves scanning the list of found paths
                 for (CyNode repNode : prefixCache
                     .get(latestPath.nodeList.subList(0, i + 1)))
                 {
@@ -214,45 +221,38 @@ public class Algorithms
                     if (repEdge != null)
                     {
                         hiddenEdges.add(repEdge);
-//                        pathHiddenEdges.add(repEdge);
                     }
                 }
 
-                // path_spur = a_star(graph, node_spur, node_end)
+                // find the shortest path using A*
                 Path pathSpur =
                     shortestPathAStar(network, nodeSpur, target, minDists);
 
-                // if path_spur['path']:
+                // short circuit if the target node was unreachable, which is
+                // expected to happen as we remove edges
                 if (pathSpur != null)
                 {
-                    // path_total = path_root[:-1] + path_spur['path']
+                    // concatenates prevPath[:i+1] and the shortest path from
+                    // nodeSpur to the target, and add this path to candidates
                     ArrayList<CyNode> pathTotal = new ArrayList<CyNode>(
                         pathRoot.subList(0, pathRoot.size() - 1));
                     pathTotal.addAll(pathSpur.nodeList);
 
-                    // dist_total = distances[node_spur] + path_spur['cost']
                     double distTotal = computePathDist(network, pathTotal);
-
-                    // potential_k = {'cost': dist_total, 'path':
-                    // path_total}
                     Path potentialK = new Path(pathTotal, distTotal);
 
-                    // if not (potential_k in B):
                     if (!B.contains(potentialK))
                     {
-                        // B.append(potential_k)
                         B.add(potentialK);
                     }
                 }
             }
 
             resetHiddenEdges();
-//            hiddenEdges.removeAll(pathHiddenEdges);
 
-            // if len(B):
             if (B.size() > 0)
             {
-                // B = sorted(B, key=itemgetter('cost'))
+                // sorts the candidate paths by their weight
                 Collections.sort(B, new Comparator<Path>() {
 
                     @Override
@@ -263,8 +263,11 @@ public class Algorithms
 
                 });
 
+                // accepts the next shortest path on the candidates heap, which
+                // is necessarily the next shortest path
                 Path newShortest = B.remove(0);
 
+                // adds this to the list of prefixes for efficient lookup later
                 for (int i = 1; i < newShortest.size(); i++)
                 {
                     CyNode currNode = newShortest.get(i);
@@ -279,12 +282,13 @@ public class Algorithms
                         cachedPath.add(currNode);
                 }
 
-                // A.append(B[0])
-                // B.pop(0)
+                // adds the next shortest path to the accepted list of paths
                 A.add(newShortest);
             }
             else
             {
+                // terminates early if there are no more paths found from the
+                // source to the target
                 break;
             }
         }
@@ -311,6 +315,11 @@ public class Algorithms
         }
     }
 
+
+    /**
+     * "Resets" hidden edges, by changing hiddenEdges state to what it was
+     * initialized to
+     */
     private static void resetHiddenEdges()
     {
         hiddenEdges.clear();
@@ -319,7 +328,8 @@ public class Algorithms
 
 
     /**
-     * Finds the shortest path between source and target using the A* algorithm
+     * An implementation of the A* algorithm. Computes exact shortest paths in
+     * the network, utilizing the fact that the heuristic function is monotonic
      *
      * @param network
      *            the supplied network
@@ -346,16 +356,15 @@ public class Algorithms
             return currPath;
         }
 
-        // dist = {} | dictionary of final distances
+        // dictionary of final distances
         HashMap<CyNode, Double> distances = new HashMap<CyNode, Double>();
-        // preds = {source:None} | dictionary of paths
+        // dictionary of paths
         HashMap<CyNode, CyNode> preds = new HashMap<CyNode, CyNode>();
-        // seen = {source:0} | map of seen nodes and their dists
+        // map of seen nodes and their distancess
         HashMap<CyNode, Double> seen = new HashMap<CyNode, Double>();
         seen.put(source, 0.);
 
-        // fringe = [] | heap of nodes on the border to process, keyed by
-        // heuristic distance
+        // heap of nodes on the border to process, keyed by heuristic distance
         PriorityQueue<AStarData> fringe =
             new PriorityQueue<AStarData>(10, new Comparator<AStarData>() {
                 @Override
@@ -366,37 +375,43 @@ public class Algorithms
 
             });
 
-        // heapq.heappush(fringe, (heuristicF(source), (source, 0)))
         fringe.add(new AStarData(heuristicF(minDists, source), source, 0));
 
-        // REL_EPS = 1e-10
+        // real-valued edge weights can cause the search to fail due to
+        // accumulated error summing along the path. test with a relative
+        // epsilon to catch only the 'real' errors
         final double REL_EPS = 1E-10;
 
-        // while fringe:
+        // iteratively search the graph outward until we've processed all nodes
         while (fringe.size() > 0)
         {
-            // (heurDist, (currNode, actualDist)) = heapq.heappop(fringe)
             AStarData currData = fringe.poll();
             CyNode currNode = currData.node;
 
-            // if currNode in dist: continue
+            // if we've already processed this node, don't re-process it. this
+            // happens beecause when we see a better path to an already seen
+            // node, it's cheaper to leave it in the heap and deal with it here
+            // than to remove it
             if (distances.containsKey(currNode))
                 continue;
 
-            // dist[currNode] = actualDist
+            // process this node, this is necessarily the best possible path
+            // to it
             distances.put(currNode, currData.actDist);
 
-            // if currNode == target: break
+            // check for a solution
             if (currNode.equals(target))
                 break;
 
-            // currEdges = iter(net[currNode].items())
+            // examine all neighbors to this node and consider adding them to
+            // the fringe
             List<CyEdge> neighbors =
                 network.getAdjacentEdgeList(currNode, CyEdge.Type.OUTGOING);
-
-            // for nextNode, edgedata in currEdges
             for (CyEdge nextEdge : neighbors)
             {
+                // doesn't consider edges that are hidden. uses this structure
+                // of hiding edges because manipulating the graph completely
+                // dominates runtime in cytoscape
                 if (hiddenEdges.contains(nextEdge))
                 {
                     continue;
@@ -404,22 +419,28 @@ public class Algorithms
 
                 CyNode nextNode = nextEdge.getTarget();
 
-                // nextActDist = actualDist + edgedata.get(weight, 1)
+                // the actual distance to the node from the source
                 double nextActDist =
                     currData.actDist + getWeight(network, nextEdge);
 
-                // nextHeurDist = nextActDist + heuristicF(nextNode)
+                // the heuristic function gives a lower bound on the path
+                // length to go the rest of the way to the finish from the start
                 double nextHeurDist =
                     nextActDist + heuristicF(minDists, nextNode);
 
-                // if isinf(nextHeurDist): continue
+                // if the heuristic function returns infinity, then the target
+                // is necessarily unreachable, so don't expand the search along
+                // this edge
                 if (isInf(heuristicF(minDists, nextNode)))
                     continue;
 
-                // if nextNode in dist
+                // if we've already processed the neighbor, then this can't
+                // possibly be a better path, assuming the problem is
+                // well-formed
                 if (distances.containsKey(nextNode))
                 {
-                    // if (nextActDist * (1+REL_EPS)) < dist[nextNode]:
+                    // verify that the graph and heuristic don't break the
+                    // search property
                     if ((nextActDist * (1 + REL_EPS)) < distances.get(nextNode))
                     {
                         JOptionPane.showMessageDialog(
@@ -428,22 +449,24 @@ public class Algorithms
                         return null;
                     }
                 }
-                // elif nextNode not in seen or nextActDist < seen[nextNode]:
+                // if this node hasn't already been processed, we need to
+                // consider adding it to the heap. if it's not already in the
+                // heap, we should only add it if this path to it is an
+                // improvement over the previous path. for performance, we leave
+                // the old entry in the heap in that case and skip it when it
+                // pops out
                 else if (!seen.containsKey(nextNode)
                     || nextActDist < seen.get(nextNode))
                 {
-                    // seen[nextNode] = nextActDist
                     seen.put(nextNode, nextActDist);
-                    // heapq.heappush(fringe, (nextHeurDist, (nextNode,
-                    // nextActDist)))
                     fringe.add(
                         new AStarData(nextHeurDist, nextNode, nextActDist));
-                    // preds[nextNode] = currNode
                     preds.put(nextNode, currNode);
                 }
             }
         }
 
+        // builds the path and returns it
         ArrayList<CyNode> nodeList = constructNodeList(preds, source, target);
         if (nodeList == null)
             return null;
@@ -490,10 +513,9 @@ public class Algorithms
             CyNode current = pq.poll();
 
             // goes through incoming neighbors because we are finding the paths
-            // that lead to the target
-            // however, we don't want to reverse the network and call a normal
-            // SSD because
-            // reversing the network dominates runtime in Cytoscape
+            // that lead to the target. however, we don't want to reverse the
+            // network and call a normal SSD because manipulating the network
+            // dominates runtime in Cytoscape
             for (CyEdge neighborEdge : network
                 .getAdjacentEdgeList(current, CyEdge.Type.INCOMING))
             {
@@ -507,7 +529,6 @@ public class Algorithms
                     distances.put(neighbor, newCost);
                     previous.put(neighbor, current);
 
-                    // Q[u] = cost_vu
                     // re-add to priority queue
                     pq.remove(neighbor);
                     pq.add(neighbor);
@@ -563,7 +584,6 @@ public class Algorithms
                     distances.put(neighbor, newCost);
                     previous.put(neighbor, current);
 
-                    // Q[u] = cost_vu
                     // add to priority queue
                     pq.remove(neighbor);
                     for (int i = 0; i < pq.size(); i++)
@@ -643,7 +663,6 @@ public class Algorithms
                     distances.put(neighbor, newCost);
                     previous.put(neighbor, current);
 
-                    // Q[u] = cost_vu
                     // add to priority queue
                     pq.remove(neighbor);
                     pq.add(neighbor);
@@ -750,7 +769,6 @@ public class Algorithms
         while (!(iter = previous.get(iter)).equals(source));
 
         nodeList.add(source);
-
         Collections.reverse(nodeList);
 
         return nodeList;

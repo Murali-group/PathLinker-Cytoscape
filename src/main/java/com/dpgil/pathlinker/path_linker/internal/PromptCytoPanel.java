@@ -174,10 +174,10 @@ public class PromptCytoPanel
             }
         }
 
-// networkManager.addNetwork(kspSubgraph);
-// CyNetworkView kspSubgraphView =
-// networkViewFactory.createNetworkView(kspSubgraph);
-// networkViewManager.addNetworkView(kspSubgraphView);
+        networkManager.addNetwork(kspSubgraph);
+        CyNetworkView kspSubgraphView =
+            networkViewFactory.createNetworkView(kspSubgraph);
+        networkViewManager.addNetworkView(kspSubgraphView);
     }
 
 
@@ -197,9 +197,9 @@ public class PromptCytoPanel
         }
 
         this.table = tableFactory
-            .createTable("PathLinker ", "#", Integer.class, true, true);
+            .createTable("PathLinker ", "k", Integer.class, true, true);
         // sets up the table
-        table.createColumn("k", Integer.class, false);
+        //table.createColumn("k", Integer.class, false);
         table.createColumn("Length", Double.class, false);
         table.createColumn("Path", String.class, false);
         // adds the table to cytoscape
@@ -343,14 +343,28 @@ public class PromptCytoPanel
         for (CyNode source : sources)
         {
             CyEdge superEdge = network.addEdge(superSource, source, true);
-            network.getRow(superEdge).set("edge_weight", 1.); // TODO EXPLAIN
+
+            // sets an edge weight of 1 for the edges. in the weighted case,
+            // we do path.weight - 2 to account for the supersource->source and
+            // the target->supertarget. in the unweighted case we also do
+            // path.weight - 2 because we don't include those two edges.
+            // assigning an edge weight of 1 allows us to calculate the final
+            // weight the same way for both cases.
+            network.getRow(superEdge).set("edge_weight", 1.);
             superEdges.add(superEdge);
         }
         // attaches all targets to super target
         for (CyNode target : targets)
         {
             CyEdge superEdge = network.addEdge(target, superTarget, true);
-            network.getRow(superEdge).set("edge_weight", 1.); // TODO EXPLAIN
+
+            // sets an edge weight of 1 for the edges. in the weighted case,
+            // we do path.weight - 2 to account for the supersource->source and
+            // the target->supertarget. in the unweighted case we also do
+            // path.weight - 2 because we don't include those two edges.
+            // assigning an edge weight of 1 allows us to calculate the final
+            // weight the same way for both cases.
+            network.getRow(superEdge).set("edge_weight", 1.);
             superEdges.add(superEdge);
         }
 
@@ -368,11 +382,9 @@ public class PromptCytoPanel
         network.removeEdges(superEdges);
         network.removeNodes(Arrays.asList(superSource, superTarget));
 
-        // updates the results
         writeResults(paths);
 
-        // generates subgraphs
-// createKSPSubgraph(paths);
+        createKSPSubgraph(paths);
 
         // notifies user of time taken
         long totalTimeMs = endTime - startTime;
@@ -433,8 +445,7 @@ public class PromptCytoPanel
             currPath.setLength(currPath.length() - 1);
 
             // sets all the values
-            row.set("k", i + 1);
-            // SS|A|B|ST = length 1 path-size 4
+//            row.set("k", i + 1);
 
             row.set("Length", paths.get(i).weight - 2);
             row.set("Path", currPath.toString());
@@ -442,6 +453,9 @@ public class PromptCytoPanel
     }
 
 
+    /**
+     * Sets up all the components in the panel
+     */
     private void initializePanelItems()
     {
         this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
@@ -504,6 +518,9 @@ public class PromptCytoPanel
     }
 
 
+    /**
+     * Populates idToCyNode, the map of node names to their objects
+     */
     private boolean populateIdToCyNode()
     {
         if (network == null)
