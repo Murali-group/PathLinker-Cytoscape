@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -25,77 +25,124 @@ import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.model.VisualProperty;
+import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
+import org.cytoscape.view.presentation.property.values.NodeShape;
+import org.cytoscape.work.SynchronousTaskManager;
+import org.cytoscape.work.TaskIterator;
 
+/** Panel for the PathLinker plugin */
 public class PromptCytoPanel
     extends JPanel
     implements CytoPanelComponent
 {
-    private CyNetwork               network;
-    private CyTable                 table;
-    private HashMap<String, CyNode> idToCyNode;
+    private CyNetwork               _network;
+    private CyTable                 _table;
+    private HashMap<String, CyNode> _idToCyNode;
 
-    private JLabel sourcesLabel;
-    private JLabel targetsLabel;
-    private JLabel kLabel;
+    private JLabel _sourcesLabel;
+    private JLabel _targetsLabel;
+    private JLabel _kLabel;
 
-    private JTextField sourcesTextField;
-    private JTextField targetsTextField;
-    private JTextField kTextField;
+    private JTextField _sourcesTextField;
+    private JTextField _targetsTextField;
+    private JTextField _kTextField;
 
-    private JButton submitButton;
+    private JButton _submitButton;
 
-    private ButtonGroup  group;
-    private JRadioButton weightedOption;
-    private JRadioButton unweightedOption;
+    private ButtonGroup  _group;
+    private JRadioButton _weightedOption;
+    private JRadioButton _unweightedOption;
 
-    private CyApplicationManager applicationManager;
-    private CyTableFactory       tableFactory;
-    private CyTableManager       tableManager;
+    private CyApplicationManager _applicationManager;
+    private CyTableFactory       _tableFactory;
+    private CyTableManager       _tableManager;
 
-    private CyNetworkFactory     networkFactory;
-    private CyNetworkManager     networkManager;
-    private CyNetworkViewFactory networkViewFactory;
-    private CyNetworkViewManager networkViewManager;
+    private CyNetworkFactory     _networkFactory;
+    private CyNetworkManager     _networkManager;
+    private CyNetworkViewFactory _networkViewFactory;
+    private CyNetworkViewManager _networkViewManager;
+
+    private CyAppAdapter _adapter;
+
+    private HashSet<CyEdge> hiddenEdges;
 
 
+    /**
+     * Constructor for the panel
+     *
+     * @param network
+     *            the supplied network
+     * @param table
+     *            the table created
+     */
     public PromptCytoPanel(CyNetwork network, CyTable table)
     {
-        this.network = network;
-        this.table = table;
+        _network = network;
+        _table = table;
         initializePanelItems();
         this.setVisible(false);
     }
 
 
+    /**
+     * Constructor for the panel
+     *
+     * @param applicationManager
+     *            the application manager
+     * @param tableFactory
+     *            the table factory
+     * @param tableManager
+     *            the table manager
+     */
     public PromptCytoPanel(
         CyApplicationManager applicationManager,
         CyTableFactory tableFactory,
         CyTableManager tableManager)
     {
-        this.applicationManager = applicationManager;
-        this.tableFactory = tableFactory;
-        this.tableManager = tableManager;
+        _applicationManager = applicationManager;
+        _tableFactory = tableFactory;
+        _tableManager = tableManager;
         initializePanelItems();
         this.setVisible(false);
     }
 
 
+    /**
+     * Initializer for the panel
+     *
+     * @param networkFactory
+     *            network factory
+     * @param networkManager
+     *            network manager
+     * @param networkViewFactory
+     *            network view factory
+     * @param networkViewManager
+     *            network view manager
+     * @param adapter
+     *            the cy application adapter
+     */
     public void initialize(
         CyNetworkFactory networkFactory,
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
-        CyNetworkViewManager networkViewManager)
+        CyNetworkViewManager networkViewManager,
+        CyAppAdapter adapter)
     {
-        this.networkFactory = networkFactory;
-        this.networkManager = networkManager;
-        this.networkViewFactory = networkViewFactory;
-        this.networkViewManager = networkViewManager;
+        _networkFactory = networkFactory;
+        _networkManager = networkManager;
+        _networkViewFactory = networkViewFactory;
+        _networkViewManager = networkViewManager;
+        _adapter = adapter;
     }
 
 
+    /** Listener for the submit button in the panel */
     class SubmitButtonListener
         implements ActionListener
     {
@@ -121,12 +168,14 @@ public class PromptCytoPanel
     private void createKSPSubgraph(ArrayList<Path> paths)
     {
         // TODO create another panel that takes in paths
-        CyNetwork kspSubgraph = networkFactory.createNetwork();
+        CyNetwork kspSubgraph = _networkFactory.createNetwork();
 
         HashSet<String> edgesAdded = new HashSet<String>();
         HashSet<String> nodesAdded = new HashSet<String>();
 
         HashMap<String, CyNode> subIdToCyNode = new HashMap<String, CyNode>();
+
+        int id = 0;
 
         for (Path currPath : paths)
         {
@@ -137,17 +186,26 @@ public class PromptCytoPanel
                 CyNode node2 = currPath.get(i + 1);
 
                 String node1Name =
-                    network.getRow(node1).get(CyNetwork.NAME, String.class);
+                    _network.getRow(node1).get(CyNetwork.NAME, String.class);
                 String node2Name =
-                    network.getRow(node2).get(CyNetwork.NAME, String.class);
+                    _network.getRow(node2).get(CyNetwork.NAME, String.class);
 
                 String edgeKey = node1Name + "|" + node2Name;
 
                 if (!nodesAdded.contains(node1Name))
                 {
                     CyNode added = kspSubgraph.addNode();
+
+//                    View<CyNode> nodeView = kspSubgraphView.getNodeView(added);
+//                    VisualProperty<?> temp = new NodeShapeVisualProperty(
+//                        NodeShapeVisualProperty.DIAMOND,
+//                        String.valueOf(id++),
+//                        node1Name,
+//                        CyNode.class);
+//                    nodeView.setVisualProperty(temp, (Object)NodeShapeVisualProperty.DIAMOND);
+
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
-                    network.getRow(node1).set(CyNetwork.SELECTED, true);
+                    _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
                 }
@@ -156,7 +214,7 @@ public class PromptCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
-                    network.getRow(node2).set(CyNetwork.SELECTED, true);
+                    _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
                 }
@@ -167,26 +225,44 @@ public class PromptCytoPanel
                     CyNode b = subIdToCyNode.get(node2Name);
                     kspSubgraph.addEdge(a, b, true);
 
-                    CyEdge select = Algorithms.getEdge(network, node1, node2);
-                    network.getRow(select).set(CyNetwork.SELECTED, true);
+                    CyEdge select = Algorithms.getEdge(_network, node1, node2);
+                    _network.getRow(select).set(CyNetwork.SELECTED, true);
                     edgesAdded.add(edgeKey);
                 }
             }
         }
 
-        networkManager.addNetwork(kspSubgraph);
+        // TODO update view
         CyNetworkView kspSubgraphView =
-            networkViewFactory.createNetworkView(kspSubgraph);
-        networkViewManager.addNetworkView(kspSubgraphView);
+            _networkViewFactory.createNetworkView(kspSubgraph);
+        _networkManager.addNetwork(kspSubgraph);
+        _networkViewManager.addNetworkView(kspSubgraphView);
+
+        // set node layout
+        CyLayoutAlgorithm algo =
+            _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
+        TaskIterator iter = algo.createTaskIterator(
+            kspSubgraphView,
+            algo.createLayoutContext(),
+            CyLayoutAlgorithm.ALL_NODE_VIEWS,
+            null);
+        _adapter.getTaskManager().execute(iter);
+        SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
+            .getService(SynchronousTaskManager.class);
+        synTaskMan.execute(iter);
+        _adapter.getVisualMappingManager().getVisualStyle(kspSubgraphView)
+            .apply(kspSubgraphView);
+        kspSubgraphView.updateView();
+
     }
 
 
     private boolean prepareForKSP()
     {
 
-        this.network = applicationManager.getCurrentNetwork();
+        _network = _applicationManager.getCurrentNetwork();
 
-        idToCyNode = new HashMap<String, CyNode>();
+        _idToCyNode = new HashMap<String, CyNode>();
         boolean success = populateIdToCyNode();
         if (!success)
         {
@@ -196,16 +272,6 @@ public class PromptCytoPanel
             return false;
         }
 
-        this.table = tableFactory
-            .createTable("PathLinker ", "k", Integer.class, true, true);
-        // sets up the table
-        //table.createColumn("k", Integer.class, false);
-        table.createColumn("Length", Double.class, false);
-        table.createColumn("Path", String.class, false);
-        // adds the table to cytoscape
-        applicationManager.setCurrentTable(table);
-        tableManager.addTable(table);
-
         return true;
     }
 
@@ -213,8 +279,8 @@ public class PromptCytoPanel
     private void runKSP()
     {
         // grabs the values in the source and target text fields
-        String sourcesTextFieldValue = sourcesTextField.getText();
-        String targetsTextFieldValue = targetsTextField.getText();
+        String sourcesTextFieldValue = _sourcesTextField.getText();
+        String targetsTextFieldValue = _targetsTextField.getText();
 
         // splits them by spaces
         String[] sourceNames = sourcesTextFieldValue.split(" ");
@@ -228,14 +294,14 @@ public class PromptCytoPanel
         // checks for mistyped source/target names
         for (String sourceName : sourceNames)
         {
-            if (!idToCyNode.containsKey(sourceName))
+            if (!_idToCyNode.containsKey(sourceName))
             {
                 sourcesNotInNet.add(sourceName);
             }
         }
         for (String targetName : targetNames)
         {
-            if (!idToCyNode.containsKey(targetName))
+            if (!_idToCyNode.containsKey(targetName))
             {
                 targetsNotInNet.add(targetName);
             }
@@ -259,7 +325,7 @@ public class PromptCytoPanel
         }
 
         int k;
-        String kInput = kTextField.getText();
+        String kInput = _kTextField.getText();
         try
         {
             k = Integer.parseInt(kInput);
@@ -292,11 +358,11 @@ public class PromptCytoPanel
         boolean weighted = false;
 
         // error checking on the weighted option
-        if (weightedOption.isSelected())
+        if (_weightedOption.isSelected())
         {
             weighted = true;
 
-            if (network.getEdgeCount() == 0)
+            if (_network.getEdgeCount() == 0)
             {
                 // TODO warn the user
                 JOptionPane.showMessageDialog(
@@ -306,8 +372,8 @@ public class PromptCytoPanel
             }
             else
             {
-                CyEdge representativeEdge = network.getEdgeList().get(0);
-                if (network.getRow(representativeEdge)
+                CyEdge representativeEdge = _network.getEdgeList().get(0);
+                if (_network.getRow(representativeEdge)
                     .get("edge_weight", Double.class) == null)
                 {
                     // weighted option selected but no weights in the graph
@@ -319,30 +385,35 @@ public class PromptCytoPanel
             }
         }
 
-        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
+        hiddenEdges = new HashSet<CyEdge>();
 
         // hides all incoming edges to source nodes
         for (CyNode source : sources)
         {
             hiddenEdges.addAll(
-                network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
+                _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
         }
         // hides all outgoing edges from target nodes
         for (CyNode target : targets)
         {
             hiddenEdges.addAll(
-                network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+                _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+        }
+
+        if (weighted) {
+            storeOldWeights();
+            logTransformEdgeWeights();
         }
 
         // sets up the super source/super target
-        CyNode superSource = network.addNode();
-        CyNode superTarget = network.addNode();
+        CyNode superSource = _network.addNode();
+        CyNode superTarget = _network.addNode();
         ArrayList<CyEdge> superEdges = new ArrayList<CyEdge>();
 
         // attaches super source to all sources
         for (CyNode source : sources)
         {
-            CyEdge superEdge = network.addEdge(superSource, source, true);
+            CyEdge superEdge = _network.addEdge(superSource, source, true);
 
             // sets an edge weight of 1 for the edges. in the weighted case,
             // we do path.weight - 2 to account for the supersource->source and
@@ -350,13 +421,13 @@ public class PromptCytoPanel
             // path.weight - 2 because we don't include those two edges.
             // assigning an edge weight of 1 allows us to calculate the final
             // weight the same way for both cases.
-            network.getRow(superEdge).set("edge_weight", 1.);
+            Algorithms.setWeight(_network, superEdge, 1.);
             superEdges.add(superEdge);
         }
         // attaches all targets to super target
         for (CyNode target : targets)
         {
-            CyEdge superEdge = network.addEdge(target, superTarget, true);
+            CyEdge superEdge = _network.addEdge(target, superTarget, true);
 
             // sets an edge weight of 1 for the edges. in the weighted case,
             // we do path.weight - 2 to account for the supersource->source and
@@ -364,7 +435,7 @@ public class PromptCytoPanel
             // path.weight - 2 because we don't include those two edges.
             // assigning an edge weight of 1 allows us to calculate the final
             // weight the same way for both cases.
-            network.getRow(superEdge).set("edge_weight", 1.);
+            Algorithms.setWeight(_network, superEdge, 1.);
             superEdges.add(superEdge);
         }
 
@@ -372,17 +443,22 @@ public class PromptCytoPanel
 
         // runs the ksp
         Algorithms.setWeighted(weighted);
+//        if (weighted)
+//            logTransformEdgeWeights();
         Algorithms.initializeHiddenEdges(hiddenEdges);
         ArrayList<Path> paths =
-            Algorithms.ksp(network, superSource, superTarget, k);
+            Algorithms.ksp(_network, superSource, superTarget, k);
 
         long endTime = System.currentTimeMillis();
 
         // removes supernodes and their edges
-        network.removeEdges(superEdges);
-        network.removeNodes(Arrays.asList(superSource, superTarget));
+        _network.removeEdges(superEdges);
+        _network.removeNodes(Arrays.asList(superSource, superTarget));
 
         writeResults(paths);
+
+        if (weighted)
+            restoreOldWeights();
 
         createKSPSubgraph(paths);
 
@@ -391,6 +467,55 @@ public class PromptCytoPanel
         String timeMessage =
             "PathLinker took " + totalTimeMs + " ms to execute";
         JOptionPane.showMessageDialog(null, timeMessage);
+    }
+
+    private void restoreOldWeights()
+    {
+        for (CyEdge edge : _network.getEdgeList())
+        {
+            double oldWeight = _network.getRow(edge).get("old_weight", Double.class);
+            _network.getRow(edge).set("edge_weight", oldWeight);
+        }
+
+        _network.getDefaultEdgeTable().deleteColumn("old_weight");
+    }
+
+    private void storeOldWeights()
+    {
+        _network.getDefaultEdgeTable().createColumn("old_weight", Double.class, false);
+
+        for (CyEdge edge : _network.getEdgeList())
+        {
+            double weight = Algorithms.getWeight(_network, edge);
+            _network.getRow(edge).set("old_weight", weight);
+        }
+    }
+
+    private void logTransformEdgeWeights()
+    {
+        double sumWeight = 0.;
+        int numEdges = 0;
+
+        for (CyEdge edge : _network.getEdgeList())
+        {
+            if (hiddenEdges.contains(edge))
+                continue;
+
+            sumWeight += Algorithms.getWeight(_network, edge);
+            numEdges++;
+        }
+
+        String message = "sumWeight: "+sumWeight+"\n"+"numEdges: "+numEdges;
+        JOptionPane.showMessageDialog(null, message);
+
+        for (CyEdge edge : _network.getEdgeList())
+        {
+            if (hiddenEdges.contains(edge))
+                continue;
+
+            double w = -1 * Math.log(Math.max(0.000000001, Algorithms.getWeight(_network, edge) / sumWeight)) / Math.log(10);
+            Algorithms.setWeight(_network, edge, w);
+        }
     }
 
 
@@ -404,9 +529,9 @@ public class PromptCytoPanel
 
         for (String name : strings)
         {
-            if (idToCyNode.containsKey(name))
+            if (_idToCyNode.containsKey(name))
             {
-                nodes.add(idToCyNode.get(name));
+                nodes.add(_idToCyNode.get(name));
             }
         }
 
@@ -425,6 +550,16 @@ public class PromptCytoPanel
             return;
         }
 
+        _table = _tableFactory
+            .createTable("PathLinker ", "k", Integer.class, true, true);
+        // sets up the table
+        // table.createColumn("k", Integer.class, false);
+        _table.createColumn("Length", Double.class, false);
+        _table.createColumn("Path", String.class, false);
+        // adds the table to cytoscape
+        _applicationManager.setCurrentTable(_table);
+        _tableManager.addTable(_table);
+
         // updates the table's values
         for (int i = 0; i < paths.size(); i++)
         {
@@ -432,20 +567,20 @@ public class PromptCytoPanel
             if (paths.get(i).size() == 0)
                 continue;
 
-            CyRow row = table.getRow(i + 1);
+            CyRow row = _table.getRow(i + 1);
 
             // builds the path string without supersource/supertarget [1,len-1]
             StringBuilder currPath = new StringBuilder();
             for (int j = 1; j < paths.get(i).size() - 1; j++)
             {
                 currPath.append(
-                    network.getRow(paths.get(i).get(j))
+                    _network.getRow(paths.get(i).get(j))
                         .get(CyNetwork.NAME, String.class) + "|");
             }
             currPath.setLength(currPath.length() - 1);
 
             // sets all the values
-//            row.set("k", i + 1);
+// row.set("k", i + 1);
 
             row.set("Length", paths.get(i).weight - 2);
             row.set("Path", currPath.toString());
@@ -460,29 +595,29 @@ public class PromptCytoPanel
     {
         this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        sourcesLabel = new JLabel("Sources separated by spaces ex. S1 S2 S3");
-        sourcesTextField = new JTextField(20);
-        sourcesTextField.setMaximumSize(
+        _sourcesLabel = new JLabel("Sources separated by spaces ex. S1 S2 S3");
+        _sourcesTextField = new JTextField(20);
+        _sourcesTextField.setMaximumSize(
             new Dimension(
                 Integer.MAX_VALUE,
-                sourcesTextField.getPreferredSize().height));
+                _sourcesTextField.getPreferredSize().height));
 
-        targetsLabel = new JLabel("Targets separated by spaces ex. T1 T2 T3");
-        targetsTextField = new JTextField(20);
-        targetsTextField.setMaximumSize(
+        _targetsLabel = new JLabel("Targets separated by spaces ex. T1 T2 T3");
+        _targetsTextField = new JTextField(20);
+        _targetsTextField.setMaximumSize(
             new Dimension(
                 Integer.MAX_VALUE,
-                targetsTextField.getPreferredSize().height));
+                _targetsTextField.getPreferredSize().height));
 
-        kLabel = new JLabel("k (shortest paths)");
-        kTextField = new JTextField(4);
-        kTextField.setMaximumSize(kTextField.getPreferredSize());
+        _kLabel = new JLabel("k (shortest paths)");
+        _kTextField = new JTextField(4);
+        _kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
-        weightedOption = new JRadioButton("Weighted");
-        unweightedOption = new JRadioButton("Unweighted");
-        group = new ButtonGroup();
-        group.add(weightedOption);
-        group.add(unweightedOption);
+        _weightedOption = new JRadioButton("Weighted");
+        _unweightedOption = new JRadioButton("Unweighted");
+        _group = new ButtonGroup();
+        _group.add(_weightedOption);
+        _group.add(_unweightedOption);
 
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
@@ -490,31 +625,31 @@ public class PromptCytoPanel
         TitledBorder sourceTargetBorder =
             BorderFactory.createTitledBorder("Sources/Targets");
         sourceTargetPanel.setBorder(sourceTargetBorder);
-        sourceTargetPanel.add(sourcesLabel);
-        sourceTargetPanel.add(sourcesTextField);
-        sourceTargetPanel.add(targetsLabel);
-        sourceTargetPanel.add(targetsTextField);
+        sourceTargetPanel.add(_sourcesLabel);
+        sourceTargetPanel.add(_sourcesTextField);
+        sourceTargetPanel.add(_targetsLabel);
+        sourceTargetPanel.add(_targetsTextField);
         this.add(sourceTargetPanel);
 
         JPanel kPanel = new JPanel();
         kPanel.setLayout(new BoxLayout(kPanel, BoxLayout.PAGE_AXIS));
         TitledBorder kBorder = BorderFactory.createTitledBorder("Algorithm");
         kPanel.setBorder(kBorder);
-        kPanel.add(kLabel);
-        kPanel.add(kTextField);
+        kPanel.add(_kLabel);
+        kPanel.add(_kTextField);
         this.add(kPanel);
 
         JPanel graphPanel = new JPanel();
         graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
         TitledBorder graphBorder = BorderFactory.createTitledBorder("Graph");
         graphPanel.setBorder(graphBorder);
-        graphPanel.add(weightedOption);
-        graphPanel.add(unweightedOption);
+        graphPanel.add(_weightedOption);
+        graphPanel.add(_unweightedOption);
         this.add(graphPanel);
 
-        submitButton = new JButton("Submit");
-        submitButton.addActionListener(new SubmitButtonListener());
-        this.add(submitButton, BorderLayout.SOUTH);
+        _submitButton = new JButton("Submit");
+        _submitButton.addActionListener(new SubmitButtonListener());
+        this.add(_submitButton, BorderLayout.SOUTH);
     }
 
 
@@ -523,14 +658,14 @@ public class PromptCytoPanel
      */
     private boolean populateIdToCyNode()
     {
-        if (network == null)
+        if (_network == null)
             return false;
 
-        for (CyNode node : network.getNodeList())
+        for (CyNode node : _network.getNodeList())
         {
             String nodeName =
-                network.getRow(node).get(CyNetwork.NAME, String.class);
-            idToCyNode.put(nodeName, node);
+                _network.getRow(node).get(CyNetwork.NAME, String.class);
+            _idToCyNode.put(nodeName, node);
         }
 
         return true;

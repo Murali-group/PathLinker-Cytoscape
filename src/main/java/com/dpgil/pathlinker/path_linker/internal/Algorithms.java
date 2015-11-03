@@ -697,11 +697,24 @@ public class Algorithms
      */
     public static double getWeight(CyNetwork network, CyEdge edge)
     {
-        if (!weighted)
-            return 1.;
+//        if (!weighted)
+//            return 1.;
 
         Double entry = network.getRow(edge).get("edge_weight", Double.class);
         return entry != null ? entry.doubleValue() : 1;
+    }
+
+
+    /**
+     * Sets the weight of an edge in the network
+     *
+     * @param network the supplied network
+     * @param edge the edge to set the weight of
+     * @param value the value to set the edge weight to
+     */
+    public static void setWeight(CyNetwork network, CyEdge edge, double value)
+    {
+        network.getRow(edge).set("edge_weight", value);
     }
 
 

@@ -6,6 +6,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import java.util.Properties;
 import javax.swing.JOptionPane;
+import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
@@ -44,7 +45,8 @@ public class CyActivator
         CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
         CyNetworkViewFactory networkViewFactory = getService(context, CyNetworkViewFactory.class);
         CyNetworkViewManager networkViewManager = getService(context, CyNetworkViewManager.class);
-        panel.initialize(networkFactory, networkManager, networkViewFactory, networkViewManager);
+        CyAppAdapter adapter = getService(context, CyAppAdapter.class);
+        panel.initialize(networkFactory, networkManager, networkViewFactory, networkViewManager, adapter);
 
         // sets up the pathlinker menu option
 //        RunPathLinkerMenuAction rplaction = new RunPathLinkerMenuAction(
@@ -63,4 +65,9 @@ public class CyActivator
         registerAllServices(context, cplaction, new Properties());
         registerService(context, panel, CytoPanelComponent.class, new Properties());
     }
+
+//    public static void openPanel()
+//    {
+//        registerService(context, )
+//    }
 }
