@@ -1,29 +1,36 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
+import com.dpgil.pathlinker.path_linker.internal.PromptCytoPanel.PanelState;
+import java.awt.Container;
 import java.awt.event.ActionEvent;
+import java.util.Properties;
 import javax.swing.JOptionPane;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.osgi.framework.BundleContext;
 
 public class OpenPathLinkerMenuAction extends AbstractCyAction
 {
-    private PromptCytoPanel panel;
-    private CyApplicationManager applicationManager;
+    private PromptCytoPanel _panel;
 
     public OpenPathLinkerMenuAction(PromptCytoPanel panel, CyApplicationManager applicationManager)
     {
         super("Open", applicationManager, null, null);
         setPreferredMenu("Apps.PathLinker");
 
-        this.panel = panel;
-        this.applicationManager = applicationManager;
+        _panel = panel;
     }
 
     @Override
     public void actionPerformed(ActionEvent arg0)
     {
-        JOptionPane.showMessageDialog(null, "Opening PathLinker");
-        panel.setVisible(true);
+        openPanel();
+    }
 
+    private void openPanel()
+    {
+        _panel.setPanelState(PanelState.OPEN);
     }
 }

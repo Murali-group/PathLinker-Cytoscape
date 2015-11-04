@@ -26,7 +26,6 @@ public class Algorithms
     private static final double    INFINITY = Integer.MAX_VALUE;
     private static HashSet<CyEdge> initialHiddenEdges;
     private static HashSet<CyEdge> hiddenEdges;
-    private static boolean         weighted;
 
 
     private static double heuristicF(
@@ -697,9 +696,6 @@ public class Algorithms
      */
     public static double getWeight(CyNetwork network, CyEdge edge)
     {
-//        if (!weighted)
-//            return 1.;
-
         Double entry = network.getRow(edge).get("edge_weight", Double.class);
         return entry != null ? entry.doubleValue() : 1;
     }
@@ -815,18 +811,6 @@ public class Algorithms
 
         hiddenEdges = new HashSet<CyEdge>();
         hiddenEdges.addAll(edges);
-    }
-
-
-    /**
-     * Sets the weighted option for KSP
-     *
-     * @param option
-     *            to use weighted edges or not
-     */
-    public static void setWeighted(boolean option)
-    {
-        Algorithms.weighted = option;
     }
 
 
