@@ -23,9 +23,10 @@ import org.cytoscape.model.CyNetwork;
  */
 public class Algorithms
 {
-    private static final double    INFINITY = Integer.MAX_VALUE;
-    private static HashSet<CyEdge> initialHiddenEdges;
-    private static HashSet<CyEdge> hiddenEdges;
+    private static final double            INFINITY = Integer.MAX_VALUE;
+    private static HashSet<CyEdge>         initialHiddenEdges;
+    private static HashSet<CyEdge>         hiddenEdges;
+    private static HashMap<CyEdge, Double> _edgeWeights;
 
 
     private static double heuristicF(
@@ -113,14 +114,10 @@ public class Algorithms
     /**
      * Computes the k shortest acyclic paths in the supplied network using Yen's
      * algorithm. Assumes that this is NOT a multigraph (there is at most one
-     * edge between any two nodes).
-     *
-     * A* is used as the pathfinding subroutine,
+     * edge between any two nodes). A* is used as the pathfinding subroutine,
      * with the distances in the input graph as a heuristic. Because the
      * algorithm computes paths over subsets of the initial heuristic is valid
-     * and effective.
-     *
-     * If the graph contains n < k paths, n paths will be
+     * and effective. If the graph contains n < k paths, n paths will be
      * returned.
      *
      * @param network
@@ -686,32 +683,69 @@ public class Algorithms
 
 
     /**
+     * Initializes our local copy of the edge weights
+     *
+     * @param weights
+     *            a map of the edge to its value
+     */
+    public static void setEdgeWeights(HashMap<CyEdge, Double> weights)
+    {
+        _edgeWeights = weights;
+    }
+
+
+    /**
      * Returns the weight of an edge in the network
      *
      * @param network
      *            the supplied network
      * @param edge
      *            the edge to find the weight of
-     * @return double the weight of the edge
+     * @return double the weight of the edge. returns a very noticeable and
+     *         obscure number if the weight is not in the network
      */
     public static double getWeight(CyNetwork network, CyEdge edge)
     {
-        Double entry = network.getRow(edge).get("edge_weight", Double.class);
-        return entry != null ? entry.doubleValue() : 1;
+        if (!_edgeWeights.containsKey(edge))
+            return -44444;
+
+        return _edgeWeights.get(edge);
+
+// Double entry = network.getRow(edge).get("edge_weight", Double.class);
+// return entry != null ? entry.doubleValue() : 1;
     }
 
 
     /**
-     * Sets the weight of an edge in the network
+     * Sets the weight of an edge in the network. Doesn't actually set the edge
+     * weight as an attribute, as that takes too much time. Instead, stores the
+     * edge weight in our copy of the weights local to the algorithm.
      *
-     * @param network the supplied network
-     * @param edge the edge to set the weight of
-     * @param value the value to set the edge weight to
+     * @param edge
+     *            the edge to set the weight of
+     * @param value
+     *            the new weight of the edge
      */
-    public static void setWeight(CyNetwork network, CyEdge edge, double value)
+    public static void setWeight(CyEdge edge, double value)
     {
-        network.getRow(edge).set("edge_weight", value);
+        _edgeWeights.put(edge, value);
     }
+//
+//
+//    /**
+//     * Sets the weight of an edge in the network
+//     *
+//     * @param network
+//     *            the supplied network
+//     * @param edge
+//     *            the edge to set the weight of
+//     * @param value
+//     *            the value to set the edge weight to
+//     */
+//    public static void setWeight(CyNetwork network, CyEdge edge, double value)
+//    {
+//        network.getRow(edge).set("edge_weight", value);
+//    }
 
 
     /**

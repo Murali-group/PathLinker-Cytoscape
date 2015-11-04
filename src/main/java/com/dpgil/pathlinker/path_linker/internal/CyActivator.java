@@ -4,7 +4,7 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
-import com.dpgil.pathlinker.path_linker.internal.PromptCytoPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerCytoPanel.PanelState;
 import java.awt.Container;
 import java.util.Properties;
 import javax.swing.JOptionPane;
@@ -43,7 +43,7 @@ public class CyActivator
         CyTableManager tableManager = getService(context, CyTableManager.class);
 
         // initializes the panel with the necessary components
-        PromptCytoPanel panel = new PromptCytoPanel(cyApplicationManager, tableFactory, tableManager);
+        PathLinkerCytoPanel panel = new PathLinkerCytoPanel(cyApplicationManager, tableFactory, tableManager);
         CyNetworkFactory networkFactory = getService(context, CyNetworkFactory.class);
         CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
         CyNetworkViewFactory networkViewFactory = getService(context, CyNetworkViewFactory.class);

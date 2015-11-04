@@ -1,6 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
-import com.dpgil.pathlinker.path_linker.internal.PromptCytoPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerCytoPanel.PanelState;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.util.Properties;
@@ -13,9 +13,9 @@ import org.osgi.framework.BundleContext;
 
 public class OpenPathLinkerMenuAction extends AbstractCyAction
 {
-    private PromptCytoPanel _panel;
+    private PathLinkerCytoPanel _panel;
 
-    public OpenPathLinkerMenuAction(PromptCytoPanel panel, CyApplicationManager applicationManager)
+    public OpenPathLinkerMenuAction(PathLinkerCytoPanel panel, CyApplicationManager applicationManager)
     {
         super("Open", applicationManager, null, null);
         setPreferredMenu("Apps.PathLinker");

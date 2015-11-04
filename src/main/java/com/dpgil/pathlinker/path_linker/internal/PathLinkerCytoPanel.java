@@ -38,7 +38,7 @@ import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
 /** Panel for the PathLinker plugin */
-public class PromptCytoPanel
+public class PathLinkerCytoPanel
     extends JPanel
     implements CytoPanelComponent
 {
@@ -57,8 +57,6 @@ public class PromptCytoPanel
     private JButton _submitButton;
 
     private ButtonGroup  _group;
-//    private JRadioButton _weightedOption;
-//    private JRadioButton _unweightedOption;
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
@@ -74,33 +72,45 @@ public class PromptCytoPanel
 
     private CyAppAdapter _adapter;
 
-    private OpenPathLinkerMenuAction _oplaction;
-    private ClosePathLinkerMenuAction _cplaction;
+    private OpenPathLinkerMenuAction  _openAction;
+    private ClosePathLinkerMenuAction _closeAction;
 
     private HashSet<CyEdge> _hiddenEdges;
 
-    private EdgeWeights _edgeWeights;
+    private EdgeWeightSetting _edgeWeightSetting;
 
     private Container _parent;
 
-    private enum EdgeWeights
+
+    private enum EdgeWeightSetting
     {
         UNWEIGHTED,
         PROBABILITIES,
         P_VALUES
     };
 
+
+    /** The state of the panel */
     public enum PanelState
     {
+        /** The panel is hidden */
         CLOSED,
+        /** The panel is visible */
         OPEN
     };
 
+    /**
+     * Initially null because nothing is correctly set, there is no current
+     * state at this point
+     */
     private PanelState _state = null;
+
 
     /**
      * Sets the state of the panel (open or closed).
-     * @param state the new state
+     *
+     * @param state
+     *            the new state
      */
     public void setPanelState(PanelState state)
     {
@@ -111,20 +121,21 @@ public class PromptCytoPanel
         {
             _state = PanelState.CLOSED;
             _parent.remove(this);
-            _cplaction.setEnabled(false);
-            _oplaction.setEnabled(true);
+            _closeAction.setEnabled(false);
+            _openAction.setEnabled(true);
         }
         else if (state == PanelState.OPEN)
         {
             _state = PanelState.OPEN;
             ((JTabbedPane)_parent).addTab(this.getTitle(), this);
-            _oplaction.setEnabled(false);
-            _cplaction.setEnabled(true);
+            _openAction.setEnabled(false);
+            _closeAction.setEnabled(true);
         }
 
         this.revalidate();
         this.repaint();
     }
+
 
     /**
      * Constructor for the panel
@@ -134,7 +145,7 @@ public class PromptCytoPanel
      * @param table
      *            the table created
      */
-    public PromptCytoPanel(CyNetwork network, CyTable table)
+    public PathLinkerCytoPanel(CyNetwork network, CyTable table)
     {
         _network = network;
         _table = table;
@@ -152,7 +163,7 @@ public class PromptCytoPanel
      * @param tableManager
      *            the table manager
      */
-    public PromptCytoPanel(
+    public PathLinkerCytoPanel(
         CyApplicationManager applicationManager,
         CyTableFactory tableFactory,
         CyTableManager tableManager)
@@ -161,7 +172,6 @@ public class PromptCytoPanel
         _tableFactory = tableFactory;
         _tableManager = tableManager;
         initializePanelItems();
-        this.setVisible(false);
     }
 
 
@@ -178,6 +188,10 @@ public class PromptCytoPanel
      *            network view manager
      * @param adapter
      *            the cy application adapter
+     * @param openAction
+     *            the menu action to open PathLinker
+     * @param closeAction
+     *            the menu action to close PathLinkers
      */
     public void initialize(
         CyNetworkFactory networkFactory,
@@ -185,16 +199,16 @@ public class PromptCytoPanel
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
         CyAppAdapter adapter,
-        OpenPathLinkerMenuAction oplaction,
-        ClosePathLinkerMenuAction cplaction)
+        OpenPathLinkerMenuAction openAction,
+        ClosePathLinkerMenuAction closeAction)
     {
         _networkFactory = networkFactory;
         _networkManager = networkManager;
         _networkViewFactory = networkViewFactory;
         _networkViewManager = networkViewManager;
         _adapter = adapter;
-        _oplaction = oplaction;
-        _cplaction = cplaction;
+        _openAction = openAction;
+        _closeAction = closeAction;
         _parent = this.getParent();
     }
 
@@ -232,8 +246,6 @@ public class PromptCytoPanel
 
         HashMap<String, CyNode> subIdToCyNode = new HashMap<String, CyNode>();
 
-        int id = 0;
-
         for (Path currPath : paths)
         {
             // excluding supersource and supertarget
@@ -253,13 +265,13 @@ public class PromptCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
 
-//                    View<CyNode> nodeView = kspSubgraphView.getNodeView(added);
-//                    VisualProperty<?> temp = new NodeShapeVisualProperty(
-//                        NodeShapeVisualProperty.DIAMOND,
-//                        String.valueOf(id++),
-//                        node1Name,
-//                        CyNode.class);
-//                    nodeView.setVisualProperty(temp, (Object)NodeShapeVisualProperty.DIAMOND);
+// View<CyNode> nodeView = kspSubgraphView.getNodeView(added);
+// VisualProperty<?> temp = new NodeShapeVisualProperty(
+// NodeShapeVisualProperty.DIAMOND,
+// String.valueOf(id++),
+// node1Name,
+// CyNode.class);
+// nodeView.setVisualProperty(temp, (Object)NodeShapeVisualProperty.DIAMOND);
 
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
                     _network.getRow(node1).set(CyNetwork.SELECTED, true);
@@ -316,7 +328,6 @@ public class PromptCytoPanel
 
     private boolean prepareForKSP()
     {
-
         _network = _applicationManager.getCurrentNetwork();
 
         _idToCyNode = new HashMap<String, CyNode>();
@@ -333,6 +344,16 @@ public class PromptCytoPanel
     }
 
 
+    // TODO possible design for algorithm structure
+    // TODO - readValuesFromPanel()
+    // TODO - errorCheckValuesFromPanel() : return success
+    // TODO - prepareForKSP_removeSourceIncoming
+    // TODO - prepareForKSP_removeTargetOutgoing
+    // TODO - prepareForKSP_setEdgeWeights
+    // TODO - runKSP
+    // TODO - writePaths
+    // TODO - createKSPSubgraph
+
     private void runKSP()
     {
         // grabs the values in the source and target text fields
@@ -340,8 +361,12 @@ public class PromptCytoPanel
         String targetsTextFieldValue = _targetsTextField.getText();
 
         // splits them by spaces
-        String[] sourceNames = sourcesTextFieldValue.split(" ");
-        String[] targetNames = targetsTextFieldValue.split(" ");
+        String[] rawSourceNames = sourcesTextFieldValue.split(" ");
+        String[] rawTargetNames = targetsTextFieldValue.split(" ");
+        ArrayList<String> sourceNames =
+            new ArrayList<String>(Arrays.asList(rawSourceNames));
+        ArrayList<String> targetNames =
+            new ArrayList<String>(Arrays.asList(rawTargetNames));
 
         // stores the sources/targets that were inputted but are not actually in
         // the network, may have been mistyped. Warns the user about them
@@ -365,6 +390,7 @@ public class PromptCytoPanel
         }
 
         StringBuilder errorMessage = new StringBuilder();
+
         if (sourcesNotInNet.size() + targetsNotInNet.size() > 0)
         {
             if (sourcesNotInNet.size() > 0)
@@ -408,6 +434,8 @@ public class PromptCytoPanel
             }
         }
 
+        sourceNames.removeAll(sourcesNotInNet);
+        targetNames.removeAll(targetsNotInNet);
         ArrayList<CyNode> sources = stringsToNodes(sourceNames);
         ArrayList<CyNode> targets = stringsToNodes(targetNames);
 
@@ -415,20 +443,22 @@ public class PromptCytoPanel
 
         if (_unweighted.isSelected())
         {
-            _edgeWeights = EdgeWeights.UNWEIGHTED;
+            _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
         }
         else if (_weightedProbabilities.isSelected())
         {
-            _edgeWeights = EdgeWeights.PROBABILITIES;
+            _edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
         }
         else if (_weightedPValues.isSelected())
         {
-            _edgeWeights = EdgeWeights.P_VALUES;
+            _edgeWeightSetting = EdgeWeightSetting.P_VALUES;
         }
         else
         {
             // TODO error check
-            JOptionPane.showMessageDialog(null, "No option selected for edge weights. Exiting...");
+            JOptionPane.showMessageDialog(
+                null,
+                "No option selected for edge weights. Exiting...");
             return;
         }
 
@@ -447,7 +477,7 @@ public class PromptCytoPanel
                 _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
         }
 
-        storeOldWeights();
+//        storeOldWeights();
 
         prepareEdgesForKSP();
 
@@ -467,7 +497,7 @@ public class PromptCytoPanel
             // path.weight - 2 because we don't include those two edges.
             // assigning an edge weight of 1 allows us to calculate the final
             // weight the same way for both cases.
-            Algorithms.setWeight(_network, superEdge, 0.);
+            Algorithms.setWeight(superEdge, 0.);
             superEdges.add(superEdge);
         }
         // attaches all targets to super target
@@ -481,7 +511,7 @@ public class PromptCytoPanel
             // path.weight - 2 because we don't include those two edges.
             // assigning an edge weight of 1 allows us to calculate the final
             // weight the same way for both cases.
-            Algorithms.setWeight(_network, superEdge, 0.);
+            Algorithms.setWeight(superEdge, 0.);
             superEdges.add(superEdge);
         }
 
@@ -500,7 +530,7 @@ public class PromptCytoPanel
 
         writeResults(paths);
 
-        restoreOldWeights();
+//        restoreOldWeights();
 
         createKSPSubgraph(paths);
 
@@ -513,82 +543,106 @@ public class PromptCytoPanel
 
     private void prepareEdgesForKSP()
     {
-        if (_edgeWeights == EdgeWeights.UNWEIGHTED)
+        HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
+
+        // TODO error checking if weighted but not all edges have weights
+
+        for (CyEdge edge : _network.getEdgeList())
         {
-            // sets all edge values to 1
-            for (CyEdge edge : _network.getEdgeList())
+            Double value = _network.getRow(edge).get("edge_weight", Double.class);
+            double edge_weight = value != null ? value.doubleValue() : -44444;
+
+            if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
             {
-                Algorithms.setWeight(_network, edge, 1.);
+                edgeWeights.put(edge, 1.);
+            }
+            else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            {
+                edgeWeights.put(edge, edge_weight);
+            }
+            else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+            {
+                edgeWeights.put(edge, 1. - edge_weight);
             }
         }
-        else
-        {
-            logTransformEdgeWeights();
-        }
-    }
 
-    private void restoreOldWeights()
-    {
-        for (CyEdge edge : _network.getEdgeList())
+        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
         {
-            double oldWeight = _network.getRow(edge).get("old_weight", Double.class);
-            _network.getRow(edge).set("edge_weight", oldWeight);
+            logTransformEdgeWeights(edgeWeights);
         }
 
-        _network.getDefaultEdgeTable().deleteColumn("old_weight");
+        Algorithms.setEdgeWeights(edgeWeights);
     }
 
-    private void storeOldWeights()
-    {
-        _network.getDefaultEdgeTable().createColumn("old_weight", Double.class, false);
 
-        for (CyEdge edge : _network.getEdgeList())
-        {
-            double weight = Algorithms.getWeight(_network, edge);
-            _network.getRow(edge).set("old_weight", weight);
-        }
-    }
-
-    private void logTransformEdgeWeights()
+    private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights)
     {
         double sumWeight = 0.;
 
-        for (CyEdge edge : _network.getEdgeList())
+        for (CyEdge edge : weights.keySet())
         {
             if (_hiddenEdges.contains(edge))
                 continue;
 
-            double edge_weight = Algorithms.getWeight(_network, edge);
-            if (_edgeWeights == EdgeWeights.P_VALUES)
-                edge_weight = 1 - edge_weight;
-
-            sumWeight += edge_weight;
+            sumWeight += weights.get(edge);
         }
 
-        for (CyEdge edge : _network.getEdgeList())
+        for (CyEdge edge : weights.keySet())
         {
             if (_hiddenEdges.contains(edge))
                 continue;
 
-            double edge_weight = Algorithms.getWeight(_network, edge);
-            if (_edgeWeights == EdgeWeights.P_VALUES)
-                edge_weight = 1 - edge_weight;
+            double edge_weight = weights.get(edge);
 
-            double w = -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight)) / Math.log(10);
-            Algorithms.setWeight(_network, edge, w);
+            double w =
+                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
+                    / Math.log(10);
+            weights.put(edge, w);
         }
     }
+//
+//    private void logTransformEdgeWeights()
+//    {
+//        double sumWeight = 0.;
+//
+//        for (CyEdge edge : _network.getEdgeList())
+//        {
+//            if (_hiddenEdges.contains(edge))
+//                continue;
+//
+//            double edge_weight = Algorithms.getWeight(_network, edge);
+//            if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+//                edge_weight = 1 - edge_weight;
+//
+//            sumWeight += edge_weight;
+//        }
+//
+//        for (CyEdge edge : _network.getEdgeList())
+//        {
+//            if (_hiddenEdges.contains(edge))
+//                continue;
+//
+//            double edge_weight = Algorithms.getWeight(_network, edge);
+//            if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+//                edge_weight = 1 - edge_weight;
+//
+//            double w =
+//                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
+//                    / Math.log(10);
+//            Algorithms.setWeight(_network, edge, w);
+//        }
+//    }
 
 
     /**
      * Converts an array of node names to a list of the actual corresponding
      * nodes
      */
-    private ArrayList<CyNode> stringsToNodes(String[] strings)
+    private ArrayList<CyNode> stringsToNodes(ArrayList<String> names)
     {
         ArrayList<CyNode> nodes = new ArrayList<CyNode>();
 
-        for (String name : strings)
+        for (String name : names)
         {
             if (_idToCyNode.containsKey(name))
             {
@@ -611,8 +665,12 @@ public class PromptCytoPanel
             return;
         }
 
-        _table = _tableFactory
-            .createTable("PathLinker ", "Path index", Integer.class, true, true);
+        _table = _tableFactory.createTable(
+            "PathLinker ",
+            "Path index",
+            Integer.class,
+            true,
+            true);
         // sets up the table
         // table.createColumn("k", Integer.class, false);
         _table.createColumn("Path score", Double.class, false);
@@ -643,7 +701,7 @@ public class PromptCytoPanel
             // sets all the values
 // row.set("k", i + 1);
 
-            row.set("Length", paths.get(i).weight);
+            row.set("Path score", paths.get(i).weight);
             row.set("Path", currPath.toString());
         }
     }
@@ -676,9 +734,12 @@ public class PromptCytoPanel
 
         _group = new ButtonGroup();
 
-        _unweighted = new JRadioButton("Unweighted - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
-        _weightedProbabilities = new JRadioButton("Weighted, edge weights are probabilities - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
-        _weightedPValues = new JRadioButton("Weighted, edge weights are p-values - PathLinker will compute the k highest cost paths, where the cost is the product of (1 - p-value) for each edge in the path.");
+        _unweighted = new JRadioButton(
+            "<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+        _weightedProbabilities = new JRadioButton(
+            "<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+        _weightedPValues = new JRadioButton(
+            "<html><b>Weighted, edge weights are p-values</b> - PathLinker will compute the k highest cost paths, where the cost is the product of (1 - p-value) for each edge in the path.</html>");
         _group.add(_unweighted);
         _group.add(_weightedProbabilities);
         _group.add(_weightedPValues);
@@ -705,7 +766,8 @@ public class PromptCytoPanel
 
         JPanel graphPanel = new JPanel();
         graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
-        TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
+        TitledBorder graphBorder =
+            BorderFactory.createTitledBorder("Edge Weights");
         graphPanel.setBorder(graphBorder);
         graphPanel.add(_unweighted);
         graphPanel.add(_weightedProbabilities);
