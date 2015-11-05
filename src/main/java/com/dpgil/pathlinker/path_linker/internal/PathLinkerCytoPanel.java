@@ -42,44 +42,62 @@ public class PathLinkerCytoPanel
     extends JPanel
     implements CytoPanelComponent
 {
-    private CyNetwork               _network;
-    private CyTable                 _table;
-    private HashMap<String, CyNode> _idToCyNode;
-
-    private JLabel _sourcesLabel;
-    private JLabel _targetsLabel;
-    private JLabel _kLabel;
-
-    private JTextField _sourcesTextField;
-    private JTextField _targetsTextField;
-    private JTextField _kTextField;
-
-    private JButton _submitButton;
-
+    /** UI components of the panel */
+    private JLabel       _sourcesLabel;
+    private JLabel       _targetsLabel;
+    private JLabel       _kLabel;
+    private JTextField   _sourcesTextField;
+    private JTextField   _targetsTextField;
+    private JTextField   _kTextField;
+    private JButton      _submitButton;
     private ButtonGroup  _group;
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
 
-    private CyApplicationManager _applicationManager;
-    private CyTableFactory       _tableFactory;
-    private CyTableManager       _tableManager;
+    /** Cytoscape classes for table management */
+    private CyTableFactory _tableFactory;
+    private CyTableManager _tableManager;
 
+    /** Cytoscape class for network and view management */
+    private CyApplicationManager _applicationManager;
     private CyNetworkFactory     _networkFactory;
     private CyNetworkManager     _networkManager;
     private CyNetworkViewFactory _networkViewFactory;
     private CyNetworkViewManager _networkViewManager;
+    private CyAppAdapter         _adapter;
 
-    private CyAppAdapter _adapter;
-
+    /** Menu options for PathLinker */
     private OpenPathLinkerMenuAction  _openAction;
     private ClosePathLinkerMenuAction _closeAction;
 
-    private HashSet<CyEdge> _hiddenEdges;
+    /** Edges that we hide from the algorithm */
+    private HashSet<CyEdge>         _hiddenEdges;
+    /** Perform algo unweighted, weighted (probs), or weighted (p-values) */
+    private EdgeWeightSetting       _edgeWeightSetting;
+    /** Parent container of the panel to re add to when we call open */
+    private Container               _parent;
+    /** The network to perform the algorithm on */
+    private CyNetwork               _network;
+    /** The table to write the results of the algorithm to */
+    private CyTable                 _table;
+    /** A mapping of the name of a node to the acutal node object */
+    private HashMap<String, CyNode> _idToCyNode;
+    /** State of the panel. Initially null b/c it isn't open or closed yet */
+    private PanelState              _state = null;
 
-    private EdgeWeightSetting _edgeWeightSetting;
-
-    private Container _parent;
+    /** The sources to be used in the algorithm */
+    private ArrayList<CyNode> _sources;
+    /** The targets to be used in the algorithm */
+    private ArrayList<CyNode> _targets;
+    /** The k value to be used in the algorithm */
+    private int               _k;
+    /** The super source to call ksp with and removed after the algorithm */
+    private CyNode            _superSource;
+    /** The super target to call ksp with and removed after the algorithm */
+    private CyNode            _superTarget;
+    /** The edges attached to super(source/target) to be removed after ksp */
+    private HashSet<CyEdge>   _superEdges;
 
 
     private enum EdgeWeightSetting
@@ -98,12 +116,6 @@ public class PathLinkerCytoPanel
         /** The panel is visible */
         OPEN
     };
-
-    /**
-     * Initially null because nothing is correctly set, there is no current
-     * state at this point
-     */
-    private PanelState _state = null;
 
 
     /**
@@ -140,22 +152,6 @@ public class PathLinkerCytoPanel
     /**
      * Constructor for the panel
      *
-     * @param network
-     *            the supplied network
-     * @param table
-     *            the table created
-     */
-    public PathLinkerCytoPanel(CyNetwork network, CyTable table)
-    {
-        _network = network;
-        _table = table;
-        initializePanelItems();
-    }
-
-
-    /**
-     * Constructor for the panel
-     *
      * @param applicationManager
      *            the application manager
      * @param tableFactory
@@ -176,7 +172,8 @@ public class PathLinkerCytoPanel
 
 
     /**
-     * Initializer for the panel
+     * Initializer for the panel to reduce the number of parameters in the
+     * constructor
      *
      * @param networkFactory
      *            network factory
@@ -218,16 +215,381 @@ public class PathLinkerCytoPanel
         implements ActionListener
     {
         /**
-         * Responds to a click of the submit button in the pathlinker jpanel.
-         * Takes in the values in the text boxes and makes the corresponding
-         * calls to the algorithms class
+         * Responds to a click of the submit button in the pathlinker jpanel
          */
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            boolean success = prepareForKSP();
-            if (success)
-                runKSP();
+            runKSP();
+        }
+    }
+
+
+    private void runKSP()
+    {
+        boolean success;
+
+        // populates a mapping from the name of a node to the actual node object
+        // used for converting user input to node objects. populates the map
+        // named _idToCyNode. is unsuccessful if there is no network
+        success = populateIdToCyNode();
+        if (!success)
+            return;
+
+        // reads the raw values from the panel and converts them into useful
+        // objects to be used in the algorithms
+        success = readValuesFromPanel();
+        if (!success)
+            return;
+
+        // "removes" the edges that are incoming to source nodes and outgoing
+        // from target nodes
+        initializeHiddenEdges();
+
+        // sets the edge weights to be used in the algorithm. doesn't actually
+        // set the values as edge attributes because that dominates runtime.
+        setEdgeWeights();
+
+        // adds a superSource and superTarget and attaches them to the sources
+        // and targets, respectively
+        addSuperNodes();
+
+        // runs the KSP algorithm
+        ArrayList<Path> result =
+            Algorithms.ksp(_network, _superSource, _superTarget, _k);
+
+        // writes the result of the algorithm to a table
+        writeResults(result);
+
+        // generates a subgraph of the nodes and edges involved in the resulting
+        // paths and displays it to the user
+        createKSPSubgraph(result);
+    }
+
+
+    /**
+     * Reads in the raw values from the panel and converts them to useful
+     * objects that can be used for the algorithm. Performs error checking on
+     * the values and warns the user if it is a minor error or quits if there
+     * are any major errors.
+     *
+     * @return true if the parsing was successful, false otherwise
+     */
+    private boolean readValuesFromPanel()
+    {
+        // error message to report errors to the user if they occur
+        StringBuilder errorMessage = new StringBuilder();
+
+        // grabs the values in the source and target text fields
+        String sourcesTextFieldValue = _sourcesTextField.getText();
+        String targetsTextFieldValue = _targetsTextField.getText();
+
+        // splits the names by spaces
+        String[] rawSourceNames = sourcesTextFieldValue.split(" ");
+        String[] rawTargetNames = targetsTextFieldValue.split(" ");
+        ArrayList<String> sourceNames =
+            new ArrayList<String>(Arrays.asList(rawSourceNames));
+        ArrayList<String> targetNames =
+            new ArrayList<String>(Arrays.asList(rawTargetNames));
+
+        // stores the sources/targets that were inputted but are not actually in
+        // the network, may have been mistyped
+        ArrayList<String> sourcesNotInNet = new ArrayList<String>();
+        ArrayList<String> targetsNotInNet = new ArrayList<String>();
+
+        // checks for mistyped source/target names
+        for (String sourceName : sourceNames)
+        {
+            if (!_idToCyNode.containsKey(sourceName))
+                sourcesNotInNet.add(sourceName);
+        }
+        for (String targetName : targetNames)
+        {
+            if (!_idToCyNode.containsKey(targetName))
+                targetsNotInNet.add(targetName);
+        }
+
+        // appends all missing sources/targets to the error message
+        if (sourcesNotInNet.size() + targetsNotInNet.size() > 0)
+        {
+            if (sourcesNotInNet.size() > 0)
+            {
+                errorMessage.append(
+                    "The sources " + sourcesNotInNet.toString()
+                        + " are not in the network.\n");
+            }
+            if (targetsNotInNet.size() > 0)
+            {
+                errorMessage.append(
+                    "The targets " + targetsNotInNet.toString()
+                        + " are not in the network.\n");
+            }
+        }
+
+        // parses the value inputted for k
+        // if it is an invalid value, uses 5 by default and also appends the
+        // error to the error message
+        String kInput = _kTextField.getText();
+        try
+        {
+            _k = Integer.parseInt(kInput);
+        }
+        catch (NumberFormatException exception)
+        {
+            errorMessage.append(
+                "Invalid number " + kInput
+                    + " entered for k. Using default k=5.\n");
+            _k = 5;
+        }
+
+        if (_unweighted.isSelected())
+        {
+            _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+        }
+        else if (_weightedProbabilities.isSelected())
+        {
+            _edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+        }
+        else if (_weightedPValues.isSelected())
+        {
+            _edgeWeightSetting = EdgeWeightSetting.P_VALUES;
+        }
+        else
+        {
+            errorMessage.append(
+                "No option selected for edge weights. Using unweighted as default.\n");
+            _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+        }
+
+        // there is some error, tell the user
+        if (errorMessage.length() > 0)
+        {
+            errorMessage.append("Continue anyway?");
+            int choice =
+                JOptionPane.showConfirmDialog(null, errorMessage.toString());
+            if (choice != 0)
+            {
+                // quit if they say no or cancel
+                return false;
+            }
+        }
+
+        // TODO check if there are actually edge weights
+
+        // generates a list of the valid source/target nodes to be used in
+        // the graph
+        sourceNames.removeAll(sourcesNotInNet);
+        targetNames.removeAll(targetsNotInNet);
+        _sources = stringsToNodes(sourceNames);
+        _targets = stringsToNodes(targetNames);
+
+        // makes sure that we actually have valid sources and targets
+        if (_sources.size() == 0)
+        {
+            JOptionPane.showMessageDialog(
+                null,
+                "There are no valid sources to be used. Quitting...");
+            return false;
+        }
+        if (_targets.size() == 0)
+        {
+            JOptionPane.showMessageDialog(
+                null,
+                "There are no valid targets to be used. Quitting...");
+            return false;
+        }
+
+        // successful parsing
+        return true;
+    }
+
+
+    /**
+     * Initializes the edges that we are hiding from the algorithm. Doesn't
+     * actually remove the edges as that dominates runtime.
+     */
+    private void initializeHiddenEdges()
+    {
+        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
+
+        // hides all incoming edges to source nodes
+        for (CyNode source : _sources)
+        {
+            hiddenEdges.addAll(
+                _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
+        }
+        // hides all outgoing edges from target nodes
+        for (CyNode target : _targets)
+        {
+            hiddenEdges.addAll(
+                _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+        }
+
+        Algorithms.initializeHiddenEdges(hiddenEdges);
+    }
+
+
+    /**
+     * Sets the edge weights to be used in the algorithm. Doesn't actually set
+     * the weights as attributes because that dominates runtime.
+     */
+    private void setEdgeWeights()
+    {
+        HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
+
+        // TODO error checking if weighted but not all edges have weights
+
+        for (CyEdge edge : _network.getEdgeList())
+        {
+            // gets the attribute edge weight value
+            Double value =
+                _network.getRow(edge).get("edge_weight", Double.class);
+            double edge_weight = value != null ? value.doubleValue() : -44444;
+
+            if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
+            {
+                edgeWeights.put(edge, 1.);
+            }
+            else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            {
+                edgeWeights.put(edge, edge_weight);
+            }
+            else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+            {
+                edgeWeights.put(edge, 1. - edge_weight);
+            }
+        }
+
+        // log transforms the edge weights for both weighted options
+        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+        {
+            logTransformEdgeWeights(edgeWeights);
+        }
+
+        // sets the weights in the algorithms class
+        Algorithms.setEdgeWeights(edgeWeights);
+    }
+
+
+    /**
+     * Performs a log transformation on the supplied edges in place given a
+     * mapping from edges to their initial weights
+     *
+     * @param weights
+     *            the mapping from edges to their initial weights
+     */
+    private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights)
+    {
+        double sumWeight = 0.;
+
+        for (CyEdge edge : weights.keySet())
+        {
+            if (_hiddenEdges.contains(edge))
+                continue;
+
+            sumWeight += weights.get(edge);
+        }
+
+        for (CyEdge edge : weights.keySet())
+        {
+            if (_hiddenEdges.contains(edge))
+                continue;
+
+            double edge_weight = weights.get(edge);
+
+            double w =
+                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
+                    / Math.log(10);
+            weights.put(edge, w);
+        }
+    }
+
+
+    /**
+     * Adds a superSource and superTarget and attaches them to the sources and
+     * targets, respectively. Sets _superSource, _superTarget, and populates the
+     * list _superEdges, so they can be removed later.
+     */
+    private void addSuperNodes()
+    {
+        // sets up the super source/super target
+        _superSource = _network.addNode();
+        _superTarget = _network.addNode();
+        _superEdges = new HashSet<CyEdge>();
+
+        // attaches super source to all sources
+        for (CyNode source : _sources)
+        {
+            CyEdge superEdge = _network.addEdge(_superSource, source, true);
+
+            // sets an edge weight of 0, so the edges connecting the super nodes
+            // and the sources/targets don't affect the final path weights
+            Algorithms.setWeight(superEdge, 0.);
+            _superEdges.add(superEdge);
+        }
+        // attaches all targets to super target
+        for (CyNode target : _targets)
+        {
+            CyEdge superEdge = _network.addEdge(target, _superTarget, true);
+
+            // sets an edge weight of 0, so the edges connecting the super nodes
+            // and the sources/targets don't affect the final path weights
+            Algorithms.setWeight(superEdge, 0.);
+            _superEdges.add(superEdge);
+        }
+    }
+
+
+    /**
+     * Writes the ksp results to a table given the results from the ksp
+     * algorithm
+     *
+     * @param paths
+     *            a list of paths generated from the ksp algorithm
+     */
+    private void writeResults(ArrayList<Path> paths)
+    {
+        if (paths.size() == 0)
+        {
+            JOptionPane.showMessageDialog(null, "No paths found.");
+            return;
+        }
+
+        _table = _tableFactory.createTable(
+            "PathLinker ",
+            "Path index",
+            Integer.class,
+            true,
+            true);
+        // sets up the table
+        _table.createColumn("Path score", Double.class, false);
+        _table.createColumn("Path", String.class, false);
+        // adds the table to cytoscape
+        _applicationManager.setCurrentTable(_table);
+        _tableManager.addTable(_table);
+
+        // updates the table's values
+        for (int i = 0; i < paths.size(); i++)
+        {
+            // empty path; should never happen
+            if (paths.get(i).size() == 0)
+                continue;
+
+            CyRow row = _table.getRow(i + 1);
+
+            // builds the path string without supersource/supertarget [1,len-1]
+            StringBuilder currPath = new StringBuilder();
+            for (int j = 1; j < paths.get(i).size() - 1; j++)
+            {
+                currPath.append(
+                    _network.getRow(paths.get(i).get(j))
+                        .get(CyNetwork.NAME, String.class) + "|");
+            }
+            currPath.setLength(currPath.length() - 1);
+
+            // sets all the values
+            row.set("Path score", paths.get(i).weight);
+            row.set("Path", currPath.toString());
         }
     }
 
@@ -235,10 +597,12 @@ public class PathLinkerCytoPanel
     /**
      * Generates a subgraph of the user supplied graph that contains only the
      * nodes and edges that are in the k shortest paths
+     *
+     * @param paths
+     *            the list of paths generated by ksp algorithm
      */
     private void createKSPSubgraph(ArrayList<Path> paths)
     {
-        // TODO create another panel that takes in paths
         CyNetwork kspSubgraph = _networkFactory.createNetwork();
 
         HashSet<String> edgesAdded = new HashSet<String>();
@@ -264,15 +628,6 @@ public class PathLinkerCytoPanel
                 if (!nodesAdded.contains(node1Name))
                 {
                     CyNode added = kspSubgraph.addNode();
-
-// View<CyNode> nodeView = kspSubgraphView.getNodeView(added);
-// VisualProperty<?> temp = new NodeShapeVisualProperty(
-// NodeShapeVisualProperty.DIAMOND,
-// String.valueOf(id++),
-// node1Name,
-// CyNode.class);
-// nodeView.setVisualProperty(temp, (Object)NodeShapeVisualProperty.DIAMOND);
-
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
                     _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
@@ -301,13 +656,13 @@ public class PathLinkerCytoPanel
             }
         }
 
-        // TODO update view
+        // creates the new network and its view
         CyNetworkView kspSubgraphView =
             _networkViewFactory.createNetworkView(kspSubgraph);
         _networkManager.addNetwork(kspSubgraph);
         _networkViewManager.addNetworkView(kspSubgraphView);
 
-        // set node layout
+        // set node layout by applying the default layout algorithm
         CyLayoutAlgorithm algo =
             _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
         TaskIterator iter = algo.createTaskIterator(
@@ -322,321 +677,16 @@ public class PathLinkerCytoPanel
         _adapter.getVisualMappingManager().getVisualStyle(kspSubgraphView)
             .apply(kspSubgraphView);
         kspSubgraphView.updateView();
-
     }
-
-
-    private boolean prepareForKSP()
-    {
-        _network = _applicationManager.getCurrentNetwork();
-
-        _idToCyNode = new HashMap<String, CyNode>();
-        boolean success = populateIdToCyNode();
-        if (!success)
-        {
-            JOptionPane.showMessageDialog(
-                null,
-                "No current network. PathLinker cannot run without a network. Exiting...");
-            return false;
-        }
-
-        return true;
-    }
-
-
-    // TODO possible design for algorithm structure
-    // TODO - readValuesFromPanel()
-    // TODO - errorCheckValuesFromPanel() : return success
-    // TODO - prepareForKSP_removeSourceIncoming
-    // TODO - prepareForKSP_removeTargetOutgoing
-    // TODO - prepareForKSP_setEdgeWeights
-    // TODO - runKSP
-    // TODO - writePaths
-    // TODO - createKSPSubgraph
-
-    private void runKSP()
-    {
-        // grabs the values in the source and target text fields
-        String sourcesTextFieldValue = _sourcesTextField.getText();
-        String targetsTextFieldValue = _targetsTextField.getText();
-
-        // splits them by spaces
-        String[] rawSourceNames = sourcesTextFieldValue.split(" ");
-        String[] rawTargetNames = targetsTextFieldValue.split(" ");
-        ArrayList<String> sourceNames =
-            new ArrayList<String>(Arrays.asList(rawSourceNames));
-        ArrayList<String> targetNames =
-            new ArrayList<String>(Arrays.asList(rawTargetNames));
-
-        // stores the sources/targets that were inputted but are not actually in
-        // the network, may have been mistyped. Warns the user about them
-        ArrayList<String> sourcesNotInNet = new ArrayList<String>();
-        ArrayList<String> targetsNotInNet = new ArrayList<String>();
-
-        // checks for mistyped source/target names
-        for (String sourceName : sourceNames)
-        {
-            if (!_idToCyNode.containsKey(sourceName))
-            {
-                sourcesNotInNet.add(sourceName);
-            }
-        }
-        for (String targetName : targetNames)
-        {
-            if (!_idToCyNode.containsKey(targetName))
-            {
-                targetsNotInNet.add(targetName);
-            }
-        }
-
-        StringBuilder errorMessage = new StringBuilder();
-
-        if (sourcesNotInNet.size() + targetsNotInNet.size() > 0)
-        {
-            if (sourcesNotInNet.size() > 0)
-            {
-                errorMessage.append(
-                    "The sources " + sourcesNotInNet.toString()
-                        + " are not in the network.\n");
-            }
-            if (targetsNotInNet.size() > 0)
-            {
-                errorMessage.append(
-                    "The targets " + targetsNotInNet.toString()
-                        + " are not in the network.\n");
-            }
-        }
-
-        int k;
-        String kInput = _kTextField.getText();
-        try
-        {
-            k = Integer.parseInt(kInput);
-        }
-        catch (NumberFormatException exception)
-        {
-            errorMessage.append(
-                "Invalid number " + kInput
-                    + " entered for k. Using default k=5.\n");
-            k = 5;
-        }
-
-        // there is some error, tell the user
-        if (errorMessage.length() > 0)
-        {
-            errorMessage.append("Continue anyway?");
-            int choice =
-                JOptionPane.showConfirmDialog(null, errorMessage.toString());
-            if (choice != 0)
-            {
-                // quit if they say no or cancel
-                return;
-            }
-        }
-
-        sourceNames.removeAll(sourcesNotInNet);
-        targetNames.removeAll(targetsNotInNet);
-        ArrayList<CyNode> sources = stringsToNodes(sourceNames);
-        ArrayList<CyNode> targets = stringsToNodes(targetNames);
-
-        // TODO say something if there are no sources or no targets
-
-        if (_unweighted.isSelected())
-        {
-            _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
-        }
-        else if (_weightedProbabilities.isSelected())
-        {
-            _edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
-        }
-        else if (_weightedPValues.isSelected())
-        {
-            _edgeWeightSetting = EdgeWeightSetting.P_VALUES;
-        }
-        else
-        {
-            // TODO error check
-            JOptionPane.showMessageDialog(
-                null,
-                "No option selected for edge weights. Exiting...");
-            return;
-        }
-
-        _hiddenEdges = new HashSet<CyEdge>();
-
-        // hides all incoming edges to source nodes
-        for (CyNode source : sources)
-        {
-            _hiddenEdges.addAll(
-                _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
-        }
-        // hides all outgoing edges from target nodes
-        for (CyNode target : targets)
-        {
-            _hiddenEdges.addAll(
-                _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
-        }
-
-//        storeOldWeights();
-
-        prepareEdgesForKSP();
-
-        // sets up the super source/super target
-        CyNode superSource = _network.addNode();
-        CyNode superTarget = _network.addNode();
-        ArrayList<CyEdge> superEdges = new ArrayList<CyEdge>();
-
-        // attaches super source to all sources
-        for (CyNode source : sources)
-        {
-            CyEdge superEdge = _network.addEdge(superSource, source, true);
-
-            // sets an edge weight of 1 for the edges. in the weighted case,
-            // we do path.weight - 2 to account for the supersource->source and
-            // the target->supertarget. in the unweighted case we also do
-            // path.weight - 2 because we don't include those two edges.
-            // assigning an edge weight of 1 allows us to calculate the final
-            // weight the same way for both cases.
-            Algorithms.setWeight(superEdge, 0.);
-            superEdges.add(superEdge);
-        }
-        // attaches all targets to super target
-        for (CyNode target : targets)
-        {
-            CyEdge superEdge = _network.addEdge(target, superTarget, true);
-
-            // sets an edge weight of 1 for the edges. in the weighted case,
-            // we do path.weight - 2 to account for the supersource->source and
-            // the target->supertarget. in the unweighted case we also do
-            // path.weight - 2 because we don't include those two edges.
-            // assigning an edge weight of 1 allows us to calculate the final
-            // weight the same way for both cases.
-            Algorithms.setWeight(superEdge, 0.);
-            superEdges.add(superEdge);
-        }
-
-        long startTime = System.currentTimeMillis();
-
-        // runs the ksp
-        Algorithms.initializeHiddenEdges(_hiddenEdges);
-        ArrayList<Path> paths =
-            Algorithms.ksp(_network, superSource, superTarget, k);
-
-        long endTime = System.currentTimeMillis();
-
-        // removes supernodes and their edges
-        _network.removeEdges(superEdges);
-        _network.removeNodes(Arrays.asList(superSource, superTarget));
-
-        writeResults(paths);
-
-//        restoreOldWeights();
-
-        createKSPSubgraph(paths);
-
-        // notifies user of time taken
-        long totalTimeMs = endTime - startTime;
-        String timeMessage =
-            "PathLinker took " + totalTimeMs + " ms to execute";
-        JOptionPane.showMessageDialog(null, timeMessage);
-    }
-
-    private void prepareEdgesForKSP()
-    {
-        HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
-
-        // TODO error checking if weighted but not all edges have weights
-
-        for (CyEdge edge : _network.getEdgeList())
-        {
-            Double value = _network.getRow(edge).get("edge_weight", Double.class);
-            double edge_weight = value != null ? value.doubleValue() : -44444;
-
-            if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
-            {
-                edgeWeights.put(edge, 1.);
-            }
-            else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
-            {
-                edgeWeights.put(edge, edge_weight);
-            }
-            else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
-            {
-                edgeWeights.put(edge, 1. - edge_weight);
-            }
-        }
-
-        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
-        {
-            logTransformEdgeWeights(edgeWeights);
-        }
-
-        Algorithms.setEdgeWeights(edgeWeights);
-    }
-
-
-    private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights)
-    {
-        double sumWeight = 0.;
-
-        for (CyEdge edge : weights.keySet())
-        {
-            if (_hiddenEdges.contains(edge))
-                continue;
-
-            sumWeight += weights.get(edge);
-        }
-
-        for (CyEdge edge : weights.keySet())
-        {
-            if (_hiddenEdges.contains(edge))
-                continue;
-
-            double edge_weight = weights.get(edge);
-
-            double w =
-                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
-                    / Math.log(10);
-            weights.put(edge, w);
-        }
-    }
-//
-//    private void logTransformEdgeWeights()
-//    {
-//        double sumWeight = 0.;
-//
-//        for (CyEdge edge : _network.getEdgeList())
-//        {
-//            if (_hiddenEdges.contains(edge))
-//                continue;
-//
-//            double edge_weight = Algorithms.getWeight(_network, edge);
-//            if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
-//                edge_weight = 1 - edge_weight;
-//
-//            sumWeight += edge_weight;
-//        }
-//
-//        for (CyEdge edge : _network.getEdgeList())
-//        {
-//            if (_hiddenEdges.contains(edge))
-//                continue;
-//
-//            double edge_weight = Algorithms.getWeight(_network, edge);
-//            if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
-//                edge_weight = 1 - edge_weight;
-//
-//            double w =
-//                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
-//                    / Math.log(10);
-//            Algorithms.setWeight(_network, edge, w);
-//        }
-//    }
 
 
     /**
      * Converts an array of node names to a list of the actual corresponding
      * nodes
+     *
+     * @param names
+     *            the names of the nodes that we want
+     * @return a list of the actual node objects with the given names
      */
     private ArrayList<CyNode> stringsToNodes(ArrayList<String> names)
     {
@@ -655,55 +705,29 @@ public class PathLinkerCytoPanel
 
 
     /**
-     * Writes the ksp results to a table
+     * Populates idToCyNode, the map of node names to their objects
      */
-    private void writeResults(ArrayList<Path> paths)
+    private boolean populateIdToCyNode()
     {
-        if (paths.size() == 0)
+        _network = _applicationManager.getCurrentNetwork();
+        _idToCyNode = new HashMap<String, CyNode>();
+
+        if (_network == null)
         {
-            JOptionPane.showMessageDialog(null, "No paths found.");
-            return;
+            JOptionPane.showMessageDialog(
+                null,
+                "No current network. PathLinker cannot run without a network. Exiting...");
+            return false;
         }
 
-        _table = _tableFactory.createTable(
-            "PathLinker ",
-            "Path index",
-            Integer.class,
-            true,
-            true);
-        // sets up the table
-        // table.createColumn("k", Integer.class, false);
-        _table.createColumn("Path score", Double.class, false);
-        _table.createColumn("Path", String.class, false);
-        // adds the table to cytoscape
-        _applicationManager.setCurrentTable(_table);
-        _tableManager.addTable(_table);
-
-        // updates the table's values
-        for (int i = 0; i < paths.size(); i++)
+        for (CyNode node : _network.getNodeList())
         {
-            // empty path; should never happen
-            if (paths.get(i).size() == 0)
-                continue;
-
-            CyRow row = _table.getRow(i + 1);
-
-            // builds the path string without supersource/supertarget [1,len-1]
-            StringBuilder currPath = new StringBuilder();
-            for (int j = 1; j < paths.get(i).size() - 1; j++)
-            {
-                currPath.append(
-                    _network.getRow(paths.get(i).get(j))
-                        .get(CyNetwork.NAME, String.class) + "|");
-            }
-            currPath.setLength(currPath.length() - 1);
-
-            // sets all the values
-// row.set("k", i + 1);
-
-            row.set("Path score", paths.get(i).weight);
-            row.set("Path", currPath.toString());
+            String nodeName =
+                _network.getRow(node).get(CyNetwork.NAME, String.class);
+            _idToCyNode.put(nodeName, node);
         }
+
+        return true;
     }
 
 
@@ -779,25 +803,6 @@ public class PathLinkerCytoPanel
         this.add(_submitButton, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
-    }
-
-
-    /**
-     * Populates idToCyNode, the map of node names to their objects
-     */
-    private boolean populateIdToCyNode()
-    {
-        if (_network == null)
-            return false;
-
-        for (CyNode node : _network.getNodeList())
-        {
-            String nodeName =
-                _network.getRow(node).get(CyNetwork.NAME, String.class);
-            _idToCyNode.put(nodeName, node);
-        }
-
-        return true;
     }
 
 
