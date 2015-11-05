@@ -1,21 +1,34 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.PathLinkerCytoPanel.PanelState;
-import java.awt.Container;
 import java.awt.event.ActionEvent;
-import java.util.Properties;
-import javax.swing.JOptionPane;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelComponent;
-import org.osgi.framework.BundleContext;
 
-public class OpenPathLinkerMenuAction extends AbstractCyAction
+/**
+ * // -------------------------------------------------------------------------
+ * /** Menu option to open the PathLinker plugin
+ *
+ * @author Daniel
+ * @version Nov 4, 2015
+ */
+public class OpenPathLinkerMenuAction
+    extends AbstractCyAction
 {
     private PathLinkerCytoPanel _panel;
 
-    public OpenPathLinkerMenuAction(PathLinkerCytoPanel panel, CyApplicationManager applicationManager)
+
+    /**
+     * Constructor for the menu option
+     *
+     * @param panel
+     *            the panel to be opened
+     * @param applicationManager
+     *            the application manager to add this option into the menu
+     */
+    public OpenPathLinkerMenuAction(
+        PathLinkerCytoPanel panel,
+        CyApplicationManager applicationManager)
     {
         super("Open", applicationManager, null, null);
         setPreferredMenu("Apps.PathLinker");
@@ -23,11 +36,13 @@ public class OpenPathLinkerMenuAction extends AbstractCyAction
         _panel = panel;
     }
 
+
     @Override
     public void actionPerformed(ActionEvent arg0)
     {
         openPanel();
     }
+
 
     private void openPanel()
     {
