@@ -710,9 +710,6 @@ public class Algorithms
             return -44444;
 
         return _edgeWeights.get(edge);
-
-// Double entry = network.getRow(edge).get("edge_weight", Double.class);
-// return entry != null ? entry.doubleValue() : 1;
     }
 
 

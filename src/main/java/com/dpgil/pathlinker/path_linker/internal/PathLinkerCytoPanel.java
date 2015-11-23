@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import org.cytoscape.app.CyAppAdapter;
@@ -45,6 +46,7 @@ public class PathLinkerCytoPanel
     private JTextField   _sourcesTextField;
     private JTextField   _targetsTextField;
     private JTextField   _kTextField;
+// private JTextField _messageField;
     private JButton      _submitButton;
     private ButtonGroup  _group;
     private JRadioButton _unweighted;
@@ -223,6 +225,8 @@ public class PathLinkerCytoPanel
 
     private void runKSP()
     {
+        long startTime = System.currentTimeMillis();
+
         boolean success;
 
         // populates a mapping from the name of a node to the actual node object
@@ -254,12 +258,28 @@ public class PathLinkerCytoPanel
         ArrayList<Path> result =
             Algorithms.ksp(_network, _superSource, _superTarget, _k);
 
+        // removes the superSource, superTarget, and edges associated
+        // with them
+        removeSuperNodes();
+
+        // "un log-transforms" the path scores in the weighted options
+        // as to undo the log transformations and leave the path scores
+        // in terms of the edge weights
+        normalizePathScores(result);
+
         // writes the result of the algorithm to a table
-        writeResults(result);
+        writeResult(result);
 
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
         createKSPSubgraph(result);
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+
+        JOptionPane.showMessageDialog(
+            null,
+            "PathLinker took " + totalTime + " ms to complete.");
     }
 
 
@@ -323,7 +343,7 @@ public class PathLinkerCytoPanel
         }
 
         // parses the value inputted for k
-        // if it is an invalid value, uses 5 by default and also appends the
+        // if it is an invalid value, uses 200 by default and also appends the
         // error to the error message
         String kInput = _kTextField.getText();
         try
@@ -334,8 +354,8 @@ public class PathLinkerCytoPanel
         {
             errorMessage.append(
                 "Invalid number " + kInput
-                    + " entered for k. Using default k=5.\n");
-            _k = 5;
+                    + " entered for k. Using default k=200.\n");
+            _k = 200;
         }
 
         if (_unweighted.isSelected())
@@ -363,6 +383,16 @@ public class PathLinkerCytoPanel
             errorMessage.append("Continue anyway?");
             int choice =
                 JOptionPane.showConfirmDialog(null, errorMessage.toString());
+            if (choice != 0)
+            {
+                // quit if they say no or cancel
+                return false;
+            }
+        }
+        else
+        {
+            String message = "No errors found. Press 'OK' to run PathLinker.";
+            int choice = JOptionPane.showConfirmDialog(null, message);
             if (choice != 0)
             {
                 // quit if they say no or cancel
@@ -406,22 +436,22 @@ public class PathLinkerCytoPanel
      */
     private void initializeHiddenEdges()
     {
-        HashSet<CyEdge> hiddenEdges = new HashSet<CyEdge>();
+        _hiddenEdges = new HashSet<CyEdge>();
 
         // hides all incoming edges to source nodes
         for (CyNode source : _sources)
         {
-            hiddenEdges.addAll(
+            _hiddenEdges.addAll(
                 _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
         }
         // hides all outgoing edges from target nodes
         for (CyNode target : _targets)
         {
-            hiddenEdges.addAll(
+            _hiddenEdges.addAll(
                 _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
         }
 
-        Algorithms.initializeHiddenEdges(hiddenEdges);
+        Algorithms.initializeHiddenEdges(_hiddenEdges);
     }
 
 
@@ -537,13 +567,55 @@ public class PathLinkerCytoPanel
 
 
     /**
+     * Removes the super source, super target, and all edges associated with
+     * these nodes to restore the network back to its original condition
+     */
+    private void removeSuperNodes()
+    {
+        _network.removeNodes(Arrays.asList(_superSource, _superTarget));
+        _network.removeEdges(_superEdges);
+    }
+
+
+    /**
+     * "un log-transforms" the path scores in the weighted options to undo the
+     * log transformations and leave the path scores in terms of the original
+     * edge weights
+     *
+     * @param paths
+     *            the list of paths from the ksp algorithm
+     */
+    private void normalizePathScores(ArrayList<Path> paths)
+    {
+        // weighted probabilities option sets the weight to 2 ^ (-weight)
+        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+        {
+            for (Path p : paths)
+            {
+                p.weight = Math.pow(2, -1 * p.weight);
+            }
+        }
+        // weighted p-values option sets the weight to 1 - 2 ^ (-weight)
+        else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+        {
+            for (Path p : paths)
+            {
+                p.weight = 1 - Math.pow(2, -1 * p.weight);
+            }
+        }
+
+        // don't have to do anything for unweighted option
+    }
+
+
+    /**
      * Writes the ksp results to a table given the results from the ksp
      * algorithm
      *
      * @param paths
      *            a list of paths generated from the ksp algorithm
      */
-    private void writeResults(ArrayList<Path> paths)
+    private void writeResult(ArrayList<Path> paths)
     {
         if (paths.size() == 0)
         {
@@ -600,6 +672,12 @@ public class PathLinkerCytoPanel
     private void createKSPSubgraph(ArrayList<Path> paths)
     {
         CyNetwork kspSubgraph = _networkFactory.createNetwork();
+        CyTable kspSubTable = kspSubgraph.getDefaultEdgeTable();
+        HashSet<String> seenColumns = new HashSet<String>();
+
+        // sets the network name
+        kspSubgraph.getRow(kspSubgraph)
+            .set(CyNetwork.NAME, "PathLinker subgraph");
 
         HashSet<String> edgesAdded = new HashSet<String>();
         HashSet<String> nodesAdded = new HashSet<String>();
@@ -621,6 +699,7 @@ public class PathLinkerCytoPanel
 
                 String edgeKey = node1Name + "|" + node2Name;
 
+                // adds a node if we haven't seen it yet
                 if (!nodesAdded.contains(node1Name))
                 {
                     CyNode added = kspSubgraph.addNode();
@@ -630,6 +709,7 @@ public class PathLinkerCytoPanel
                     subIdToCyNode.put(node1Name, added);
                 }
 
+                // adds the node if we haven't seen it yet
                 if (!nodesAdded.contains(node2Name))
                 {
                     CyNode added = kspSubgraph.addNode();
@@ -639,14 +719,48 @@ public class PathLinkerCytoPanel
                     subIdToCyNode.put(node2Name, added);
                 }
 
+                // adds the edge if we haven't seen it yet
                 if (!edgesAdded.contains(edgeKey))
                 {
+                    // adds the edge to the subgraph
                     CyNode a = subIdToCyNode.get(node1Name);
                     CyNode b = subIdToCyNode.get(node2Name);
-                    kspSubgraph.addEdge(a, b, true);
+                    CyEdge added = kspSubgraph.addEdge(a, b, true);
+                    CyRow addedRow = kspSubgraph.getRow(added);
 
+                    // selects the edge in the underlying network
                     CyEdge select = Algorithms.getEdge(_network, node1, node2);
-                    _network.getRow(select).set(CyNetwork.SELECTED, true);
+                    CyRow currRow = _network.getRow(select);
+                    currRow.set(CyNetwork.SELECTED, true);
+
+                    // gets the current edge attributes
+                    Map<String, Object> values = currRow.getAllValues();
+
+                    // updates the edge attributes for the new network
+                    for (String key : values.keySet())
+                    {
+                        // haven't seen this column yet
+                        // might need to create it in the new subgraph table
+                        if (!seenColumns.contains(key))
+                        {
+                            if (kspSubTable.getColumn(key) == null)
+                            {
+                                kspSubTable.createColumn(
+                                    key,
+                                    values.get(key).getClass(),
+                                    false);
+                            }
+
+                            seenColumns.add(key);
+                        }
+
+                        // sets the new edge attribute
+                        addedRow.set(key, values.get(key));
+                    }
+
+                    // makes sure the subnetwork edges aren't selected
+                    addedRow.set(CyNetwork.SELECTED, false);
+
                     edgesAdded.add(edgeKey);
                 }
             }
@@ -749,7 +863,7 @@ public class PathLinkerCytoPanel
                 _targetsTextField.getPreferredSize().height));
 
         _kLabel = new JLabel("k (# of paths)");
-        _kTextField = new JTextField(4);
+        _kTextField = new JTextField(7);
         _kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
         _group = new ButtonGroup();
