@@ -9,7 +9,7 @@ import org.cytoscape.application.swing.AbstractCyAction;
  * // -------------------------------------------------------------------------
  * /** Menu option to close the PathLinker plugin
  *
- * @author Daniel
+ * @author Daniel Gil
  * @version Nov 4, 2015
  */
 public class ClosePathLinkerMenuAction

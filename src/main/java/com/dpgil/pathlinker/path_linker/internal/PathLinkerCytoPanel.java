@@ -46,7 +46,6 @@ public class PathLinkerCytoPanel
     private JTextField   _sourcesTextField;
     private JTextField   _targetsTextField;
     private JTextField   _kTextField;
-// private JTextField _messageField;
     private JButton      _submitButton;
     private ButtonGroup  _group;
     private JRadioButton _unweighted;
@@ -225,8 +224,6 @@ public class PathLinkerCytoPanel
 
     private void runKSP()
     {
-        long startTime = System.currentTimeMillis();
-
         boolean success;
 
         // populates a mapping from the name of a node to the actual node object
@@ -267,19 +264,12 @@ public class PathLinkerCytoPanel
         // in terms of the edge weights
         normalizePathScores(result);
 
-        // writes the result of the algorithm to a table
-        writeResult(result);
-
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
         createKSPSubgraph(result);
 
-        long endTime = System.currentTimeMillis();
-        long totalTime = endTime - startTime;
-
-        JOptionPane.showMessageDialog(
-            null,
-            "PathLinker took " + totalTime + " ms to complete.");
+        // writes the result of the algorithm to a table
+        writeResult(result);
     }
 
 
@@ -392,12 +382,7 @@ public class PathLinkerCytoPanel
         else
         {
             String message = "No errors found. Press 'OK' to run PathLinker.";
-            int choice = JOptionPane.showConfirmDialog(null, message);
-            if (choice != 0)
-            {
-                // quit if they say no or cancel
-                return false;
-            }
+            JOptionPane.showMessageDialog(null, message);
         }
 
         // TODO check if there are actually edge weights
@@ -623,42 +608,47 @@ public class PathLinkerCytoPanel
             return;
         }
 
-        _table = _tableFactory.createTable(
-            "PathLinker ",
-            "Path index",
-            Integer.class,
-            true,
-            true);
-        // sets up the table
-        _table.createColumn("Path score", Double.class, false);
-        _table.createColumn("Path", String.class, false);
-        // adds the table to cytoscape
-        _applicationManager.setCurrentTable(_table);
-        _tableManager.addTable(_table);
+        ResultFrame resultFrame = new ResultFrame(_network, paths);
+        resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        resultFrame.setVisible(true);
+        resultFrame.setSize(500, 700);
 
-        // updates the table's values
-        for (int i = 0; i < paths.size(); i++)
-        {
-            // empty path; should never happen
-            if (paths.get(i).size() == 0)
-                continue;
-
-            CyRow row = _table.getRow(i + 1);
-
-            // builds the path string without supersource/supertarget [1,len-1]
-            StringBuilder currPath = new StringBuilder();
-            for (int j = 1; j < paths.get(i).size() - 1; j++)
-            {
-                currPath.append(
-                    _network.getRow(paths.get(i).get(j))
-                        .get(CyNetwork.NAME, String.class) + "|");
-            }
-            currPath.setLength(currPath.length() - 1);
-
-            // sets all the values
-            row.set("Path score", paths.get(i).weight);
-            row.set("Path", currPath.toString());
-        }
+//        _table = _tableFactory.createTable(
+//            "PathLinker ",
+//            "Path index",
+//            Integer.class,
+//            true,
+//            true);
+//        // sets up the table
+//        _table.createColumn("Path score", Double.class, false);
+//        _table.createColumn("Path", String.class, false);
+//        // adds the table to cytoscape
+//        _applicationManager.setCurrentTable(_table);
+//        _tableManager.addTable(_table);
+//
+//        // updates the table's values
+//        for (int i = 0; i < paths.size(); i++)
+//        {
+//            // empty path; should never happen
+//            if (paths.get(i).size() == 0)
+//                continue;
+//
+//            CyRow row = _table.getRow(i + 1);
+//
+//            // builds the path string without supersource/supertarget [1,len-1]
+//            StringBuilder currPath = new StringBuilder();
+//            for (int j = 1; j < paths.get(i).size() - 1; j++)
+//            {
+//                currPath.append(
+//                    _network.getRow(paths.get(i).get(j))
+//                        .get(CyNetwork.NAME, String.class) + "|");
+//            }
+//            currPath.setLength(currPath.length() - 1);
+//
+//            // sets all the values
+//            row.set("Path score", paths.get(i).weight);
+//            row.set("Path", currPath.toString());
+//        }
     }
 
 
@@ -676,8 +666,9 @@ public class PathLinkerCytoPanel
         HashSet<String> seenColumns = new HashSet<String>();
 
         // sets the network name
+        String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
         kspSubgraph.getRow(kspSubgraph)
-            .set(CyNetwork.NAME, "PathLinker subgraph");
+            .set(CyNetwork.NAME, subgraphName);
 
         HashSet<String> edgesAdded = new HashSet<String>();
         HashSet<String> nodesAdded = new HashSet<String>();
@@ -704,7 +695,7 @@ public class PathLinkerCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
-                    _network.getRow(node1).set(CyNetwork.SELECTED, true);
+//                    _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
                 }
@@ -714,7 +705,7 @@ public class PathLinkerCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
-                    _network.getRow(node2).set(CyNetwork.SELECTED, true);
+//                    _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
                 }
@@ -731,7 +722,7 @@ public class PathLinkerCytoPanel
                     // selects the edge in the underlying network
                     CyEdge select = Algorithms.getEdge(_network, node1, node2);
                     CyRow currRow = _network.getRow(select);
-                    currRow.set(CyNetwork.SELECTED, true);
+//                    currRow.set(CyNetwork.SELECTED, true);
 
                     // gets the current edge attributes
                     Map<String, Object> values = currRow.getAllValues();
