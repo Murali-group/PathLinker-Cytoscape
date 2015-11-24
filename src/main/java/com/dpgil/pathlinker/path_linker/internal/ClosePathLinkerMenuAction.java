@@ -1,6 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerCytoPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.awt.event.ActionEvent;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
@@ -15,7 +15,7 @@ import org.cytoscape.application.swing.AbstractCyAction;
 public class ClosePathLinkerMenuAction
     extends AbstractCyAction
 {
-    private static PathLinkerCytoPanel _panel;
+    private static PathLinkerPanel _panel;
 
 
     /**
@@ -27,7 +27,7 @@ public class ClosePathLinkerMenuAction
      *            the application manager to add this option into the menu
      */
     public ClosePathLinkerMenuAction(
-        PathLinkerCytoPanel panel,
+        PathLinkerPanel panel,
         CyApplicationManager applicationManager)
     {
         super("Close", applicationManager, null, null);

@@ -35,7 +35,7 @@ import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
 /** Panel for the PathLinker plugin */
-public class PathLinkerCytoPanel
+public class PathLinkerPanel
     extends JPanel
     implements CytoPanelComponent
 {
@@ -47,10 +47,13 @@ public class PathLinkerCytoPanel
     private JTextField   _targetsTextField;
     private JTextField   _kTextField;
     private JButton      _submitButton;
-    private ButtonGroup  _group;
+    private ButtonGroup  _weightedOptionGroup;
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
+    private ButtonGroup  _subgraphOptionGroup;
+    private JRadioButton _subgraph;
+    private JRadioButton _noSubgraph;
 
     /** Cytoscape classes for table management */
     private CyTableFactory _tableFactory;
@@ -95,6 +98,8 @@ public class PathLinkerCytoPanel
     private CyNode            _superTarget;
     /** The edges attached to super(source/target) to be removed after ksp */
     private HashSet<CyEdge>   _superEdges;
+    /** Whether or not to generate a subgraph */
+    private boolean           _generateSubgraph;
 
 
     private enum EdgeWeightSetting
@@ -156,7 +161,7 @@ public class PathLinkerCytoPanel
      * @param tableManager
      *            the table manager
      */
-    public PathLinkerCytoPanel(
+    public PathLinkerPanel(
         CyApplicationManager applicationManager,
         CyTableFactory tableFactory,
         CyTableManager tableManager)
@@ -266,7 +271,8 @@ public class PathLinkerCytoPanel
 
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
-        createKSPSubgraph(result);
+        if (_generateSubgraph)
+            createKSPSubgraph(result);
 
         // writes the result of the algorithm to a table
         writeResult(result);
@@ -365,6 +371,15 @@ public class PathLinkerCytoPanel
             errorMessage.append(
                 "No option selected for edge weights. Using unweighted as default.\n");
             _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+        }
+
+        if (_subgraph.isSelected())
+        {
+            _generateSubgraph = true;
+        }
+        else if (_noSubgraph.isSelected())
+        {
+            _generateSubgraph = false;
         }
 
         // there is some error, tell the user
@@ -613,42 +628,42 @@ public class PathLinkerCytoPanel
         resultFrame.setVisible(true);
         resultFrame.setSize(500, 700);
 
-//        _table = _tableFactory.createTable(
-//            "PathLinker ",
-//            "Path index",
-//            Integer.class,
-//            true,
-//            true);
-//        // sets up the table
-//        _table.createColumn("Path score", Double.class, false);
-//        _table.createColumn("Path", String.class, false);
-//        // adds the table to cytoscape
-//        _applicationManager.setCurrentTable(_table);
-//        _tableManager.addTable(_table);
+// _table = _tableFactory.createTable(
+// "PathLinker ",
+// "Path index",
+// Integer.class,
+// true,
+// true);
+// // sets up the table
+// _table.createColumn("Path score", Double.class, false);
+// _table.createColumn("Path", String.class, false);
+// // adds the table to cytoscape
+// _applicationManager.setCurrentTable(_table);
+// _tableManager.addTable(_table);
 //
-//        // updates the table's values
-//        for (int i = 0; i < paths.size(); i++)
-//        {
-//            // empty path; should never happen
-//            if (paths.get(i).size() == 0)
-//                continue;
+// // updates the table's values
+// for (int i = 0; i < paths.size(); i++)
+// {
+// // empty path; should never happen
+// if (paths.get(i).size() == 0)
+// continue;
 //
-//            CyRow row = _table.getRow(i + 1);
+// CyRow row = _table.getRow(i + 1);
 //
-//            // builds the path string without supersource/supertarget [1,len-1]
-//            StringBuilder currPath = new StringBuilder();
-//            for (int j = 1; j < paths.get(i).size() - 1; j++)
-//            {
-//                currPath.append(
-//                    _network.getRow(paths.get(i).get(j))
-//                        .get(CyNetwork.NAME, String.class) + "|");
-//            }
-//            currPath.setLength(currPath.length() - 1);
+// // builds the path string without supersource/supertarget [1,len-1]
+// StringBuilder currPath = new StringBuilder();
+// for (int j = 1; j < paths.get(i).size() - 1; j++)
+// {
+// currPath.append(
+// _network.getRow(paths.get(i).get(j))
+// .get(CyNetwork.NAME, String.class) + "|");
+// }
+// currPath.setLength(currPath.length() - 1);
 //
-//            // sets all the values
-//            row.set("Path score", paths.get(i).weight);
-//            row.set("Path", currPath.toString());
-//        }
+// // sets all the values
+// row.set("Path score", paths.get(i).weight);
+// row.set("Path", currPath.toString());
+// }
     }
 
 
@@ -667,8 +682,7 @@ public class PathLinkerCytoPanel
 
         // sets the network name
         String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
-        kspSubgraph.getRow(kspSubgraph)
-            .set(CyNetwork.NAME, subgraphName);
+        kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
 
         HashSet<String> edgesAdded = new HashSet<String>();
         HashSet<String> nodesAdded = new HashSet<String>();
@@ -695,7 +709,7 @@ public class PathLinkerCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
-//                    _network.getRow(node1).set(CyNetwork.SELECTED, true);
+// _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
                 }
@@ -705,7 +719,7 @@ public class PathLinkerCytoPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
-//                    _network.getRow(node2).set(CyNetwork.SELECTED, true);
+// _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
                 }
@@ -722,7 +736,7 @@ public class PathLinkerCytoPanel
                     // selects the edge in the underlying network
                     CyEdge select = Algorithms.getEdge(_network, node1, node2);
                     CyRow currRow = _network.getRow(select);
-//                    currRow.set(CyNetwork.SELECTED, true);
+// currRow.set(CyNetwork.SELECTED, true);
 
                     // gets the current edge attributes
                     Map<String, Object> values = currRow.getAllValues();
@@ -857,17 +871,24 @@ public class PathLinkerCytoPanel
         _kTextField = new JTextField(7);
         _kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
-        _group = new ButtonGroup();
-
+        _weightedOptionGroup = new ButtonGroup();
         _unweighted = new JRadioButton(
             "<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
         _weightedProbabilities = new JRadioButton(
             "<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
         _weightedPValues = new JRadioButton(
             "<html><b>Weighted, edge weights are p-values</b> - PathLinker will compute the k highest cost paths, where the cost is the product of (1 - p-value) for each edge in the path.</html>");
-        _group.add(_unweighted);
-        _group.add(_weightedProbabilities);
-        _group.add(_weightedPValues);
+        _weightedOptionGroup.add(_unweighted);
+        _weightedOptionGroup.add(_weightedProbabilities);
+        _weightedOptionGroup.add(_weightedPValues);
+
+        _subgraphOptionGroup = new ButtonGroup();
+        _subgraph = new JRadioButton(
+            "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>");
+        _noSubgraph = new JRadioButton(
+            "<html>Do not generate a subnetwork of the nodes/edges involved in the k paths</html>");
+        _subgraphOptionGroup.add(_subgraph);
+        _subgraphOptionGroup.add(_noSubgraph);
 
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
@@ -899,11 +920,23 @@ public class PathLinkerCytoPanel
         graphPanel.add(_weightedPValues);
         this.add(graphPanel);
 
+        JPanel subgraphPanel = new JPanel();
+        subgraphPanel
+            .setLayout(new BoxLayout(subgraphPanel, BoxLayout.PAGE_AXIS));
+        TitledBorder subgraphBorder =
+            BorderFactory.createTitledBorder("Output");
+        subgraphPanel.setBorder(subgraphBorder);
+        subgraphPanel.add(_subgraph);
+        subgraphPanel.add(_noSubgraph);
+        this.add(subgraphPanel);
+
         _submitButton = new JButton("Submit");
         _submitButton.addActionListener(new SubmitButtonListener());
         this.add(_submitButton, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
+        _subgraph.setSelected(true);
+
     }
 
 

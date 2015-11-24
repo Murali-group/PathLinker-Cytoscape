@@ -54,7 +54,7 @@ public class ResultFrame
 
         for (int i = 0; i < results.size(); i++)
         {
-            rowData[i][0] = i;
+            rowData[i][0] = i + 1;
             rowData[i][1] = results.get(i).weight;
             rowData[i][2] = pathAsString(results.get(i));
         }
@@ -82,12 +82,15 @@ public class ResultFrame
             new JTable(new NonEditableModel(rowData, columnNames));
 
         // fixes column widths
-//        TableColumn index = resultTable.getColumnModel().getColumn(0);
-//        index.setMaxWidth(index.getPreferredWidth() * 2);
-//        index.setResizable(true);
-//        TableColumn score = resultTable.getColumnModel().getColumn(1);
-//        score.setMaxWidth(score.getPreferredWidth());
-//        score.setResizable(true);
+        TableColumn index = resultTable.getColumnModel().getColumn(0);
+        index.setMaxWidth(100);
+
+        TableColumn score = resultTable.getColumnModel().getColumn(1);
+        score.setMinWidth(150);
+        score.setMaxWidth(200);
+
+        TableColumn path = resultTable.getColumnModel().getColumn(2);
+        path.setMinWidth(200);
 
         // table automatically resizes to fit path column
         resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);

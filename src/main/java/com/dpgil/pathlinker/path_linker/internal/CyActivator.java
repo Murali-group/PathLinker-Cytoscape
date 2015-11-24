@@ -4,7 +4,7 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerCytoPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -39,7 +39,7 @@ public class CyActivator
         CyTableManager tableManager = getService(context, CyTableManager.class);
 
         // initializes the panel with the necessary components
-        PathLinkerCytoPanel panel = new PathLinkerCytoPanel(
+        PathLinkerPanel panel = new PathLinkerPanel(
             cyApplicationManager,
             tableFactory,
             tableManager);
