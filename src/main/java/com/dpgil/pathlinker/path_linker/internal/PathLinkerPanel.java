@@ -27,6 +27,8 @@ import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.model.subnetwork.CyRootNetwork;
+import org.cytoscape.model.subnetwork.CySubNetwork;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -123,27 +125,31 @@ public class PathLinkerPanel
     /**
      * Sets the state of the panel (open or closed).
      *
-     * @param state
+     * @param newState
      *            the new state
      */
-    public void setPanelState(PanelState state)
+    public void setPanelState(PanelState newState)
     {
-        if (state == _state)
+        if (newState == _state)
             return;
 
-        if (state == PanelState.CLOSED)
+        if (newState == PanelState.CLOSED)
         {
             _state = PanelState.CLOSED;
             _parent.remove(this);
-            _closeAction.setEnabled(false);
-            _openAction.setEnabled(true);
+// _closeAction.setEnabled(false);
+// _closeAction.updateEnableState();
+// _openAction.setEnabled(true);
+// _openAction.updateEnableState();
         }
-        else if (state == PanelState.OPEN)
+        else if (newState == PanelState.OPEN)
         {
             _state = PanelState.OPEN;
             ((JTabbedPane)_parent).addTab(this.getTitle(), this);
-            _openAction.setEnabled(false);
-            _closeAction.setEnabled(true);
+// _openAction.setEnabled(false);
+// _openAction.updateEnableState();
+// _closeAction.setEnabled(true);
+// _closeAction.updateEnableState();
         }
 
         this.revalidate();
@@ -400,7 +406,22 @@ public class PathLinkerPanel
             JOptionPane.showMessageDialog(null, message);
         }
 
-        // TODO check if there are actually edge weights
+        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+        {
+            for (CyEdge edge : _network.getEdgeList())
+            {
+                Double value =
+                    _network.getRow(edge).get("edge_weight", Double.class);
+
+                if (value == null)
+                {
+                    JOptionPane.showMessageDialog(
+                        null,
+                        "Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
+                    return false;
+                }
+            }
+        }
 
         // generates a list of the valid source/target nodes to be used in
         // the graph
@@ -462,8 +483,6 @@ public class PathLinkerPanel
     private void setEdgeWeights()
     {
         HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
-
-        // TODO error checking if weighted but not all edges have weights
 
         for (CyEdge edge : _network.getEdgeList())
         {
@@ -676,7 +695,10 @@ public class PathLinkerPanel
      */
     private void createKSPSubgraph(ArrayList<Path> paths)
     {
-        CyNetwork kspSubgraph = _networkFactory.createNetwork();
+        // creates a new network in the same network collection
+        // as the original network
+        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+        CyNetwork kspSubgraph = root.addSubNetwork();
         CyTable kspSubTable = kspSubgraph.getDefaultEdgeTable();
         HashSet<String> seenColumns = new HashSet<String>();
 
