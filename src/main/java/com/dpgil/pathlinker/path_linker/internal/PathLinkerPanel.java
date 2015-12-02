@@ -20,13 +20,10 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.subnetwork.CyRootNetwork;
 import org.cytoscape.model.subnetwork.CySubNetwork;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
@@ -53,26 +50,14 @@ public class PathLinkerPanel
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
-    private JCheckBox _subgraphOption;
-//    private ButtonGroup  _subgraphOptionGroup;
-//    private JRadioButton _subgraph;
-//    private JRadioButton _noSubgraph;
-
-    /** Cytoscape classes for table management */
-    private CyTableFactory _tableFactory;
-    private CyTableManager _tableManager;
+    private JCheckBox    _subgraphOption;
 
     /** Cytoscape class for network and view management */
     private CyApplicationManager _applicationManager;
-    private CyNetworkFactory     _networkFactory;
     private CyNetworkManager     _networkManager;
     private CyNetworkViewFactory _networkViewFactory;
     private CyNetworkViewManager _networkViewManager;
     private CyAppAdapter         _adapter;
-
-    /** Menu options for PathLinker */
-    private OpenPathLinkerMenuAction  _openAction;
-    private ClosePathLinkerMenuAction _closeAction;
 
     /** Edges that we hide from the algorithm */
     private HashSet<CyEdge>         _hiddenEdges;
@@ -82,8 +67,6 @@ public class PathLinkerPanel
     private Container               _parent;
     /** The network to perform the algorithm on */
     private CyNetwork               _network;
-    /** The table to write the results of the algorithm to */
-    private CyTable                 _table;
     /** A mapping of the name of a node to the acutal node object */
     private HashMap<String, CyNode> _idToCyNode;
     /** State of the panel. Initially null b/c it isn't open or closed yet */
@@ -138,19 +121,11 @@ public class PathLinkerPanel
         {
             _state = PanelState.CLOSED;
             _parent.remove(this);
-// _closeAction.setEnabled(false);
-// _closeAction.updateEnableState();
-// _openAction.setEnabled(true);
-// _openAction.updateEnableState();
         }
         else if (newState == PanelState.OPEN)
         {
             _state = PanelState.OPEN;
             ((JTabbedPane)_parent).addTab(this.getTitle(), this);
-// _openAction.setEnabled(false);
-// _openAction.updateEnableState();
-// _closeAction.setEnabled(true);
-// _closeAction.updateEnableState();
         }
 
         this.revalidate();
@@ -159,23 +134,10 @@ public class PathLinkerPanel
 
 
     /**
-     * Constructor for the panel
-     *
-     * @param applicationManager
-     *            the application manager
-     * @param tableFactory
-     *            the table factory
-     * @param tableManager
-     *            the table manager
+     * Constructor for the panel Initializes the visual elements in the panel
      */
-    public PathLinkerPanel(
-        CyApplicationManager applicationManager,
-        CyTableFactory tableFactory,
-        CyTableManager tableManager)
+    public PathLinkerPanel()
     {
-        _applicationManager = applicationManager;
-        _tableFactory = tableFactory;
-        _tableManager = tableManager;
         initializePanelItems();
     }
 
@@ -184,8 +146,8 @@ public class PathLinkerPanel
      * Initializer for the panel to reduce the number of parameters in the
      * constructor
      *
-     * @param networkFactory
-     *            network factory
+     * @param applicationManager
+     *            application manager
      * @param networkManager
      *            network manager
      * @param networkViewFactory
@@ -194,27 +156,19 @@ public class PathLinkerPanel
      *            network view manager
      * @param adapter
      *            the cy application adapter
-     * @param openAction
-     *            the menu action to open PathLinker
-     * @param closeAction
-     *            the menu action to close PathLinkers
      */
     public void initialize(
-        CyNetworkFactory networkFactory,
+        CyApplicationManager applicationManager,
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
-        CyAppAdapter adapter,
-        OpenPathLinkerMenuAction openAction,
-        ClosePathLinkerMenuAction closeAction)
+        CyAppAdapter adapter)
     {
-        _networkFactory = networkFactory;
+        _applicationManager = applicationManager;
         _networkManager = networkManager;
         _networkViewFactory = networkViewFactory;
         _networkViewManager = networkViewManager;
         _adapter = adapter;
-        _openAction = openAction;
-        _closeAction = closeAction;
         _parent = this.getParent();
     }
 
@@ -540,7 +494,7 @@ public class PathLinkerPanel
 
             double edge_weight = weights.get(edge);
 
-//            double w = -1 * Math.log(edge_weight);
+// double w = -1 * Math.log(edge_weight);
             double w =
                 -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
                     / Math.log(10);
@@ -903,7 +857,9 @@ public class PathLinkerPanel
         _weightedOptionGroup.add(_weightedProbabilities);
         _weightedOptionGroup.add(_weightedPValues);
 
-        _subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>", true);
+        _subgraphOption = new JCheckBox(
+            "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
+            true);
 
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
@@ -949,7 +905,7 @@ public class PathLinkerPanel
         this.add(_submitButton, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
-//        _subgraph.setSelected(true);
+// _subgraph.setSelected(true);
 
     }
 

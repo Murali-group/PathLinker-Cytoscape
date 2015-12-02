@@ -16,7 +16,6 @@ public class OpenPathLinkerMenuAction
     extends AbstractCyAction
 {
     private PathLinkerPanel _panel;
-    private boolean         _isEnabled;
 
 
     /**
@@ -35,36 +34,13 @@ public class OpenPathLinkerMenuAction
         setPreferredMenu("Apps.PathLinker");
 
         _panel = panel;
-        _isEnabled = true;
-//        this.setEnabled(true);
-// this.updateEnableState();
     }
 
 
     @Override
     public void actionPerformed(ActionEvent arg0)
     {
-        openPanel();
-    }
-
-
-//    @Override
-//    public void setEnabled(boolean enable)
-//    {
-//        _isEnabled = enable;
-//// this.updateEnableState();
-//    }
-//
-//
-//    @Override
-//    public boolean isEnabled()
-//    {
-//        return _isEnabled;
-//    }
-
-
-    private void openPanel()
-    {
+        // opens the panel
         _panel.setPanelState(PanelState.OPEN);
     }
 }

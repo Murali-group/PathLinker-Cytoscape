@@ -16,7 +16,7 @@ public class ClosePathLinkerMenuAction
     extends AbstractCyAction
 {
     private static PathLinkerPanel _panel;
-    private boolean _isEnabled;
+
 
     /**
      * Constructor for the menu option
@@ -34,34 +34,13 @@ public class ClosePathLinkerMenuAction
         setPreferredMenu("Apps.PathLinker");
 
         _panel = panel;
-        _isEnabled = false;
-//        this.setEnabled(false);
-//        this.updateEnableState();
     }
 
 
     @Override
     public void actionPerformed(ActionEvent arg0)
     {
-        closePanel();
-    }
-
-//    @Override
-//    public void setEnabled(boolean enable)
-//    {
-//        _isEnabled = enable;
-////        this.updateEnableState();
-//    }
-//
-//    @Override
-//    public boolean isEnabled()
-//    {
-//        return _isEnabled;
-//    }
-
-
-    private void closePanel()
-    {
+        // closes the panel
         _panel.setPanelState(PanelState.CLOSED);
     }
 }

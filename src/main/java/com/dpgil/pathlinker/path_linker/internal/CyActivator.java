@@ -1,9 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
-import org.cytoscape.model.CyTableManager;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyTableFactory;
 import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
@@ -33,18 +30,8 @@ public class CyActivator
         CyApplicationManager cyApplicationManager =
             getService(context, CyApplicationManager.class);
 
-        // grabs the table factory and manager from the bundle context
-        // so they can be passed to the panel
-        CyTableFactory tableFactory = getService(context, CyTableFactory.class);
-        CyTableManager tableManager = getService(context, CyTableManager.class);
-
         // initializes the panel with the necessary components
-        PathLinkerPanel panel = new PathLinkerPanel(
-            cyApplicationManager,
-            tableFactory,
-            tableManager);
-        CyNetworkFactory networkFactory =
-            getService(context, CyNetworkFactory.class);
+        PathLinkerPanel panel = new PathLinkerPanel();
         CyNetworkManager networkManager =
             getService(context, CyNetworkManager.class);
         CyNetworkViewFactory networkViewFactory =
@@ -68,13 +55,11 @@ public class CyActivator
 
         // intializes panel
         panel.initialize(
-            networkFactory,
+            cyApplicationManager,
             networkManager,
             networkViewFactory,
             networkViewManager,
-            adapter,
-            oplaction,
-            cplaction);
+            adapter);
 
         // starts off the panel in a closed state
         panel.setPanelState(PanelState.CLOSED);
