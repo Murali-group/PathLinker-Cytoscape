@@ -91,6 +91,13 @@ public class PathLinkerPanel
 
     private CyNetworkFactory _networkFactory;
 
+    private HashSet<String> _sourceNames;
+    private HashSet<String> _targetNames;
+
+    private final int DEFAULT_NODE = 0;
+    private final int SOURCE_NODE = 1;
+    private final int TARGET_NODE = 2;
+
 
     private enum EdgeWeightSetting
     {
@@ -107,6 +114,14 @@ public class PathLinkerPanel
         CLOSED,
         /** The panel is visible */
         OPEN
+    };
+
+
+    private enum NodeStatus
+    {
+        NONE,
+        SOURCE,
+        TARGET
     };
 
 
@@ -271,10 +286,12 @@ public class PathLinkerPanel
         // splits the names by spaces
         String[] rawSourceNames = sourcesTextFieldValue.split(" ");
         String[] rawTargetNames = targetsTextFieldValue.split(" ");
-        ArrayList<String> sourceNames =
-            new ArrayList<String>(Arrays.asList(rawSourceNames));
-        ArrayList<String> targetNames =
-            new ArrayList<String>(Arrays.asList(rawTargetNames));
+//        ArrayList<String> sourceNames =
+//            new ArrayList<String>(Arrays.asList(rawSourceNames));
+//        ArrayList<String> targetNames =
+//            new ArrayList<String>(Arrays.asList(rawTargetNames));
+        _sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
+        _targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
 
         // stores the sources/targets that were inputted but are not actually in
         // the network, may have been mistyped
@@ -282,12 +299,12 @@ public class PathLinkerPanel
         ArrayList<String> targetsNotInNet = new ArrayList<String>();
 
         // checks for mistyped source/target names
-        for (String sourceName : sourceNames)
+        for (String sourceName : _sourceNames)
         {
             if (!_idToCyNode.containsKey(sourceName))
                 sourcesNotInNet.add(sourceName);
         }
-        for (String targetName : targetNames)
+        for (String targetName : _targetNames)
         {
             if (!_idToCyNode.containsKey(targetName))
                 targetsNotInNet.add(targetName);
@@ -384,10 +401,10 @@ public class PathLinkerPanel
 
         // generates a list of the valid source/target nodes to be used in
         // the graph
-        sourceNames.removeAll(sourcesNotInNet);
-        targetNames.removeAll(targetsNotInNet);
-        _sources = stringsToNodes(sourceNames);
-        _targets = stringsToNodes(targetNames);
+        _sourceNames.removeAll(sourcesNotInNet);
+        _targetNames.removeAll(targetsNotInNet);
+        _sources = stringsToNodes(_sourceNames);
+        _targets = stringsToNodes(_targetNames);
 
         // makes sure that we actually have valid sources and targets
         if (_sources.size() == 0)
@@ -660,8 +677,12 @@ public class PathLinkerPanel
 //        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
 //        CyNetwork kspSubgraph = root.addSubNetwork();
         CyNetwork kspSubgraph = _networkFactory.createNetwork();
-        CyTable kspSubTable = kspSubgraph.getDefaultEdgeTable();
+        CyTable kspSubNodeTable = kspSubgraph.getDefaultNodeTable();
+        CyTable kspSubEdgeTable = kspSubgraph.getDefaultEdgeTable();
         HashSet<String> seenColumns = new HashSet<String>();
+
+        // create new node status column
+        kspSubNodeTable.createColumn("node_status", Integer.class, true, DEFAULT_NODE);
 
         // sets the network name
         String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
@@ -692,6 +713,12 @@ public class PathLinkerPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
+
+                    if (_sourceNames.contains(node1Name))
+                        kspSubgraph.getRow(added).set("node_status", SOURCE_NODE);
+                    else if (_targetNames.contains(node1Name))
+                        kspSubgraph.getRow(added).set("node_status", TARGET_NODE);
+
 // _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
@@ -702,6 +729,12 @@ public class PathLinkerPanel
                 {
                     CyNode added = kspSubgraph.addNode();
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
+
+                    if (_sourceNames.contains(node2Name))
+                        kspSubgraph.getRow(added).set("node_status", SOURCE_NODE);
+                    else if (_targetNames.contains(node2Name))
+                        kspSubgraph.getRow(added).set("node_status", TARGET_NODE);
+
 // _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
@@ -731,9 +764,9 @@ public class PathLinkerPanel
                         // might need to create it in the new subgraph table
                         if (!seenColumns.contains(key))
                         {
-                            if (kspSubTable.getColumn(key) == null)
+                            if (kspSubEdgeTable.getColumn(key) == null)
                             {
-                                kspSubTable.createColumn(
+                                kspSubEdgeTable.createColumn(
                                     key,
                                     values.get(key).getClass(),
                                     false);
@@ -786,7 +819,7 @@ public class PathLinkerPanel
      *            the names of the nodes that we want
      * @return a list of the actual node objects with the given names
      */
-    private ArrayList<CyNode> stringsToNodes(ArrayList<String> names)
+    private ArrayList<CyNode> stringsToNodes(HashSet<String> names)
     {
         ArrayList<CyNode> nodes = new ArrayList<CyNode>();
 
