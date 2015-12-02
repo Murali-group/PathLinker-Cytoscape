@@ -20,6 +20,7 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -86,6 +87,9 @@ public class PathLinkerPanel
     private HashSet<CyEdge>   _superEdges;
     /** Whether or not to generate a subgraph */
     private boolean           _generateSubgraph;
+
+
+    private CyNetworkFactory _networkFactory;
 
 
     private enum EdgeWeightSetting
@@ -159,6 +163,7 @@ public class PathLinkerPanel
      */
     public void initialize(
         CyApplicationManager applicationManager,
+        CyNetworkFactory networkFactory,
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
@@ -170,6 +175,8 @@ public class PathLinkerPanel
         _networkViewManager = networkViewManager;
         _adapter = adapter;
         _parent = this.getParent();
+
+        _networkFactory = networkFactory;
     }
 
 
@@ -650,8 +657,9 @@ public class PathLinkerPanel
     {
         // creates a new network in the same network collection
         // as the original network
-        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
-        CyNetwork kspSubgraph = root.addSubNetwork();
+//        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+//        CyNetwork kspSubgraph = root.addSubNetwork();
+        CyNetwork kspSubgraph = _networkFactory.createNetwork();
         CyTable kspSubTable = kspSubgraph.getDefaultEdgeTable();
         HashSet<String> seenColumns = new HashSet<String>();
 

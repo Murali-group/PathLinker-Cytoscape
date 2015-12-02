@@ -1,5 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
+import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
@@ -32,6 +33,7 @@ public class CyActivator
 
         // initializes the panel with the necessary components
         PathLinkerPanel panel = new PathLinkerPanel();
+        CyNetworkFactory networkFactory = getService(context, CyNetworkFactory.class);
         CyNetworkManager networkManager =
             getService(context, CyNetworkManager.class);
         CyNetworkViewFactory networkViewFactory =
@@ -56,6 +58,7 @@ public class CyActivator
         // intializes panel
         panel.initialize(
             cyApplicationManager,
+            networkFactory,
             networkManager,
             networkViewFactory,
             networkViewManager,
