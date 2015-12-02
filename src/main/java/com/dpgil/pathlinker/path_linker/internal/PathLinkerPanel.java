@@ -53,9 +53,10 @@ public class PathLinkerPanel
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
-    private ButtonGroup  _subgraphOptionGroup;
-    private JRadioButton _subgraph;
-    private JRadioButton _noSubgraph;
+    private JCheckBox _subgraphOption;
+//    private ButtonGroup  _subgraphOptionGroup;
+//    private JRadioButton _subgraph;
+//    private JRadioButton _noSubgraph;
 
     /** Cytoscape classes for table management */
     private CyTableFactory _tableFactory;
@@ -233,6 +234,10 @@ public class PathLinkerPanel
     }
 
 
+    /**
+     * Main driving method for the KSP algorithm Makes all the calls for
+     * preprocessing and displaying the results
+     */
     private void runKSP()
     {
         boolean success;
@@ -379,14 +384,7 @@ public class PathLinkerPanel
             _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
         }
 
-        if (_subgraph.isSelected())
-        {
-            _generateSubgraph = true;
-        }
-        else if (_noSubgraph.isSelected())
-        {
-            _generateSubgraph = false;
-        }
+        _generateSubgraph = _subgraphOption.isSelected();
 
         // there is some error, tell the user
         if (errorMessage.length() > 0)
@@ -542,6 +540,7 @@ public class PathLinkerPanel
 
             double edge_weight = weights.get(edge);
 
+//            double w = -1 * Math.log(edge_weight);
             double w =
                 -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
                     / Math.log(10);
@@ -904,13 +903,7 @@ public class PathLinkerPanel
         _weightedOptionGroup.add(_weightedProbabilities);
         _weightedOptionGroup.add(_weightedPValues);
 
-        _subgraphOptionGroup = new ButtonGroup();
-        _subgraph = new JRadioButton(
-            "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>");
-        _noSubgraph = new JRadioButton(
-            "<html>Do not generate a subnetwork of the nodes/edges involved in the k paths</html>");
-        _subgraphOptionGroup.add(_subgraph);
-        _subgraphOptionGroup.add(_noSubgraph);
+        _subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>", true);
 
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
@@ -948,8 +941,7 @@ public class PathLinkerPanel
         TitledBorder subgraphBorder =
             BorderFactory.createTitledBorder("Output");
         subgraphPanel.setBorder(subgraphBorder);
-        subgraphPanel.add(_subgraph);
-        subgraphPanel.add(_noSubgraph);
+        subgraphPanel.add(_subgraphOption);
         this.add(subgraphPanel);
 
         _submitButton = new JButton("Submit");
@@ -957,7 +949,7 @@ public class PathLinkerPanel
         this.add(_submitButton, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
-        _subgraph.setSelected(true);
+//        _subgraph.setSelected(true);
 
     }
 
