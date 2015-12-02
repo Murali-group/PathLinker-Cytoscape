@@ -2,9 +2,11 @@ package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -31,6 +33,14 @@ import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
+import org.cytoscape.view.presentation.property.values.NodeShape;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyle;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
+import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
@@ -88,15 +98,18 @@ public class PathLinkerPanel
     /** Whether or not to generate a subgraph */
     private boolean           _generateSubgraph;
 
-
     private CyNetworkFactory _networkFactory;
 
     private HashSet<String> _sourceNames;
     private HashSet<String> _targetNames;
 
     private final int DEFAULT_NODE = 0;
-    private final int SOURCE_NODE = 1;
-    private final int TARGET_NODE = 2;
+    private final int SOURCE_NODE  = 1;
+    private final int TARGET_NODE  = 2;
+
+    private VisualMappingManager         _visualMappingManager;
+    private VisualStyleFactory           _visualStyleFactory;
+    private VisualMappingFunctionFactory _visualMappingFunctionFactory;
 
 
     private enum EdgeWeightSetting
@@ -182,7 +195,10 @@ public class PathLinkerPanel
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
-        CyAppAdapter adapter)
+        CyAppAdapter adapter,
+        VisualMappingManager visualMappingManager,
+        VisualStyleFactory visualStyleFactory,
+        VisualMappingFunctionFactory visualMappingFunctionFactory)
     {
         _applicationManager = applicationManager;
         _networkManager = networkManager;
@@ -192,6 +208,10 @@ public class PathLinkerPanel
         _parent = this.getParent();
 
         _networkFactory = networkFactory;
+
+        _visualMappingManager = visualMappingManager;
+        _visualStyleFactory = visualStyleFactory;
+        _visualMappingFunctionFactory = visualMappingFunctionFactory;
     }
 
 
@@ -286,10 +306,10 @@ public class PathLinkerPanel
         // splits the names by spaces
         String[] rawSourceNames = sourcesTextFieldValue.split(" ");
         String[] rawTargetNames = targetsTextFieldValue.split(" ");
-//        ArrayList<String> sourceNames =
-//            new ArrayList<String>(Arrays.asList(rawSourceNames));
-//        ArrayList<String> targetNames =
-//            new ArrayList<String>(Arrays.asList(rawTargetNames));
+// ArrayList<String> sourceNames =
+// new ArrayList<String>(Arrays.asList(rawSourceNames));
+// ArrayList<String> targetNames =
+// new ArrayList<String>(Arrays.asList(rawTargetNames));
         _sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
         _targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
 
@@ -674,15 +694,16 @@ public class PathLinkerPanel
     {
         // creates a new network in the same network collection
         // as the original network
-//        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
-//        CyNetwork kspSubgraph = root.addSubNetwork();
-        CyNetwork kspSubgraph = _networkFactory.createNetwork();
+ CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+ CyNetwork kspSubgraph = root.addSubNetwork();
+//        CyNetwork kspSubgraph = _networkFactory.createNetwork();
         CyTable kspSubNodeTable = kspSubgraph.getDefaultNodeTable();
         CyTable kspSubEdgeTable = kspSubgraph.getDefaultEdgeTable();
         HashSet<String> seenColumns = new HashSet<String>();
 
         // create new node status column
-        kspSubNodeTable.createColumn("node_status", Integer.class, true, DEFAULT_NODE);
+        kspSubNodeTable
+            .createColumn("node_status", Integer.class, true, DEFAULT_NODE);
 
         // sets the network name
         String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
@@ -715,9 +736,11 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
 
                     if (_sourceNames.contains(node1Name))
-                        kspSubgraph.getRow(added).set("node_status", SOURCE_NODE);
+                        kspSubgraph.getRow(added)
+                            .set("node_status", SOURCE_NODE);
                     else if (_targetNames.contains(node1Name))
-                        kspSubgraph.getRow(added).set("node_status", TARGET_NODE);
+                        kspSubgraph.getRow(added)
+                            .set("node_status", TARGET_NODE);
 
 // _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
@@ -731,9 +754,11 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
 
                     if (_sourceNames.contains(node2Name))
-                        kspSubgraph.getRow(added).set("node_status", SOURCE_NODE);
+                        kspSubgraph.getRow(added)
+                            .set("node_status", SOURCE_NODE);
                     else if (_targetNames.contains(node2Name))
-                        kspSubgraph.getRow(added).set("node_status", TARGET_NODE);
+                        kspSubgraph.getRow(added)
+                            .set("node_status", TARGET_NODE);
 
 // _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
@@ -792,6 +817,34 @@ public class PathLinkerPanel
             _networkViewFactory.createNetworkView(kspSubgraph);
         _networkManager.addNetwork(kspSubgraph);
         _networkViewManager.addNetworkView(kspSubgraphView);
+
+        // sets the visual aspects of the subnetwork
+        VisualStyle cvs = _visualMappingManager.getCurrentVisualStyle();
+
+        DiscreteMapping<Integer, Paint> colorMapping =
+            (DiscreteMapping<Integer, Paint>)_visualMappingFunctionFactory
+                .createVisualMappingFunction(
+                    "node_status",
+                    Integer.class,
+                    BasicVisualLexicon.NODE_FILL_COLOR);
+        colorMapping.putMapValue(SOURCE_NODE, Color.CYAN);
+        colorMapping.putMapValue(TARGET_NODE, Color.GREEN);
+        cvs.addVisualMappingFunction(colorMapping);
+
+        DiscreteMapping<Integer, NodeShape> shapeMapping =
+            (DiscreteMapping<Integer, NodeShape>)_visualMappingFunctionFactory
+                .createVisualMappingFunction(
+                    "node_status",
+                    Integer.class,
+                    BasicVisualLexicon.NODE_SHAPE);
+        shapeMapping.putMapValue(SOURCE_NODE, NodeShapeVisualProperty.DIAMOND);
+        shapeMapping
+            .putMapValue(TARGET_NODE, NodeShapeVisualProperty.ROUND_RECTANGLE);
+        cvs.addVisualMappingFunction(shapeMapping);
+
+        _visualMappingManager.setCurrentVisualStyle(cvs);
+        cvs.apply(kspSubgraphView);
+        kspSubgraphView.updateView();
 
         // set node layout by applying the default layout algorithm
         CyLayoutAlgorithm algo =

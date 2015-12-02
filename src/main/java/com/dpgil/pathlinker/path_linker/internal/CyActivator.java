@@ -10,6 +10,9 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -47,6 +50,11 @@ public class CyActivator
             CytoPanelComponent.class,
             new Properties());
 
+        // visual stuff
+        VisualMappingManager visualMappingManager = getService(context, VisualMappingManager.class);
+        VisualStyleFactory visualStyleFactory = getService(context, VisualStyleFactory.class);
+        VisualMappingFunctionFactory visualMappingFunctionFactory = getService(context, VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
+
         // sets up the pathlinker open and close menu options
         OpenPathLinkerMenuAction oplaction =
             new OpenPathLinkerMenuAction(panel, cyApplicationManager);
@@ -62,7 +70,10 @@ public class CyActivator
             networkManager,
             networkViewFactory,
             networkViewManager,
-            adapter);
+            adapter,
+            visualMappingManager,
+            visualStyleFactory,
+            visualMappingFunctionFactory);
 
         // starts off the panel in a closed state
         panel.setPanelState(PanelState.CLOSED);
