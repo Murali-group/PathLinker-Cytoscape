@@ -682,6 +682,7 @@ public class PathLinkerPanel
 // }
     }
 
+    private final String NODE_STATUS = "node_status";
 
     /**
      * Generates a subgraph of the user supplied graph that contains only the
@@ -694,16 +695,16 @@ public class PathLinkerPanel
     {
         // creates a new network in the same network collection
         // as the original network
- CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
- CyNetwork kspSubgraph = root.addSubNetwork();
-//        CyNetwork kspSubgraph = _networkFactory.createNetwork();
-        CyTable kspSubNodeTable = kspSubgraph.getDefaultNodeTable();
+        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+        CyNetwork kspSubgraph = root.addSubNetwork();
+        CyTable kspSubNodeTable = kspSubgraph.getTable(CyNode.class, CyNetwork.LOCAL_ATTRS);
+//        CyTable kspSubNodeTable = kspSubgraph.getTable(CyNode.class, CyNetwork.HIDDEN_ATTRS);
         CyTable kspSubEdgeTable = kspSubgraph.getDefaultEdgeTable();
         HashSet<String> seenColumns = new HashSet<String>();
 
         // create new node status column
         kspSubNodeTable
-            .createColumn("node_status", Integer.class, true, DEFAULT_NODE);
+            .createColumn(NODE_STATUS, Integer.class, true, DEFAULT_NODE);
 
         // sets the network name
         String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
@@ -736,13 +737,12 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
 
                     if (_sourceNames.contains(node1Name))
-                        kspSubgraph.getRow(added)
-                            .set("node_status", SOURCE_NODE);
+                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS */)
+                            .set(NODE_STATUS, SOURCE_NODE);
                     else if (_targetNames.contains(node1Name))
-                        kspSubgraph.getRow(added)
-                            .set("node_status", TARGET_NODE);
+                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
+                            .set(NODE_STATUS, TARGET_NODE);
 
-// _network.getRow(node1).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
                 }
@@ -754,13 +754,12 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
 
                     if (_sourceNames.contains(node2Name))
-                        kspSubgraph.getRow(added)
-                            .set("node_status", SOURCE_NODE);
+                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
+                            .set(NODE_STATUS, SOURCE_NODE);
                     else if (_targetNames.contains(node2Name))
-                        kspSubgraph.getRow(added)
-                            .set("node_status", TARGET_NODE);
+                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
+                            .set(NODE_STATUS, TARGET_NODE);
 
-// _network.getRow(node2).set(CyNetwork.SELECTED, true);
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
                 }
@@ -777,7 +776,6 @@ public class PathLinkerPanel
                     // selects the edge in the underlying network
                     CyEdge select = Algorithms.getEdge(_network, node1, node2);
                     CyRow currRow = _network.getRow(select);
-// currRow.set(CyNetwork.SELECTED, true);
 
                     // gets the current edge attributes
                     Map<String, Object> values = currRow.getAllValues();
@@ -824,7 +822,7 @@ public class PathLinkerPanel
         DiscreteMapping<Integer, Paint> colorMapping =
             (DiscreteMapping<Integer, Paint>)_visualMappingFunctionFactory
                 .createVisualMappingFunction(
-                    "node_status",
+                    NODE_STATUS,
                     Integer.class,
                     BasicVisualLexicon.NODE_FILL_COLOR);
         colorMapping.putMapValue(SOURCE_NODE, Color.CYAN);
@@ -834,7 +832,7 @@ public class PathLinkerPanel
         DiscreteMapping<Integer, NodeShape> shapeMapping =
             (DiscreteMapping<Integer, NodeShape>)_visualMappingFunctionFactory
                 .createVisualMappingFunction(
-                    "node_status",
+                    NODE_STATUS,
                     Integer.class,
                     BasicVisualLexicon.NODE_SHAPE);
         shapeMapping.putMapValue(SOURCE_NODE, NodeShapeVisualProperty.DIAMOND);
