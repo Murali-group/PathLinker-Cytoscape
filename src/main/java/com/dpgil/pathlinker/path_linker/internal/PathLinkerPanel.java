@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -33,14 +31,9 @@ import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
-import org.cytoscape.view.presentation.property.values.NodeShape;
-import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualMappingManager;
-import org.cytoscape.view.vizmap.VisualStyle;
-import org.cytoscape.view.vizmap.VisualStyleFactory;
-import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
@@ -62,6 +55,7 @@ public class PathLinkerPanel
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
     private JCheckBox    _subgraphOption;
+    private JLabel _runningMessage;
 
     /** Cytoscape class for network and view management */
     private CyApplicationManager _applicationManager;
@@ -98,18 +92,8 @@ public class PathLinkerPanel
     /** Whether or not to generate a subgraph */
     private boolean           _generateSubgraph;
 
-    private CyNetworkFactory _networkFactory;
-
     private HashSet<String> _sourceNames;
     private HashSet<String> _targetNames;
-
-    private final int DEFAULT_NODE = 0;
-    private final int SOURCE_NODE  = 1;
-    private final int TARGET_NODE  = 2;
-
-    private VisualMappingManager         _visualMappingManager;
-    private VisualStyleFactory           _visualStyleFactory;
-    private VisualMappingFunctionFactory _visualMappingFunctionFactory;
 
 
     private enum EdgeWeightSetting
@@ -127,14 +111,6 @@ public class PathLinkerPanel
         CLOSED,
         /** The panel is visible */
         OPEN
-    };
-
-
-    private enum NodeStatus
-    {
-        NONE,
-        SOURCE,
-        TARGET
     };
 
 
@@ -191,14 +167,10 @@ public class PathLinkerPanel
      */
     public void initialize(
         CyApplicationManager applicationManager,
-        CyNetworkFactory networkFactory,
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
-        CyAppAdapter adapter,
-        VisualMappingManager visualMappingManager,
-        VisualStyleFactory visualStyleFactory,
-        VisualMappingFunctionFactory visualMappingFunctionFactory)
+        CyAppAdapter adapter)
     {
         _applicationManager = applicationManager;
         _networkManager = networkManager;
@@ -206,12 +178,6 @@ public class PathLinkerPanel
         _networkViewManager = networkViewManager;
         _adapter = adapter;
         _parent = this.getParent();
-
-        _networkFactory = networkFactory;
-
-        _visualMappingManager = visualMappingManager;
-        _visualStyleFactory = visualStyleFactory;
-        _visualMappingFunctionFactory = visualMappingFunctionFactory;
     }
 
 
@@ -227,6 +193,16 @@ public class PathLinkerPanel
         {
             runKSP();
         }
+    }
+
+    private void showRunningMessage()
+    {
+        _runningMessage.setVisible(true);
+    }
+
+    private void hideRunningMessage()
+    {
+        _runningMessage.setVisible(false);
     }
 
 
@@ -276,6 +252,8 @@ public class PathLinkerPanel
         // in terms of the edge weights
         normalizePathScores(result);
 
+//        hideRunningMessage();
+
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
         if (_generateSubgraph)
@@ -306,10 +284,7 @@ public class PathLinkerPanel
         // splits the names by spaces
         String[] rawSourceNames = sourcesTextFieldValue.split(" ");
         String[] rawTargetNames = targetsTextFieldValue.split(" ");
-// ArrayList<String> sourceNames =
-// new ArrayList<String>(Arrays.asList(rawSourceNames));
-// ArrayList<String> targetNames =
-// new ArrayList<String>(Arrays.asList(rawTargetNames));
+
         _sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
         _targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
 
@@ -398,6 +373,7 @@ public class PathLinkerPanel
         }
         else
         {
+//            showRunningMessage();
             String message = "No errors found. Press 'OK' to run PathLinker.";
             JOptionPane.showMessageDialog(null, message);
         }
@@ -643,46 +619,7 @@ public class PathLinkerPanel
         resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         resultFrame.setVisible(true);
         resultFrame.setSize(500, 700);
-
-// _table = _tableFactory.createTable(
-// "PathLinker ",
-// "Path index",
-// Integer.class,
-// true,
-// true);
-// // sets up the table
-// _table.createColumn("Path score", Double.class, false);
-// _table.createColumn("Path", String.class, false);
-// // adds the table to cytoscape
-// _applicationManager.setCurrentTable(_table);
-// _tableManager.addTable(_table);
-//
-// // updates the table's values
-// for (int i = 0; i < paths.size(); i++)
-// {
-// // empty path; should never happen
-// if (paths.get(i).size() == 0)
-// continue;
-//
-// CyRow row = _table.getRow(i + 1);
-//
-// // builds the path string without supersource/supertarget [1,len-1]
-// StringBuilder currPath = new StringBuilder();
-// for (int j = 1; j < paths.get(i).size() - 1; j++)
-// {
-// currPath.append(
-// _network.getRow(paths.get(i).get(j))
-// .get(CyNetwork.NAME, String.class) + "|");
-// }
-// currPath.setLength(currPath.length() - 1);
-//
-// // sets all the values
-// row.set("Path score", paths.get(i).weight);
-// row.set("Path", currPath.toString());
-// }
     }
-
-    private final String NODE_STATUS = "node_status";
 
     /**
      * Generates a subgraph of the user supplied graph that contains only the
@@ -697,23 +634,29 @@ public class PathLinkerPanel
         // as the original network
         CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
         CyNetwork kspSubgraph = root.addSubNetwork();
-        CyTable kspSubNodeTable = kspSubgraph.getTable(CyNode.class, CyNetwork.LOCAL_ATTRS);
-//        CyTable kspSubNodeTable = kspSubgraph.getTable(CyNode.class, CyNetwork.HIDDEN_ATTRS);
         CyTable kspSubEdgeTable = kspSubgraph.getDefaultEdgeTable();
+
+        // keeps track of columns added so it only adds new columns once each
         HashSet<String> seenColumns = new HashSet<String>();
 
-        // create new node status column
-        kspSubNodeTable
-            .createColumn(NODE_STATUS, Integer.class, true, DEFAULT_NODE);
+        // keeps track of nodes/edges added to only add each once
+        // nodes/edges will be repeated since we go through all paths
+        HashSet<String> edgesAdded = new HashSet<String>();
+        HashSet<String> nodesAdded = new HashSet<String>();
 
         // sets the network name
         String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
         kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
 
-        HashSet<String> edgesAdded = new HashSet<String>();
-        HashSet<String> nodesAdded = new HashSet<String>();
-
+        // keeps track of node names to their objects
+        // used when creating an edge between two nodes when
+        // we only have the names of the two nodes
         HashMap<String, CyNode> subIdToCyNode = new HashMap<String, CyNode>();
+
+        // keeps track of sources/targets in the ksp subgraph
+        // to change their visual properties later
+        ArrayList<CyNode> sources = new ArrayList<CyNode>();
+        ArrayList<CyNode> targets = new ArrayList<CyNode>();
 
         for (Path currPath : paths)
         {
@@ -737,11 +680,9 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
 
                     if (_sourceNames.contains(node1Name))
-                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS */)
-                            .set(NODE_STATUS, SOURCE_NODE);
-                    else if (_targetNames.contains(node1Name))
-                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
-                            .set(NODE_STATUS, TARGET_NODE);
+                        sources.add(added);
+                    if (_targetNames.contains(node1Name))
+                        targets.add(added);
 
                     nodesAdded.add(node1Name);
                     subIdToCyNode.put(node1Name, added);
@@ -754,11 +695,9 @@ public class PathLinkerPanel
                     kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
 
                     if (_sourceNames.contains(node2Name))
-                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
-                            .set(NODE_STATUS, SOURCE_NODE);
-                    else if (_targetNames.contains(node2Name))
-                        kspSubgraph.getRow(added/*, CyNetwork.HIDDEN_ATTRS*/)
-                            .set(NODE_STATUS, TARGET_NODE);
+                        sources.add(added);
+                    if (_targetNames.contains(node2Name))
+                        targets.add(added);
 
                     nodesAdded.add(node2Name);
                     subIdToCyNode.put(node2Name, added);
@@ -816,33 +755,19 @@ public class PathLinkerPanel
         _networkManager.addNetwork(kspSubgraph);
         _networkViewManager.addNetworkView(kspSubgraphView);
 
-        // sets the visual aspects of the subnetwork
-        VisualStyle cvs = _visualMappingManager.getCurrentVisualStyle();
-
-        DiscreteMapping<Integer, Paint> colorMapping =
-            (DiscreteMapping<Integer, Paint>)_visualMappingFunctionFactory
-                .createVisualMappingFunction(
-                    NODE_STATUS,
-                    Integer.class,
-                    BasicVisualLexicon.NODE_FILL_COLOR);
-        colorMapping.putMapValue(SOURCE_NODE, Color.CYAN);
-        colorMapping.putMapValue(TARGET_NODE, Color.GREEN);
-        cvs.addVisualMappingFunction(colorMapping);
-
-        DiscreteMapping<Integer, NodeShape> shapeMapping =
-            (DiscreteMapping<Integer, NodeShape>)_visualMappingFunctionFactory
-                .createVisualMappingFunction(
-                    NODE_STATUS,
-                    Integer.class,
-                    BasicVisualLexicon.NODE_SHAPE);
-        shapeMapping.putMapValue(SOURCE_NODE, NodeShapeVisualProperty.DIAMOND);
-        shapeMapping
-            .putMapValue(TARGET_NODE, NodeShapeVisualProperty.ROUND_RECTANGLE);
-        cvs.addVisualMappingFunction(shapeMapping);
-
-        _visualMappingManager.setCurrentVisualStyle(cvs);
-        cvs.apply(kspSubgraphView);
-        kspSubgraphView.updateView();
+        // use a visual bypass to color the sources and targets
+        for (CyNode source : sources)
+        {
+            View<CyNode> currView = kspSubgraphView.getNodeView(source);
+            currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
+            currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
+        }
+        for (CyNode target : targets)
+        {
+            View<CyNode> currView = kspSubgraphView.getNodeView(target);
+            currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
+            currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN);
+        }
 
         // set node layout by applying the default layout algorithm
         CyLayoutAlgorithm algo =
@@ -953,6 +878,8 @@ public class PathLinkerPanel
             "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
             true);
 
+        _runningMessage = new JLabel("PathLinker is running...");
+
         JPanel sourceTargetPanel = new JPanel();
         sourceTargetPanel
             .setLayout(new BoxLayout(sourceTargetPanel, BoxLayout.PAGE_AXIS));
@@ -996,9 +923,11 @@ public class PathLinkerPanel
         _submitButton.addActionListener(new SubmitButtonListener());
         this.add(_submitButton, BorderLayout.SOUTH);
 
-        _unweighted.setSelected(true);
-// _subgraph.setSelected(true);
+        _runningMessage.setForeground(Color.BLUE);
+        _runningMessage.setVisible(false);
+        this.add(_runningMessage, BorderLayout.SOUTH);
 
+        _unweighted.setSelected(true);
     }
 
 
