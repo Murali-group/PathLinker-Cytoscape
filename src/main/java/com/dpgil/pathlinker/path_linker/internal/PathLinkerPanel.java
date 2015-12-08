@@ -55,7 +55,7 @@ public class PathLinkerPanel
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
     private JCheckBox    _subgraphOption;
-    private JLabel _runningMessage;
+    private JLabel       _runningMessage;
 
     /** Cytoscape class for network and view management */
     private CyApplicationManager _applicationManager;
@@ -185,24 +185,64 @@ public class PathLinkerPanel
     class SubmitButtonListener
         implements ActionListener
     {
+        boolean status = true;
+
+
         /**
          * Responds to a click of the submit button in the pathlinker jpanel
          */
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            runKSP();
+            prepareAndRunKSP();
         }
     }
+
+
+    private void prepareAndRunKSP()
+    {
+        showRunningMessage();
+
+        // calls invoke later to wait for the gui (mainly the
+        // "PathLinker is running..." message) to update before
+        // ksp is actually run. necessary due to the multi-threaded
+        // nature of java swing gui
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run()
+            {
+                runKSP();
+            }
+        });
+
+        // calls invoke later for similar reasons to the above
+        // we don't want to remove the running message until
+        // we show the results panel. if we don't use invokeLater
+        // the running message will be removed as soon as it's added
+        // and we'll never see the message
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run()
+            {
+                hideRunningMessage();
+            }
+        });
+    }
+
 
     private void showRunningMessage()
     {
         _runningMessage.setVisible(true);
+        _runningMessage.setForeground(Color.BLUE);
+        add(_runningMessage, BorderLayout.SOUTH);
+        repaint();
+        revalidate();
     }
+
 
     private void hideRunningMessage()
     {
-        _runningMessage.setVisible(false);
+        remove(_runningMessage);
+        repaint();
+        revalidate();
     }
 
 
@@ -251,8 +291,6 @@ public class PathLinkerPanel
         // as to undo the log transformations and leave the path scores
         // in terms of the edge weights
         normalizePathScores(result);
-
-//        hideRunningMessage();
 
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
@@ -370,12 +408,6 @@ public class PathLinkerPanel
                 // quit if they say no or cancel
                 return false;
             }
-        }
-        else
-        {
-//            showRunningMessage();
-            String message = "No errors found. Press 'OK' to run PathLinker.";
-            JOptionPane.showMessageDialog(null, message);
         }
 
         if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
@@ -621,6 +653,7 @@ public class PathLinkerPanel
         resultFrame.setSize(500, 700);
     }
 
+
     /**
      * Generates a subgraph of the user supplied graph that contains only the
      * nodes and edges that are in the k shortest paths
@@ -759,14 +792,21 @@ public class PathLinkerPanel
         for (CyNode source : sources)
         {
             View<CyNode> currView = kspSubgraphView.getNodeView(source);
-            currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
-            currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
+            currView.setLockedValue(
+                BasicVisualLexicon.NODE_SHAPE,
+                NodeShapeVisualProperty.DIAMOND);
+            currView
+                .setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
         }
         for (CyNode target : targets)
         {
             View<CyNode> currView = kspSubgraphView.getNodeView(target);
-            currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
-            currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.GREEN);
+            currView.setLockedValue(
+                BasicVisualLexicon.NODE_SHAPE,
+                NodeShapeVisualProperty.RECTANGLE);
+            currView.setLockedValue(
+                BasicVisualLexicon.NODE_FILL_COLOR,
+                Color.GREEN);
         }
 
         // set node layout by applying the default layout algorithm
@@ -925,7 +965,7 @@ public class PathLinkerPanel
 
         _runningMessage.setForeground(Color.BLUE);
         _runningMessage.setVisible(false);
-        this.add(_runningMessage, BorderLayout.SOUTH);
+// this.add(_runningMessage, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
     }
