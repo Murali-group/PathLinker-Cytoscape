@@ -203,28 +203,44 @@ public class PathLinkerPanel
     {
         showRunningMessage();
 
-        // calls invoke later to wait for the gui (mainly the
-        // "PathLinker is running..." message) to update before
-        // ksp is actually run. necessary due to the multi-threaded
-        // nature of java swing gui
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run()
-            {
-                runKSP();
-            }
-        });
+//        SwingUtilities.invokeLater(new Runnable()
+//            {
+//                public void run()
+//                {
+//                    runKSP();
+//                }
+//            });
+//
+//        SwingUtilities.invokeLater(new Runnable()
+//            {
+//                public void run()
+//                {
+//                    hideRunningMessage();
+//                }
+//            });
 
-        // calls invoke later for similar reasons to the above
-        // we don't want to remove the running message until
-        // we show the results panel. if we don't use invokeLater
-        // the running message will be removed as soon as it's added
-        // and we'll never see the message
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run()
+        // this looks extremely stupid, but is very important.
+        // due to the multi-threaded nature of the swing gui, if
+        // this were simply runKSP() and then hideRunningMessage(), java
+        // would assign a thread to the hideRunningMessage and we would
+        // never see the "PathLinker is running..." message. By adding
+        // the if else we force the program to wait on the result of
+        // runKSP and thus peforming these events in the order we want
+        SwingUtilities.invokeLater(new Runnable()
             {
-                hideRunningMessage();
-            }
-        });
+                public void run()
+                {
+                    if (runKSP())
+                    {
+                        hideRunningMessage();
+                    }
+                    else
+                    {
+                        hideRunningMessage();
+                    }
+                }
+            });
+
     }
 
 
@@ -250,7 +266,7 @@ public class PathLinkerPanel
      * Main driving method for the KSP algorithm Makes all the calls for
      * preprocessing and displaying the results
      */
-    private void runKSP()
+    private boolean runKSP()
     {
         boolean success;
 
@@ -259,13 +275,13 @@ public class PathLinkerPanel
         // named _idToCyNode. is unsuccessful if there is no network
         success = populateIdToCyNode();
         if (!success)
-            return;
+            return false;
 
         // reads the raw values from the panel and converts them into useful
         // objects to be used in the algorithms
         success = readValuesFromPanel();
         if (!success)
-            return;
+            return false;
 
         // "removes" the edges that are incoming to source nodes and outgoing
         // from target nodes
@@ -299,6 +315,8 @@ public class PathLinkerPanel
 
         // writes the result of the algorithm to a table
         writeResult(result);
+
+        return true;
     }
 
 
@@ -885,14 +903,14 @@ public class PathLinkerPanel
     {
         this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        _sourcesLabel = new JLabel("Sources separated by spaces ex. S1 S2 S3");
+        _sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
         _sourcesTextField = new JTextField(20);
         _sourcesTextField.setMaximumSize(
             new Dimension(
                 Integer.MAX_VALUE,
                 _sourcesTextField.getPreferredSize().height));
 
-        _targetsLabel = new JLabel("Targets separated by spaces ex. T1 T2 T3");
+        _targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
         _targetsTextField = new JTextField(20);
         _targetsTextField.setMaximumSize(
             new Dimension(
