@@ -54,6 +54,7 @@ public class PathLinkerPanel
     private JRadioButton _unweighted;
     private JRadioButton _weightedProbabilities;
     private JRadioButton _weightedPValues;
+    private JRadioButton _weightedAdditive;
     private JCheckBox    _subgraphOption;
     private JLabel       _runningMessage;
 
@@ -100,7 +101,8 @@ public class PathLinkerPanel
     {
         UNWEIGHTED,
         PROBABILITIES,
-        P_VALUES
+        P_VALUES,
+        ADDITIVE
     };
 
 
@@ -185,9 +187,6 @@ public class PathLinkerPanel
     class SubmitButtonListener
         implements ActionListener
     {
-        boolean status = true;
-
-
         /**
          * Responds to a click of the submit button in the pathlinker jpanel
          */
@@ -202,22 +201,6 @@ public class PathLinkerPanel
     private void prepareAndRunKSP()
     {
         showRunningMessage();
-
-//        SwingUtilities.invokeLater(new Runnable()
-//            {
-//                public void run()
-//                {
-//                    runKSP();
-//                }
-//            });
-//
-//        SwingUtilities.invokeLater(new Runnable()
-//            {
-//                public void run()
-//                {
-//                    hideRunningMessage();
-//                }
-//            });
 
         // this looks extremely stupid, but is very important.
         // due to the multi-threaded nature of the swing gui, if
@@ -406,6 +389,10 @@ public class PathLinkerPanel
         {
             _edgeWeightSetting = EdgeWeightSetting.P_VALUES;
         }
+        else if (_weightedAdditive.isSelected())
+        {
+            _edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
+        }
         else
         {
             errorMessage.append(
@@ -525,10 +512,15 @@ public class PathLinkerPanel
             {
                 edgeWeights.put(edge, 1. - edge_weight);
             }
+            else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+            {
+                edgeWeights.put(edge, edge_weight);
+            }
         }
 
         // log transforms the edge weights for both weighted options
-        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES ||
+            _edgeWeightSetting == EdgeWeightSetting.P_VALUES)
         {
             logTransformEdgeWeights(edgeWeights);
         }
@@ -646,7 +638,7 @@ public class PathLinkerPanel
             }
         }
 
-        // don't have to do anything for unweighted option
+        // don't have to do anything for unweighted or additive option
     }
 
 
@@ -928,9 +920,11 @@ public class PathLinkerPanel
             "<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
         _weightedPValues = new JRadioButton(
             "<html><b>Weighted, edge weights are p-values</b> - PathLinker will compute the k highest cost paths, where the cost is the product of (1 - p-value) for each edge in the path.</html>");
+        _weightedAdditive = new JRadioButton("<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k highest cost paths, where the cost is the sum of the edge weights.</html>");
         _weightedOptionGroup.add(_unweighted);
         _weightedOptionGroup.add(_weightedProbabilities);
         _weightedOptionGroup.add(_weightedPValues);
+        _weightedOptionGroup.add(_weightedAdditive);
 
         _subgraphOption = new JCheckBox(
             "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
@@ -966,6 +960,7 @@ public class PathLinkerPanel
         graphPanel.add(_unweighted);
         graphPanel.add(_weightedProbabilities);
         graphPanel.add(_weightedPValues);
+        graphPanel.add(_weightedAdditive);
         this.add(graphPanel);
 
         JPanel subgraphPanel = new JPanel();
@@ -983,7 +978,6 @@ public class PathLinkerPanel
 
         _runningMessage.setForeground(Color.BLUE);
         _runningMessage.setVisible(false);
-// this.add(_runningMessage, BorderLayout.SOUTH);
 
         _unweighted.setSelected(true);
     }
