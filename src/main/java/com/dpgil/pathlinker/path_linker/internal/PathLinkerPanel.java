@@ -52,9 +52,8 @@ public class PathLinkerPanel
     private JButton      _submitButton;
     private ButtonGroup  _weightedOptionGroup;
     private JRadioButton _unweighted;
-    private JRadioButton _weightedProbabilities;
-    private JRadioButton _weightedPValues;
     private JRadioButton _weightedAdditive;
+    private JRadioButton _weightedProbabilities;
     private JCheckBox    _subgraphOption;
     private JLabel       _runningMessage;
 
@@ -100,9 +99,8 @@ public class PathLinkerPanel
     private enum EdgeWeightSetting
     {
         UNWEIGHTED,
-        PROBABILITIES,
-        P_VALUES,
-        ADDITIVE
+        ADDITIVE,
+        PROBABILITIES
     };
 
 
@@ -381,17 +379,13 @@ public class PathLinkerPanel
         {
             _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
         }
-        else if (_weightedProbabilities.isSelected())
-        {
-            _edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
-        }
-        else if (_weightedPValues.isSelected())
-        {
-            _edgeWeightSetting = EdgeWeightSetting.P_VALUES;
-        }
         else if (_weightedAdditive.isSelected())
         {
             _edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
+        }
+        else if (_weightedProbabilities.isSelected())
+        {
+            _edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
         }
         else
         {
@@ -504,23 +498,18 @@ public class PathLinkerPanel
             {
                 edgeWeights.put(edge, 1.);
             }
-            else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
             {
                 edgeWeights.put(edge, edge_weight);
             }
-            else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
-            {
-                edgeWeights.put(edge, 1. - edge_weight);
-            }
-            else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+            else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
             {
                 edgeWeights.put(edge, edge_weight);
             }
         }
 
         // log transforms the edge weights for both weighted options
-        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES ||
-            _edgeWeightSetting == EdgeWeightSetting.P_VALUES)
+        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
         {
             logTransformEdgeWeights(edgeWeights);
         }
@@ -627,14 +616,6 @@ public class PathLinkerPanel
             for (Path p : paths)
             {
                 p.weight = Math.pow(2, -1 * p.weight);
-            }
-        }
-        // weighted p-values option sets the weight to 1 - 2 ^ (-weight)
-        else if (_edgeWeightSetting == EdgeWeightSetting.P_VALUES)
-        {
-            for (Path p : paths)
-            {
-                p.weight = 1 - Math.pow(2, -1 * p.weight);
             }
         }
 
@@ -816,7 +797,7 @@ public class PathLinkerPanel
                 NodeShapeVisualProperty.RECTANGLE);
             currView.setLockedValue(
                 BasicVisualLexicon.NODE_FILL_COLOR,
-                Color.GREEN);
+                Color.YELLOW);
         }
 
         // set node layout by applying the default layout algorithm
@@ -916,15 +897,12 @@ public class PathLinkerPanel
         _weightedOptionGroup = new ButtonGroup();
         _unweighted = new JRadioButton(
             "<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+        _weightedAdditive = new JRadioButton("<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
         _weightedProbabilities = new JRadioButton(
             "<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
-        _weightedPValues = new JRadioButton(
-            "<html><b>Weighted, edge weights are p-values</b> - PathLinker will compute the k highest cost paths, where the cost is the product of (1 - p-value) for each edge in the path.</html>");
-        _weightedAdditive = new JRadioButton("<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k highest cost paths, where the cost is the sum of the edge weights.</html>");
         _weightedOptionGroup.add(_unweighted);
-        _weightedOptionGroup.add(_weightedProbabilities);
-        _weightedOptionGroup.add(_weightedPValues);
         _weightedOptionGroup.add(_weightedAdditive);
+        _weightedOptionGroup.add(_weightedProbabilities);
 
         _subgraphOption = new JCheckBox(
             "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
@@ -958,9 +936,8 @@ public class PathLinkerPanel
             BorderFactory.createTitledBorder("Edge Weights");
         graphPanel.setBorder(graphBorder);
         graphPanel.add(_unweighted);
-        graphPanel.add(_weightedProbabilities);
-        graphPanel.add(_weightedPValues);
         graphPanel.add(_weightedAdditive);
+        graphPanel.add(_weightedProbabilities);
         this.add(graphPanel);
 
         JPanel subgraphPanel = new JPanel();
