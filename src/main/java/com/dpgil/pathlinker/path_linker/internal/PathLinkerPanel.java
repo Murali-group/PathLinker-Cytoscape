@@ -362,7 +362,7 @@ public class PathLinkerPanel
         // parses the value inputted for k
         // if it is an invalid value, uses 200 by default and also appends the
         // error to the error message
-        String kInput = _kTextField.getText();
+        String kInput = _kTextField.getText().trim();
         try
         {
             _k = Integer.parseInt(kInput);
