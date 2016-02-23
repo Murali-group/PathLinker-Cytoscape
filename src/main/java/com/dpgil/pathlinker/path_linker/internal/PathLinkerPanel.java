@@ -595,8 +595,10 @@ public class PathLinkerPanel
      */
     private void removeSuperNodes()
     {
-        _network.removeNodes(Arrays.asList(_superSource, _superTarget));
-        _network.removeEdges(_superEdges);
+        // removes node entries from the default node table
+        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+        root.removeNodes(Arrays.asList(_superSource, _superTarget));
+        root.removeEdges(_superEdges);
     }
 
 
