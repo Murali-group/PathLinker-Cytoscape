@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -91,6 +92,8 @@ public class PathLinkerPanel
     private HashSet<CyEdge>   _superEdges;
     /** Whether or not to generate a subgraph */
     private boolean           _generateSubgraph;
+
+    private boolean _allEdgesContainWeights = true;
 
     private HashSet<String> _sourceNames;
     private HashSet<String> _targetNames;
@@ -207,20 +210,19 @@ public class PathLinkerPanel
         // never see the "PathLinker is running..." message. By adding
         // the if else we force the program to wait on the result of
         // runKSP and thus peforming these events in the order we want
-        SwingUtilities.invokeLater(new Runnable()
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run()
             {
-                public void run()
+                if (runKSP())
                 {
-                    if (runKSP())
-                    {
-                        hideRunningMessage();
-                    }
-                    else
-                    {
-                        hideRunningMessage();
-                    }
+                    hideRunningMessage();
                 }
-            });
+                else
+                {
+                    hideRunningMessage();
+                }
+            }
+        });
 
     }
 
@@ -263,6 +265,11 @@ public class PathLinkerPanel
         success = readValuesFromPanel();
         if (!success)
             return false;
+
+        // treats multiple edges as one edge with a weight of the average of
+        // the multiple edges. this is done because pathlinker is not compatible
+        // with multigraphs
+        averageMultiEdges();
 
         // "removes" the edges that are incoming to source nodes and outgoing
         // from target nodes
@@ -409,14 +416,27 @@ public class PathLinkerPanel
             }
         }
 
-        if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+        // checks if all the edges in the graph have weights.
+        // if a weighted option was selected, but not all edges have weights
+        // then we say something to the user.
+        // we do this check for the unweighted option as well so in the case
+        // that we have to deal with multi edges, we know whether or not to
+        // average the weights or just delete the extra edges (see
+        // averageMultiEdges method)
+        for (CyEdge edge : _network.getEdgeList())
         {
-            for (CyEdge edge : _network.getEdgeList())
-            {
-                Double value =
-                    _network.getRow(edge).get("edge_weight", Double.class);
+            Double value =
+                _network.getRow(edge).get("edge_weight", Double.class);
 
-                if (value == null)
+            if (value == null)
+            {
+                // not all the edges have weights (i.e., at least one of the
+                // entries in the table is null)
+                _allEdgesContainWeights = false;
+
+                // only want to warn the user about not having all weighted
+                // edges if a weighted option is selected
+                if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
                 {
                     JOptionPane.showMessageDialog(
                         null,
@@ -451,6 +471,113 @@ public class PathLinkerPanel
 
         // successful parsing
         return true;
+    }
+
+
+    /**
+     * Treats multiple edges as one edge with a weight of the average of the
+     * multiple edges. This is done because pathlinker is not compatible with
+     * multigraphs
+     */
+    private void averageMultiEdges()
+    {
+        // maps one edge to all the other edges connecting the same
+        // source/target pair so we can go through afterwards and remove
+        // the extra edges
+        HashMap<CyEdge, List<CyEdge>> edgeToMulti =
+            new HashMap<CyEdge, List<CyEdge>>();
+
+        // keeps track of edges we've already visited so we don't
+        // store multiple (edge:extra) entries
+        HashSet<CyEdge> seenEdges = new HashSet<CyEdge>();
+
+        // populates the edgeToMulti hash map
+        for (CyEdge e : _network.getEdgeList())
+        {
+            // don't want to have multiple (edge:extra) entries
+            if (seenEdges.contains(e))
+                continue;
+
+            CyNode eSource = e.getSource();
+            CyNode eTarget = e.getTarget();
+
+            // stores all edges except e, all the "extra" edges
+            List<CyEdge> extraEdges = new ArrayList<CyEdge>();
+            // have to go through and filter the edges that connect
+            // src->target, because the getConnectingEdgeList method gives us
+            // any edges between source and target
+            for (CyEdge potentialExtraEdge : _network.getConnectingEdgeList(
+                e.getSource(),
+                e.getTarget(),
+                CyEdge.Type.DIRECTED))
+            {
+                // e doesn't count as an extra edge; it is the single edge
+                // that we want left
+                if (potentialExtraEdge.equals(e))
+                    continue;
+
+                // verifies the edges direction
+                if (potentialExtraEdge.getSource().equals(eSource)
+                    && potentialExtraEdge.getTarget().equals(eTarget))
+                {
+                    extraEdges.add(potentialExtraEdge);
+                }
+            }
+
+            // marks all edges as dealt with so we don't duplicate entries
+            // in the map. i.e. if we have edges A,B,C, we only want
+            // A: {B,C}. we don't want the other entries B: {C,A} and C: {A,B}
+            seenEdges.add(e);
+            seenEdges.addAll(extraEdges);
+
+            // no extra edges, we don't do anything
+            if (extraEdges.size() == 0)
+                continue;
+
+            // adds the (edge:extra) entry to the map
+            edgeToMulti.put(e, extraEdges);
+        }
+
+        // root network for removing nodes and edges
+        CyRootNetwork root = ((CySubNetwork)_network).getRootNetwork();
+
+        // for every (edge:extra) pair, we set edge's weight to the average
+        // of all the edges, and then remove the extra edges from the network
+        for (CyEdge e : edgeToMulti.keySet())
+        {
+            // if not all the edges contain weights, no point in averaging the
+            // edge weights, because we'll hit null entries in the edge table.
+            // so we just remove the extra edges
+            if (!_allEdgesContainWeights)
+            {
+                root.removeEdges(edgeToMulti.get(e));
+            }
+            // all the edges contain weights, so we should average the edge
+            // weights and transform this graph into one without multi edges
+            // regardless if it's unweighted or not. if the unweighted option
+            // is selected, it'll just treat that single edge as weight 1 anyway
+            else
+            {
+                double sumWeight = getNetworkTableWeight(e);
+                int edgeCount = 1;
+
+                List<CyEdge> extraEdges = edgeToMulti.get(e);
+                for (CyEdge extraEdge : extraEdges)
+                {
+                    sumWeight += getNetworkTableWeight(extraEdge);
+                    edgeCount++;
+                }
+
+                // averages the weights
+                double averageWeight = sumWeight / edgeCount;
+
+                // stores the new average weight as the table weight for e
+                setNetworkTableWeight(e, averageWeight);
+
+                // removes the extra edges from the graph that aren't e
+                root.removeEdges(extraEdges);
+            }
+        }
     }
 
 
@@ -521,7 +648,8 @@ public class PathLinkerPanel
 
     /**
      * Performs a log transformation on the supplied edges in place given a
-     * mapping from edges to their initial weights
+     * mapping from edges to their initial weights TODO do we still want to
+     * divide by sumWeight even though the python version no longer does it?
      *
      * @param weights
      *            the mapping from edges to their initial weights
@@ -878,14 +1006,16 @@ public class PathLinkerPanel
     {
         this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        _sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
+        _sourcesLabel =
+            new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
         _sourcesTextField = new JTextField(20);
         _sourcesTextField.setMaximumSize(
             new Dimension(
                 Integer.MAX_VALUE,
                 _sourcesTextField.getPreferredSize().height));
 
-        _targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
+        _targetsLabel =
+            new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
         _targetsTextField = new JTextField(20);
         _targetsTextField.setMaximumSize(
             new Dimension(
@@ -899,7 +1029,8 @@ public class PathLinkerPanel
         _weightedOptionGroup = new ButtonGroup();
         _unweighted = new JRadioButton(
             "<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
-        _weightedAdditive = new JRadioButton("<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+        _weightedAdditive = new JRadioButton(
+            "<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
         _weightedProbabilities = new JRadioButton(
             "<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
         _weightedOptionGroup.add(_unweighted);
@@ -959,6 +1090,29 @@ public class PathLinkerPanel
         _runningMessage.setVisible(false);
 
         _unweighted.setSelected(true);
+    }
+
+
+    /**
+     * Gets the edge weight value from the network table. Expensive operation,
+     * so we try to minimize how often we use this
+     */
+    private double getNetworkTableWeight(CyEdge e)
+    {
+        // gets the attribute edge weight value
+        Double value = _network.getRow(e).get("edge_weight", Double.class);
+        double edge_weight = value != null ? value.doubleValue() : -44444;
+
+        return edge_weight;
+    }
+
+
+    /**
+     * Sets the edge weight value in the network table
+     */
+    private void setNetworkTableWeight(CyEdge e, double weight)
+    {
+        _network.getRow(e).set("edge_weight", weight);
     }
 
 
