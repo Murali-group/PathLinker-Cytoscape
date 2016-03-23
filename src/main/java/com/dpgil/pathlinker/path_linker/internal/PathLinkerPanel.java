@@ -47,9 +47,11 @@ public class PathLinkerPanel
     private JLabel       _sourcesLabel;
     private JLabel       _targetsLabel;
     private JLabel       _kLabel;
+    private JLabel       _edgePenaltyLabel;
     private JTextField   _sourcesTextField;
     private JTextField   _targetsTextField;
     private JTextField   _kTextField;
+    private JTextField   _edgePenaltyTextField;
     private JButton      _submitButton;
     private ButtonGroup  _weightedOptionGroup;
     private JRadioButton _unweighted;
@@ -84,6 +86,8 @@ public class PathLinkerPanel
     private ArrayList<CyNode> _targets;
     /** The k value to be used in the algorithm */
     private int               _k;
+    /** The value by which to penalize each edge weight */
+    private double            _edgePenalty;
     /** The super source to call ksp with and removed after the algorithm */
     private CyNode            _superSource;
     /** The super target to call ksp with and removed after the algorithm */
@@ -294,7 +298,7 @@ public class PathLinkerPanel
         // "un log-transforms" the path scores in the weighted options
         // as to undo the log transformations and leave the path scores
         // in terms of the edge weights
-        normalizePathScores(result);
+        undoLogTransformPathLength(result);
 
         // generates a subgraph of the nodes and edges involved in the resulting
         // paths and displays it to the user
@@ -399,6 +403,50 @@ public class PathLinkerPanel
             errorMessage.append(
                 "No option selected for edge weights. Using unweighted as default.\n");
             _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+        }
+
+        // parses the value inputted for edge penalty
+        // if it is an invalid value, uses 1.0 by default for multiplicative
+        // option or 0.0 by default for additive option and also appends the
+        // error to the error message
+        String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
+        try
+        {
+            _edgePenalty = Double.parseDouble(edgePenaltyInput);
+
+            if (_edgePenalty <= 0
+                && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            {
+                errorMessage.append(
+                    "Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
+                _edgePenalty = 1.0;
+            }
+
+            if (_edgePenalty < 0
+                && _edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+            {
+                errorMessage.append(
+                    "Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
+                _edgePenalty = 0;
+            }
+        }
+        catch (NumberFormatException exception)
+        {
+            if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            {
+                errorMessage.append(
+                    "Invalid number " + edgePenaltyInput
+                        + " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
+                _edgePenalty = 1.0;
+            }
+
+            if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+            {
+                errorMessage.append(
+                    "Invalid number " + edgePenaltyInput
+                        + " entered for edge penalty. Using default additive edge penalty=0\n");
+                _edgePenalty = 0;
+            }
         }
 
         _generateSubgraph = _subgraphOption.isSelected();
@@ -635,10 +683,18 @@ public class PathLinkerPanel
             }
         }
 
-        // log transforms the edge weights for both weighted options
+        // applies edge penalty and then log transforms the edge weights for the
+        // probability option
         if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
         {
+            applyMultiplicativeEdgePenalty(edgeWeights, _edgePenalty);
             logTransformEdgeWeights(edgeWeights);
+        }
+
+        // applies edge penalty for the additive option
+        if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+        {
+            applyAdditiveEdgePenalty(edgeWeights, _edgePenalty);
         }
 
         // sets the weights in the algorithms class
@@ -647,36 +703,87 @@ public class PathLinkerPanel
 
 
     /**
+     * Applies the user specified edge penalty for the multiplicative option.
+     * This weight penalizes the score of every path by a factor equal to (the
+     * number of edges in the path)^(this factor). This was previously done in
+     * the logTransformEdgeWeights method with a parameter weight=(sum of all
+     * edge weights). In the "standard" PathLinker case, this was necessary to
+     * account for the probability that is lost when edges (incoming source or
+     * outgoing target) are removed, along with probability lost to zero degree
+     * nodes in the edge flux calculation.
+     *
+     * @param weights
+     *            the map from edges to their weights
+     * @param edgePenalty
+     *            the penalty to apply to each edge
+     */
+    private void applyMultiplicativeEdgePenalty(
+        HashMap<CyEdge, Double> weights,
+        double edgePenalty)
+    {
+        if (edgePenalty == 1.0)
+            return;
+
+        for (CyEdge edge : weights.keySet())
+        {
+            if (_hiddenEdges.contains(edge))
+                continue;
+
+            double edgeWeight = weights.get(edge);
+            double w = edgeWeight / edgePenalty;
+            weights.put(edge, w);
+        }
+    }
+
+
+    /**
+     * Applies the user specified edge penalty for the additive option. This
+     * weight penalizes the score of every path by a factor equal to (the number
+     * of edges in the path)*(this factor).
+     *
+     * @param weights
+     *            the map from edges to their weights
+     * @param edgePenalty
+     *            the penalty to apply to each edge
+     */
+    private void applyAdditiveEdgePenalty(
+        HashMap<CyEdge, Double> weights,
+        double edgePenalty)
+    {
+        if (edgePenalty == 0)
+            return;
+
+        for (CyEdge edge : weights.keySet())
+        {
+            if (_hiddenEdges.contains(edge))
+                continue;
+
+            double edgeWeight = weights.get(edge);
+            double w = edgeWeight + edgePenalty;
+            weights.put(edge, w);
+        }
+    }
+
+
+    /**
      * Performs a log transformation on the supplied edges in place given a
-     * mapping from edges to their initial weights TODO do we still want to
-     * divide by sumWeight even though the python version no longer does it?
+     * mapping from edges to their initial weights
      *
      * @param weights
      *            the mapping from edges to their initial weights
      */
     private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights)
     {
-        double sumWeight = 0.;
-
         for (CyEdge edge : weights.keySet())
         {
             if (_hiddenEdges.contains(edge))
                 continue;
 
-            sumWeight += weights.get(edge);
-        }
-
-        for (CyEdge edge : weights.keySet())
-        {
-            if (_hiddenEdges.contains(edge))
-                continue;
-
-            double edge_weight = weights.get(edge);
+            double edgeWeight = weights.get(edge);
 
 // double w = -1 * Math.log(edge_weight);
             double w =
-                -1 * Math.log(Math.max(0.000000001, edge_weight / sumWeight))
-                    / Math.log(10);
+                -1 * Math.log(Math.max(0.000000001, edgeWeight)) / Math.log(10);
             weights.put(edge, w);
         }
     }
@@ -738,14 +845,14 @@ public class PathLinkerPanel
      * @param paths
      *            the list of paths from the ksp algorithm
      */
-    private void normalizePathScores(ArrayList<Path> paths)
+    private void undoLogTransformPathLength(ArrayList<Path> paths)
     {
         // weighted probabilities option sets the weight to 2 ^ (-weight)
         if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
         {
             for (Path p : paths)
             {
-                p.weight = Math.pow(2, -1 * p.weight);
+                p.weight = Math.pow(10, -1 * p.weight);
             }
         }
 
@@ -1026,6 +1133,11 @@ public class PathLinkerPanel
         _kTextField = new JTextField(7);
         _kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
+        _edgePenaltyLabel = new JLabel("Edge penalty");
+        _edgePenaltyTextField = new JTextField(7);
+        _edgePenaltyTextField
+            .setMaximumSize(_edgePenaltyTextField.getPreferredSize());
+
         _weightedOptionGroup = new ButtonGroup();
         _unweighted = new JRadioButton(
             "<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
@@ -1061,6 +1173,8 @@ public class PathLinkerPanel
         kPanel.setBorder(kBorder);
         kPanel.add(_kLabel);
         kPanel.add(_kTextField);
+        kPanel.add(_edgePenaltyLabel);
+        kPanel.add(_edgePenaltyTextField);
         this.add(kPanel);
 
         JPanel graphPanel = new JPanel();
