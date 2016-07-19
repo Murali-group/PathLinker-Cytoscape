@@ -353,6 +353,29 @@ public class PathLinkerPanel
                 targetsNotInNet.add(targetName);
         }
 
+        // generates a list of the valid source/target nodes to be used in
+        // the graph
+        _sourceNames.removeAll(sourcesNotInNet);
+        _targetNames.removeAll(targetsNotInNet);
+        _sources = stringsToNodes(_sourceNames);
+        _targets = stringsToNodes(_targetNames);
+
+        // makes sure that we actually have at least one valid source and target
+        if (_sources.size() == 0)
+        {
+            JOptionPane.showMessageDialog(
+                null,
+                "There are no valid sources to be used. Quitting...");
+            return false;
+        }
+        if (_targets.size() == 0)
+        {
+            JOptionPane.showMessageDialog(
+                null,
+                "There are no valid targets to be used. Quitting...");
+            return false;
+        }
+
         // appends all missing sources/targets to the error message
         if (sourcesNotInNet.size() + targetsNotInNet.size() > 0)
         {
@@ -511,29 +534,6 @@ public class PathLinkerPanel
                     return false;
                 }
             }
-        }
-
-        // generates a list of the valid source/target nodes to be used in
-        // the graph
-        _sourceNames.removeAll(sourcesNotInNet);
-        _targetNames.removeAll(targetsNotInNet);
-        _sources = stringsToNodes(_sourceNames);
-        _targets = stringsToNodes(_targetNames);
-
-        // makes sure that we actually have valid sources and targets
-        if (_sources.size() == 0)
-        {
-            JOptionPane.showMessageDialog(
-                null,
-                "There are no valid sources to be used. Quitting...");
-            return false;
-        }
-        if (_targets.size() == 0)
-        {
-            JOptionPane.showMessageDialog(
-                null,
-                "There are no valid targets to be used. Quitting...");
-            return false;
         }
 
         // successful parsing
