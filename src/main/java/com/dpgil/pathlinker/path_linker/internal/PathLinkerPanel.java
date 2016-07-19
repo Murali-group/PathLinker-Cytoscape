@@ -410,10 +410,47 @@ public class PathLinkerPanel
         // option or 0.0 by default for additive option and also appends the
         // error to the error message
         String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
-        try
+        if (edgePenaltyInput.isEmpty())
         {
-            _edgePenalty = Double.parseDouble(edgePenaltyInput);
+            // nothing was inputted, use the default values for the setting
+            if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+            {
+                _edgePenalty = 1.0;
+            }
+            else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+            {
+                _edgePenalty = 0.;
+            }
+        }
+        else
+        {
+            // try to parse the user's input
+            try
+            {
+                _edgePenalty = Double.parseDouble(edgePenaltyInput);
+            }
+            catch (NumberFormatException exception)
+            {
+                // invalid number was entered, invoked an exception
+                if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+                {
+                    errorMessage.append(
+                        "Invalid number " + edgePenaltyInput
+                            + " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
+                    _edgePenalty = 1.0;
+                }
 
+                if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
+                {
+                    errorMessage.append(
+                        "Invalid number " + edgePenaltyInput
+                            + " entered for edge penalty. Using default additive edge penalty=0\n");
+                    _edgePenalty = 0;
+                }
+            }
+
+            // valid number was entered, but not valid for the algorithm
+            // i.e., negative number
             if (_edgePenalty <= 0
                 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
             {
@@ -427,24 +464,6 @@ public class PathLinkerPanel
             {
                 errorMessage.append(
                     "Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
-                _edgePenalty = 0;
-            }
-        }
-        catch (NumberFormatException exception)
-        {
-            if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
-            {
-                errorMessage.append(
-                    "Invalid number " + edgePenaltyInput
-                        + " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
-                _edgePenalty = 1.0;
-            }
-
-            if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE)
-            {
-                errorMessage.append(
-                    "Invalid number " + edgePenaltyInput
-                        + " entered for edge penalty. Using default additive edge penalty=0\n");
                 _edgePenalty = 0;
             }
         }
@@ -1040,6 +1059,8 @@ public class PathLinkerPanel
         // set node layout by applying the default layout algorithm
         CyLayoutAlgorithm algo =
             _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
+        // CyLayoutAlgorithm algo =
+        // _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical");
         TaskIterator iter = algo.createTaskIterator(
             kspSubgraphView,
             algo.createLayoutContext(),
