@@ -1077,6 +1077,16 @@ public class PathLinkerPanel
             .apply(kspSubgraphView);
         kspSubgraphView.updateView();
 
+        try
+        {
+            Thread.sleep(100);
+        }
+        catch (InterruptedException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         // reflect nodes about the x-axis because the default hierarchical
         // layout renders the nodes upside down
         // reflect nodes
