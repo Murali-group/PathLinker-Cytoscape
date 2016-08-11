@@ -18,8 +18,11 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
@@ -61,6 +64,7 @@ public class PathLinkerPanel
     private JLabel       _runningMessage;
 
     /** Cytoscape class for network and view management */
+    private CySwingApplication _cySwingApp;
     private CyApplicationManager _applicationManager;
     private CyNetworkManager     _networkManager;
     private CyNetworkViewFactory _networkViewFactory;
@@ -141,6 +145,13 @@ public class PathLinkerPanel
         {
             _state = PanelState.OPEN;
             ((JTabbedPane)_parent).addTab(this.getTitle(), this);
+            CytoPanel cytoPanel = _cySwingApp.getCytoPanel(getCytoPanelName());
+            if (cytoPanel.getState() == CytoPanelState.HIDE) {
+                cytoPanel.setState(CytoPanelState.DOCK);
+            }
+            setVisible(true);
+            // This panel is selected upon clicking PathLinker -> Open
+            cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(getComponent()));
         }
 
         this.revalidate();
@@ -173,12 +184,14 @@ public class PathLinkerPanel
      *            the cy application adapter
      */
     public void initialize(
+        CySwingApplication cySwingApp,
         CyApplicationManager applicationManager,
         CyNetworkManager networkManager,
         CyNetworkViewFactory networkViewFactory,
         CyNetworkViewManager networkViewManager,
         CyAppAdapter adapter)
     {
+        _cySwingApp = cySwingApp;
         _applicationManager = applicationManager;
         _networkManager = networkManager;
         _networkViewFactory = networkViewFactory;
