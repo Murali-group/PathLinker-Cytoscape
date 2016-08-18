@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import org.cytoscape.app.CyAppAdapter;
@@ -58,6 +60,8 @@ public class PathLinkerPanel
     private JRadioButton _weightedAdditive;
     private JRadioButton _weightedProbabilities;
     private JCheckBox    _subgraphOption;
+    private JCheckBox    _allowSourcesTargetsInPathsOption;
+    private JCheckBox    _targetsSameAsSourcesOption;
     private JLabel       _runningMessage;
 
     /** Cytoscape class for network and view management */
@@ -75,7 +79,7 @@ public class PathLinkerPanel
     private Container               _parent;
     /** The network to perform the algorithm on */
     private CyNetwork               _network;
-    /** A mapping of the name of a node to the acutal node object */
+    /** A mapping of the name of a node to the actual node object */
     private HashMap<String, CyNode> _idToCyNode;
     /** State of the panel. Initially null b/c it isn't open or closed yet */
     private PanelState              _state = null;
@@ -96,6 +100,10 @@ public class PathLinkerPanel
     private HashSet<CyEdge>   _superEdges;
     /** Whether or not to generate a subgraph */
     private boolean           _generateSubgraph;
+    /** Whether or not to allow sources and targets in paths */
+    private boolean 		  _allowSourcesTargetsInPaths;
+    /** Number of shared nodes between sources and targets */
+    private int 			  _commonSourcesTargets;
 
     private boolean _allEdgesContainWeights = true;
 
@@ -207,6 +215,14 @@ public class PathLinkerPanel
     {
         showRunningMessage();
 
+        // checks for identical sources/targets option selection to 
+        // update the panel values
+        if (_targetsSameAsSourcesOption.isSelected())
+        {
+        	_targetsTextField.setText(_sourcesTextField.getText());
+        	_allowSourcesTargetsInPathsOption.setSelected(true);
+        }
+        
         // this looks extremely stupid, but is very important.
         // due to the multi-threaded nature of the swing gui, if
         // this were simply runKSP() and then hideRunningMessage(), java
@@ -289,7 +305,13 @@ public class PathLinkerPanel
 
         // runs the KSP algorithm
         ArrayList<Path> result =
-            Algorithms.ksp(_network, _superSource, _superTarget, _k);
+            Algorithms.ksp(_network, _superSource, _superTarget, _k + _commonSourcesTargets);
+        
+        // discard first _commonSourcesTargets paths
+        // this is for a temporary hack: when there are n nodes that are both sources and targets,
+        // the algorithm will generate paths of length 0 from superSource -> node -> superTarget
+        // we don't want these, so we generate k + n paths and discard those n paths
+        result.subList(0, _commonSourcesTargets).clear();
 
         // removes the superSource, superTarget, and edges associated
         // with them
@@ -324,7 +346,13 @@ public class PathLinkerPanel
     {
         // error message to report errors to the user if they occur
         StringBuilder errorMessage = new StringBuilder();
-
+        
+        // set boolean for allowing sources/targets in paths
+        if (_allowSourcesTargetsInPathsOption.isSelected())
+        {
+        	_allowSourcesTargetsInPaths = true;
+        }
+        
         // grabs the values in the source and target text fields
         String sourcesTextFieldValue = _sourcesTextField.getText();
         String targetsTextFieldValue = _targetsTextField.getText();
@@ -392,6 +420,18 @@ public class PathLinkerPanel
                         + " are not in the network.\n");
             }
         }
+        
+        // sets the number of common sources and targets
+        // this is for a temporary hack: when there are n nodes that are both sources and targets,
+        // the algorithm will generate paths of length 0 from superSource -> node -> superTarget
+        // we don't want these, so we generate k + n paths and discard those n paths
+        _commonSourcesTargets = 0;
+        Set<CyNode> targetSet = new HashSet<CyNode>(_targets);
+        for (CyNode source : _sources)
+        {
+        	if (targetSet.contains(source))
+        		_commonSourcesTargets++;
+        }
 
         // parses the value inputted for k
         // if it is an invalid value, uses 200 by default and also appends the
@@ -409,6 +449,7 @@ public class PathLinkerPanel
             _k = 200;
         }
 
+        // gets the option for edge weight setting
         if (_unweighted.isSelected())
         {
             _edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
@@ -656,17 +697,21 @@ public class PathLinkerPanel
     {
         _hiddenEdges = new HashSet<CyEdge>();
 
-        // hides all incoming edges to source nodes
-        for (CyNode source : _sources)
+        // only if we don't allow sources and targets internal to paths
+        if (!_allowSourcesTargetsInPaths)
         {
-            _hiddenEdges.addAll(
-                _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
-        }
-        // hides all outgoing edges from target nodes
-        for (CyNode target : _targets)
-        {
-            _hiddenEdges.addAll(
-                _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+            // hides all incoming edges to source nodes
+            for (CyNode source : _sources)
+            {
+                _hiddenEdges.addAll(
+                    _network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
+            }
+            // hides all outgoing edges from target nodes
+            for (CyNode target : _targets)
+            {
+                _hiddenEdges.addAll(
+                    _network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
+            }
         }
 
         Algorithms.initializeHiddenEdges(_hiddenEdges);
@@ -1196,6 +1241,9 @@ public class PathLinkerPanel
                 Integer.MAX_VALUE,
                 _targetsTextField.getPreferredSize().height));
 
+        _allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+        _targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
+        
         _kLabel = new JLabel("k (# of paths)");
         _kTextField = new JTextField(7);
         _kTextField.setMaximumSize(_kTextField.getPreferredSize());
@@ -1215,7 +1263,7 @@ public class PathLinkerPanel
         _weightedOptionGroup.add(_unweighted);
         _weightedOptionGroup.add(_weightedAdditive);
         _weightedOptionGroup.add(_weightedProbabilities);
-
+        
         _subgraphOption = new JCheckBox(
             "<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
             true);
@@ -1232,6 +1280,8 @@ public class PathLinkerPanel
         sourceTargetPanel.add(_sourcesTextField);
         sourceTargetPanel.add(_targetsLabel);
         sourceTargetPanel.add(_targetsTextField);
+        sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
+        sourceTargetPanel.add(_targetsSameAsSourcesOption);
         this.add(sourceTargetPanel);
 
         JPanel kPanel = new JPanel();
@@ -1317,10 +1367,10 @@ public class PathLinkerPanel
         return null;
     }
 
-
+    
     @Override
     public String getTitle()
     {
-        return "PathLinker";
-    }
+		return "PathLinker";
+	}
 }

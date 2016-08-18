@@ -139,7 +139,7 @@ public class Algorithms
         // the list of shortest paths
         ArrayList<Path> A = new ArrayList<Path>();
 
-        // compute the original distance from the soruce to use for the
+        // compute the original distance from the source to use for the
         // heuristic function
         HashMap<CyNode, Double> minDists =
             reverseSingleSourceDijkstra(network, target);
@@ -727,22 +727,6 @@ public class Algorithms
     {
         _edgeWeights.put(edge, value);
     }
-//
-//
-//    /**
-//     * Sets the weight of an edge in the network
-//     *
-//     * @param network
-//     *            the supplied network
-//     * @param edge
-//     *            the edge to set the weight of
-//     * @param value
-//     *            the value to set the edge weight to
-//     */
-//    public static void setWeight(CyNetwork network, CyEdge edge, double value)
-//    {
-//        network.getRow(edge).set("edge_weight", value);
-//    }
 
 
     /**
