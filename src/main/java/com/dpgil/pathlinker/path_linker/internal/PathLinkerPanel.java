@@ -1073,7 +1073,7 @@ public class PathLinkerPanel
                 }
             }
         }
-
+        
         // creates the new network and its view
         CyNetworkView kspSubgraphView =
             _networkViewFactory.createNetworkView(kspSubgraph);
@@ -1103,12 +1103,24 @@ public class PathLinkerPanel
                 targetColor);
 
         }
-
-        // set node layout by applying the default layout algorithm
-        //CyLayoutAlgorithm algo =
-        //    _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
-         CyLayoutAlgorithm algo =
-         _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical");
+        
+        applyLayout(kspSubgraph, kspSubgraphView);
+    }
+    
+    /**
+     * Applies a layout algorithm to the nodes
+     * If k <= 200, we apply a hierarchical layout
+     * Otherwise, we apply the default layout
+     * @param kspSubgraphView
+     */
+    private void applyLayout(CyNetwork kspSubgraph, CyNetworkView kspSubgraphView)
+    {
+    	boolean hierarchical = _k <= 200;
+    	
+    	// set node layout by applying the default layout algorithm
+         CyLayoutAlgorithm algo = hierarchical ?
+        		 _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical") : 
+        		 _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
         TaskIterator iter = algo.createTaskIterator(
             kspSubgraphView,
             algo.createLayoutContext(),
@@ -1122,48 +1134,54 @@ public class PathLinkerPanel
             .apply(kspSubgraphView);
         kspSubgraphView.updateView();
 
-        try
+        // if we applied the hierarchical layout, by default it is rendered upside down
+        // so we reflect all the nodes about the x axis
+        if (hierarchical)
         {
-            Thread.sleep(100);
+        	// sleep so the hierarchical layout can get applied
+	        try
+	        {
+	            Thread.sleep(100);
+	        }
+	        catch (InterruptedException e)
+	        {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+	        }
+	
+	        // reflect nodes about the x-axis because the default hierarchical
+	        // layout renders the nodes upside down
+	        // reflect nodes
+	        double maxY = Integer.MIN_VALUE;
+	        double minY = Integer.MAX_VALUE;
+	
+	        // finds the midpoint x coordinate
+	        for (CyNode node : kspSubgraph.getNodeList())
+	        {
+	            View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
+	            double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+	
+	            if (yCoord > maxY)
+	                maxY = yCoord;
+	
+	            if (yCoord < minY)
+	                minY = yCoord;
+	        }
+	
+	        double midY = (maxY + minY) / 2;
+	
+	        // reflects each node about the midpoint x axis
+	        for (CyNode node : kspSubgraph.getNodeList())
+	        {
+	            View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
+	            double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+	
+	            double newY = -1 * yCoord + 2 * midY;
+	            nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
+	        }
+	
+	        kspSubgraphView.updateView();
         }
-        catch (InterruptedException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        // reflect nodes about the x-axis because the default hierarchical
-        // layout renders the nodes upside down
-        // reflect nodes
-        double maxY = Integer.MIN_VALUE;
-        double minY = Integer.MAX_VALUE;
-
-        // finds the midpoint x coordinate
-        for (CyNode node : kspSubgraph.getNodeList())
-        {
-            View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
-            double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-
-            if (yCoord > maxY)
-                maxY = yCoord;
-
-            if (yCoord < minY)
-                minY = yCoord;
-        }
-
-        double midY = (maxY + minY) / 2;
-
-        // reflects each node about the midpoint x axis
-        for (CyNode node : kspSubgraph.getNodeList())
-        {
-            View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
-            double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-
-            double newY = -1 * yCoord + 2 * midY;
-            nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
-        }
-
-        kspSubgraphView.updateView();
     }
 
 
