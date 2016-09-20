@@ -309,9 +309,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		StringBuilder errorMessage = new StringBuilder();
 
 		// set boolean for allowing sources/targets in paths
-		if (_allowSourcesTargetsInPathsOption.isSelected()) {
-			_allowSourcesTargetsInPaths = true;
-		}
+		_allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
 
 		// grabs the values in the source and target text fields
 		String sourcesTextFieldValue = _sourcesTextField.getText();
