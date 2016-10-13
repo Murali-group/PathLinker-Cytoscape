@@ -5,6 +5,7 @@ import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -39,6 +40,7 @@ public class CyActivator
         CyNetworkViewManager networkViewManager =
             getService(context, CyNetworkViewManager.class);
         CyAppAdapter adapter = getService(context, CyAppAdapter.class);
+        CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
         registerService(
             context,
             panel,
@@ -55,6 +57,7 @@ public class CyActivator
 
         // intializes panel
         panel.initialize(
+        	cySwingApp,
             cyApplicationManager,
             networkManager,
             networkViewFactory,

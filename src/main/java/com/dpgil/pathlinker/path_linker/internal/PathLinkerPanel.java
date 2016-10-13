@@ -20,8 +20,11 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
@@ -62,6 +65,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JLabel _runningMessage;
 
 	/** Cytoscape class for network and view management */
+	private CySwingApplication _cySwingApp;
 	private CyApplicationManager _applicationManager;
 	private CyNetworkManager _networkManager;
 	private CyNetworkViewFactory _networkViewFactory;
@@ -128,11 +132,18 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 *            the new state
 	 */
 	public void setPanelState(PanelState newState) {
-		if (newState == _state)
-		{
-			if (newState == PanelState.OPEN)
-			{
-				((JTabbedPane) _parent).setSelectedIndex(_tabIndex);
+		if (newState == _state) {
+			// occurs when panel is already "open" (it's in the cytopanel)
+			// so we don't need to re add it to the panel, just set it as
+			// selected
+			if (newState == PanelState.OPEN) {
+				CytoPanel cytoPanel = _cySwingApp.getCytoPanel(getCytoPanelName());
+				if (cytoPanel.getState() == CytoPanelState.HIDE) {
+					cytoPanel.setState(CytoPanelState.DOCK);
+				}
+				setVisible(true);
+				// The panel is selected upon clicking PathLinker -> Open
+				cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(getComponent()));
 			}
 
 			return;
@@ -141,10 +152,18 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		if (newState == PanelState.CLOSED) {
 			_state = PanelState.CLOSED;
 			_parent.remove(this);
-		} else if (newState == PanelState.OPEN) {
+		}
+		// only occurs if panel is previously closed
+		else if (newState == PanelState.OPEN) {
 			_state = PanelState.OPEN;
 			((JTabbedPane) _parent).addTab(this.getTitle(), this);
-			_tabIndex = ((JTabbedPane) _parent).getSelectedIndex();
+			CytoPanel cytoPanel = _cySwingApp.getCytoPanel(getCytoPanelName());
+			if (cytoPanel.getState() == CytoPanelState.HIDE) {
+				cytoPanel.setState(CytoPanelState.DOCK);
+			}
+			setVisible(true);
+			// The panel is selected upon clicking PathLinker -> Open
+			cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(getComponent()));
 		}
 
 		this.revalidate();
@@ -173,8 +192,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * @param adapter
 	 *            the cy application adapter
 	 */
-	public void initialize(CyApplicationManager applicationManager, CyNetworkManager networkManager,
-			CyNetworkViewFactory networkViewFactory, CyNetworkViewManager networkViewManager, CyAppAdapter adapter) {
+	public void initialize(CySwingApplication cySwingApp, CyApplicationManager applicationManager,
+			CyNetworkManager networkManager, CyNetworkViewFactory networkViewFactory,
+			CyNetworkViewManager networkViewManager, CyAppAdapter adapter) {
+		_cySwingApp = cySwingApp;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
 		_networkViewFactory = networkViewFactory;
