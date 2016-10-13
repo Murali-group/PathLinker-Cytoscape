@@ -80,6 +80,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private HashMap<String, CyNode> _idToCyNode;
 	/** State of the panel. Initially null b/c it isn't open or closed yet */
 	private PanelState _state = null;
+	/** Index of the tab in the parent panel */
+	private int _tabIndex;
 
 	/** The sources to be used in the algorithm */
 	private ArrayList<CyNode> _sources;
@@ -127,7 +129,14 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 */
 	public void setPanelState(PanelState newState) {
 		if (newState == _state)
+		{
+			if (newState == PanelState.OPEN)
+			{
+				((JTabbedPane) _parent).setSelectedIndex(_tabIndex);
+			}
+
 			return;
+		}
 
 		if (newState == PanelState.CLOSED) {
 			_state = PanelState.CLOSED;
@@ -135,6 +144,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		} else if (newState == PanelState.OPEN) {
 			_state = PanelState.OPEN;
 			((JTabbedPane) _parent).addTab(this.getTitle(), this);
+			_tabIndex = ((JTabbedPane) _parent).getSelectedIndex();
 		}
 
 		this.revalidate();
