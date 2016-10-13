@@ -124,6 +124,11 @@
 			<artifactId>swing-application-api</artifactId>
 			<version>3.2.0</version>
 		</dependency>
+                <dependency>
+                        <groupId>org.cytoscape</groupId>
+                        <artifactId>app-api</artifactId>
+                        <version>3.2.0</version>
+                </dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>session-api</artifactId>
