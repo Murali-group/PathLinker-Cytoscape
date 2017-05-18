@@ -562,10 +562,30 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				if (potentialExtraEdge.equals(e))
 					continue;
 
-				// verifies the edges direction
-				if (potentialExtraEdge.getSource().equals(eSource) && potentialExtraEdge.getTarget().equals(eTarget)) {
-					extraEdges.add(potentialExtraEdge);
+				// if the e is undirected, we don't want to lose a directed version of it 
+				// because only one direction of an undirected edge is used in our implementation of ksp
+				if (e.isDirected())
+				{
+					// verifies the edges direction
+					if (potentialExtraEdge.getSource().equals(eSource) && potentialExtraEdge.getTarget().equals(eTarget)) {
+						extraEdges.add(potentialExtraEdge);
+					}
 				}
+			}
+			// Also consider the undirected edges
+			for (CyEdge potentialExtraEdge : _network.getConnectingEdgeList(e.getSource(), e.getTarget(),
+					CyEdge.Type.UNDIRECTED)) {
+				// e doesn't count as an extra edge; it is the single edge
+				// that we want left
+				if (potentialExtraEdge.equals(e))
+					continue;
+				// if e is a directed edge (for example A->B), 
+				// then don't remove the undirected edge 
+				// because we would lose the B->A connection 
+				if (e.isDirected())
+					continue;
+
+				extraEdges.add(potentialExtraEdge);
 			}
 
 			// marks all edges as dealt with so we don't duplicate entries
@@ -629,11 +649,11 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		// only if we don't allow sources and targets internal to paths
 		if (!_allowSourcesTargetsInPaths) {
-			// hides all incoming edges to source nodes
+			// hides all incoming directed edges to source nodes
 			for (CyNode source : _sources) {
 				_hiddenEdges.addAll(_network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
 			}
-			// hides all outgoing edges from target nodes
+			// hides all outgoing directed edges from target nodes
 			for (CyNode target : _targets) {
 				_hiddenEdges.addAll(_network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
 			}

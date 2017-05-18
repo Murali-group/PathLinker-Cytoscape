@@ -27,6 +27,9 @@ public class Algorithms
     private static HashSet<CyEdge>         initialHiddenEdges;
     private static HashSet<CyEdge>         hiddenEdges;
     private static HashMap<CyEdge, Double> _edgeWeights;
+    // Boolean indicating whether or not to include the undirected outgoing/incoming edges
+    // For now, always use both undirected and directed edges
+    private static boolean                 includeUndirected = true; 
 
 
     private static double heuristicF(
@@ -197,7 +200,7 @@ public class Algorithms
                 // incoming edges to this node and all previous nodes have
                 // been hidden
                 List<CyEdge> inEdges =
-                    network.getAdjacentEdgeList(nodeSpur, CyEdge.Type.INCOMING);
+                    getAdjacentEdgeList(network, nodeSpur, CyEdge.Type.INCOMING);
                 for (CyEdge inEdge : inEdges)
                 {
                     hiddenEdges.add(inEdge);
@@ -401,10 +404,11 @@ public class Algorithms
 
             // examine all neighbors to this node and consider adding them to
             // the fringe
-            List<CyEdge> neighbors =
-                network.getAdjacentEdgeList(currNode, CyEdge.Type.OUTGOING);
-            for (CyEdge nextEdge : neighbors)
+            List<CyNode> neighbors =
+                getNeighborList(network, currNode, CyEdge.Type.OUTGOING);
+            for (CyNode nextNode : neighbors)
             {
+            	CyEdge nextEdge = getEdge(network, currNode, nextNode);
                 // doesn't consider edges that are hidden. uses this structure
                 // of hiding edges because manipulating the graph completely
                 // dominates runtime in cytoscape
@@ -412,8 +416,6 @@ public class Algorithms
                 {
                     continue;
                 }
-
-                CyNode nextNode = nextEdge.getTarget();
 
                 // the actual distance to the node from the source
                 double nextActDist =
@@ -512,10 +514,11 @@ public class Algorithms
             // that lead to the target. however, we don't want to reverse the
             // network and call a normal SSD because manipulating the network
             // dominates runtime in Cytoscape
-            for (CyEdge neighborEdge : network
-                .getAdjacentEdgeList(current, CyEdge.Type.INCOMING))
+            for (CyNode neighbor : 
+            	getNeighborList(network, current, CyEdge.Type.INCOMING))
             {
-                CyNode neighbor = neighborEdge.getSource();
+
+            	CyEdge neighborEdge = getEdge(network, neighbor, current);
 
                 double newCost =
                     distances.get(current) + getWeight(network, neighborEdge);
@@ -567,10 +570,10 @@ public class Algorithms
             CyNode current = pq.remove(0);
 
             // goes through the neighbors
-            for (CyEdge neighborEdge : network
-                .getAdjacentEdgeList(current, CyEdge.Type.OUTGOING))
+            for (CyNode neighbor : 
+            	getNeighborList(network, current, CyEdge.Type.OUTGOING))
             {
-                CyNode neighbor = neighborEdge.getTarget();
+            	CyEdge neighborEdge = getEdge(network, current, neighbor);
 
                 double newCost =
                     distances.get(current) + getWeight(network, neighborEdge);
@@ -644,13 +647,12 @@ public class Algorithms
                 // return path reconstructed
                 break;
             }
-
             // goes through the neighbors
-            for (CyEdge neighborEdge : network
-                .getAdjacentEdgeList(current, CyEdge.Type.OUTGOING))
+            for (CyNode neighbor : 
+            	getNeighborList(network, current, CyEdge.Type.OUTGOING))
             {
-                CyNode neighbor = neighborEdge.getTarget();
 
+            	CyEdge neighborEdge = getEdge(network, current, neighbor);
                 double newCost =
                     distances.get(current) + getWeight(network, neighborEdge);
 
@@ -746,10 +748,13 @@ public class Algorithms
         CyNode source,
         CyNode target)
     {
-        List<CyEdge> connections =
+        List<CyEdge> dirConnections =
             network.getConnectingEdgeList(source, target, CyEdge.Type.DIRECTED);
 
-        for (CyEdge edge : connections)
+        // getConnectingEdgeList() returns both the incoming and outgoing edges connected to the two nodes
+        // Use this for loop to get the edge directed from source->target
+        // Currently PathLinker does not support multi-graphs, so just return the first edge found
+        for (CyEdge edge : dirConnections)
         {
             if (edge.getSource().equals(source)
                 && edge.getTarget().equals(target))
@@ -759,7 +764,69 @@ public class Algorithms
             }
         }
 
+        // If undirected edges are allowed, then also check for an undirected edge between them
+        // Currently directed edges are favored over undirected edges
+        if (includeUndirected) 
+        {
+			List<CyEdge> undirConnections =
+				network.getConnectingEdgeList(source, target, CyEdge.Type.UNDIRECTED);
+			for (CyEdge edge : undirConnections)
+			{
+				return edge;
+			}
+        	
+        }
+
         return null;
+    }
+    
+    
+    /**
+     * Returns 
+     * @param network
+     * 				the network
+     * @param node
+     * 				the node to get the connecting edges
+     * @param edgeType
+     * 				Should be either CyEdge.Type.OUTGOING or CyEdge.Type.INCOMING
+     * @return List<CyEdge> the list of edges (either outgoing or incoming) connected to the given node
+     */
+    public static List<CyEdge> getAdjacentEdgeList(CyNetwork network, CyNode node, CyEdge.Type edgeType)
+    {
+		
+    	// retrieves all of the directed edges incoming to or outgoing from the given node
+    	List<CyEdge> adjacentEdges = network.getAdjacentEdgeList(node, edgeType);
+
+    	// If specified, add all of the undirected edges connected to the given node as well
+    	if (includeUndirected){
+    		adjacentEdges.addAll(network.getAdjacentEdgeList(node, CyEdge.Type.UNDIRECTED));
+    	}
+
+    	return adjacentEdges;
+    }
+
+    /**
+     * Returns 
+     * @param network
+     * 				the network
+     * @param node
+     * 				the node for which to get the neighboring nodes
+     * @param edgeType
+     * 				Should be either CyEdge.Type.OUTGOING or CyEdge.Type.INCOMING
+     * @return List<CyNode> the list of incoming or outgoing neighboring nodes 
+     */
+    public static List<CyNode> getNeighborList(CyNetwork network, CyNode node, CyEdge.Type edgeType)
+    {
+		
+    	// retrieves all of the directed edges incoming to or outgoing from the given node
+    	List<CyNode> neighbors = network.getNeighborList(node, edgeType);
+
+    	// If specified, add all of the undirected edges connected to the given node as well
+    	if (includeUndirected){
+    		neighbors.addAll(network.getNeighborList(node, CyEdge.Type.UNDIRECTED));
+    	}
+
+    	return neighbors;
     }
 
 
