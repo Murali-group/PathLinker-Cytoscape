@@ -863,109 +863,50 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// creates a new network in the same network collection
 		// as the original network
 		CyRootNetwork root = ((CySubNetwork) _network).getRootNetwork();
-		CyNetwork kspSubgraph = root.addSubNetwork();
-		CyTable kspSubEdgeTable = kspSubgraph.getDefaultEdgeTable();
-
-		// keeps track of columns added so it only adds new columns once each
-		HashSet<String> seenColumns = new HashSet<String>();
-
-		// keeps track of nodes/edges added to only add each once
-		// nodes/edges will be repeated since we go through all paths
-		HashSet<String> edgesAdded = new HashSet<String>();
-		HashSet<String> nodesAdded = new HashSet<String>();
-
-		// sets the network name
-		String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
-		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
-
-		// keeps track of node names to their objects
-		// used when creating an edge between two nodes when
-		// we only have the names of the two nodes
-		HashMap<String, CyNode> subIdToCyNode = new HashMap<String, CyNode>();
+		
+		HashSet<CyNode> nodesToAdd = new HashSet<CyNode>();
+		HashSet<CyEdge> edgesToAdd = new HashSet<CyEdge>();
 
 		// keeps track of sources/targets in the ksp subgraph
 		// to change their visual properties later
-		ArrayList<CyNode> sources = new ArrayList<CyNode>();
-		ArrayList<CyNode> targets = new ArrayList<CyNode>();
-
+		HashSet<CyNode> sources = new HashSet<CyNode>();
+		HashSet<CyNode> targets = new HashSet<CyNode>();
+		
 		for (Path currPath : paths) {
 			// excluding supersource and supertarget
 			for (int i = 1; i < currPath.size() - 2; i++) {
 				CyNode node1 = currPath.get(i);
 				CyNode node2 = currPath.get(i + 1);
+				nodesToAdd.add(node1);
+				nodesToAdd.add(node2);
 
-				String node1Name = _network.getRow(node1).get(CyNetwork.NAME, String.class);
-				String node2Name = _network.getRow(node2).get(CyNetwork.NAME, String.class);
+				// check if the nodes are part of the sources or targets specified
+				String node1name = _network.getRow(node1).get(CyNetwork.NAME, String.class);
+				String node2name = _network.getRow(node2).get(CyNetwork.NAME, String.class);
+				if (_sourceNames.contains(node1name))
+					sources.add(node1);
+				if (_targetNames.contains(node2name))
+					targets.add(node2);
 
-				String edgeKey = node1Name + "|" + node2Name;
-
-				// adds a node if we haven't seen it yet
-				if (!nodesAdded.contains(node1Name)) {
-					CyNode added = kspSubgraph.addNode();
-					kspSubgraph.getRow(added).set(CyNetwork.NAME, node1Name);
-
-					if (_sourceNames.contains(node1Name))
-						sources.add(added);
-					if (_targetNames.contains(node1Name))
-						targets.add(added);
-
-					nodesAdded.add(node1Name);
-					subIdToCyNode.put(node1Name, added);
+				// add all of the directed edges from node1 to node2
+				List<CyEdge> edges = _network.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+				for (CyEdge edge : edges){
+					// verifies the edges direction
+					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
+						edgesToAdd.add(edge);
 				}
+				// also add all of the undirected edges from node1 to node2
+				edgesToAdd.addAll(_network.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
 
-				// adds the node if we haven't seen it yet
-				if (!nodesAdded.contains(node2Name)) {
-					CyNode added = kspSubgraph.addNode();
-					kspSubgraph.getRow(added).set(CyNetwork.NAME, node2Name);
 
-					if (_sourceNames.contains(node2Name))
-						sources.add(added);
-					if (_targetNames.contains(node2Name))
-						targets.add(added);
-
-					nodesAdded.add(node2Name);
-					subIdToCyNode.put(node2Name, added);
-				}
-
-				// adds the edge if we haven't seen it yet
-				if (!edgesAdded.contains(edgeKey)) {
-					// adds the edge to the subgraph
-					CyNode a = subIdToCyNode.get(node1Name);
-					CyNode b = subIdToCyNode.get(node2Name);
-					CyEdge added = kspSubgraph.addEdge(a, b, true);
-					CyRow addedRow = kspSubgraph.getRow(added);
-
-					// selects the edge in the underlying network
-					CyEdge select = Algorithms.getEdge(_network, node1, node2);
-					CyRow currRow = _network.getRow(select);
-
-					// gets the current edge attributes
-					Map<String, Object> values = currRow.getAllValues();
-
-					// updates the edge attributes for the new network
-					for (String key : values.keySet()) {
-						// haven't seen this column yet
-						// might need to create it in the new subgraph table
-						if (!seenColumns.contains(key)) {
-							if (kspSubEdgeTable.getColumn(key) == null) {
-								kspSubEdgeTable.createColumn(key, values.get(key).getClass(), false);
-							}
-
-							seenColumns.add(key);
-						}
-
-						// sets the new edge attribute
-						addedRow.set(key, values.get(key));
-					}
-
-					// makes sure the subnetwork edges aren't selected
-					addedRow.set(CyNetwork.SELECTED, false);
-
-					edgesAdded.add(edgeKey);
-				}
 			}
 		}
+		CyNetwork kspSubgraph = root.addSubNetwork(nodesToAdd, edgesToAdd);
 
+		// sets the network name
+		String subgraphName = "PathLinker-subnetwork-" + _k + "-paths";
+		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
+		
 		// creates the new network and its view
 		CyNetworkView kspSubgraphView = _networkViewFactory.createNetworkView(kspSubgraph);
 		_networkManager.addNetwork(kspSubgraph);
