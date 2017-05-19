@@ -2,12 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<properties>
-						<bundle.symbolicName>com.dpgil.pathlinker.path_linker</bundle.symbolicName>
+	    <bundle.symbolicName>com.dpgil.pathlinker.path_linker</bundle.symbolicName>
 		<bundle.namespace>com.dpgil.pathlinker.path_linker</bundle.namespace>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
-	<version>1.2.4</version>
+	<version>1.3</version>
 
 			<name>${bundle.symbolicName}</name>
 	
@@ -122,11 +123,6 @@
 			<artifactId>swing-application-api</artifactId>
 			<version>3.2.0</version>
 		</dependency>
-                <dependency>
-                        <groupId>org.cytoscape</groupId>
-                        <artifactId>app-api</artifactId>
-                        <version>3.2.0</version>
-                </dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>app-api</artifactId>
