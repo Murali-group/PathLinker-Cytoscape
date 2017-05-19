@@ -32,6 +32,21 @@ public class Algorithms
     private static boolean                 includeUndirected = true; 
 
 
+    /**
+  	 * This heuristic function gives a lower bound on the path
+	 * length to go the rest of the way to the finish from the start
+
+	 * If this function returns infinity, then the target
+	 * is necessarily unreachable, so don't expand the search along
+	 * this edge
+     *            
+	 * @param minDists
+     *            the map of nodes to their minimum distance from the target
+	 * @param node
+	 * 			  the node to check the distance for
+	 * @return minimum distance to target or infinity if the target is unreachable
+     *            
+     */
     private static double heuristicF(
         HashMap<CyNode, Double> minDists,
         CyNode node)
@@ -752,6 +767,7 @@ public class Algorithms
             network.getConnectingEdgeList(source, target, CyEdge.Type.DIRECTED);
 
         // getConnectingEdgeList() returns both the incoming and outgoing edges connected to the two nodes
+        // Using CyEdge.Type.OUTGOING gave strange results in testing, so I stuck with this loop
         // Use this for loop to get the edge directed from source->target
         // Currently PathLinker does not support multi-graphs, so just return the first edge found
         for (CyEdge edge : dirConnections)
@@ -782,7 +798,18 @@ public class Algorithms
     
     
     /**
-     * Returns 
+     * Returns the list of edges connected to this node based on the specified CyEdge.Type
+     * This is a wrapper around the built-in CyNetwork function getAdjacentEdgeList. In the built-in function:
+     * If CyEdge.Type.OUTGOING is passed, the directed outgoing adjacent edges will be returned
+     * If CyEdge.Type.INCOMING is passed, the directed incoming adjacent edges will be returned
+     * If CyEdge.Type.DIRECTED is passed, the directed (outgoing and incoming) adjacent edges will be returned
+     * If CyEdge.Type.UNDIRECTED is passed, the undirected adjacent edges will be returned
+     * 
+     * In networks containing both directed and undirected networks, we want to get both the directed and undirected adjacent edges
+     * hence why this wrapper was made
+     * 
+     * Undirected edges will be included based on the value of includeUndirected which is currently always true
+     * 
      * @param network
      * 				the network
      * @param node
@@ -806,7 +833,18 @@ public class Algorithms
     }
 
     /**
-     * Returns 
+     * Returns the list of nodes neighboring the input node based on the specified CyEdge.Type
+     * This is a wrapper around the built-in CyNetwork function getNeighborList. In the built-in function:
+     * If CyEdge.Type.OUTGOING is passed, the nodes connected by a directed outgoing edge will be returned
+     * If CyEdge.Type.INCOMING is passed, the nodes connected by a directed incoming edge will be returned
+     * If CyEdge.Type.DIRECTED is passed, the nodes connected by a directed (outgoing and incoming) edge will be returned
+     * If CyEdge.Type.UNDIRECTED is passed, the nodes connected by an undirected edge will be returned
+     * 
+     * In networks containing both directed and undirected networks, we want to get both the directed and undirected neighbors
+     * hence why this wrapper was made
+     * 
+     * Undirected edges will be included based on the value of includeUndirected which is currently always true
+     * 
      * @param network
      * 				the network
      * @param node
