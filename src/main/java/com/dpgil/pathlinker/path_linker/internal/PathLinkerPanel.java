@@ -533,13 +533,17 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	/**
 	 * Creates a copy of the original network to run ksp 
 	 * with the following modifications:
-	 * 1. undirected edges are converted to bidirectional edges
+	 * 1. undirected edges are converted to bidirectional edges.  
 	 * 2. treats multiple edges as one edge with a weight of the average of the
 	 * multiple edges. This is done because pathlinker is not compatible with
 	 * multigraphs.
 	 */
 	private void initializeNetwork() {
-		// create a copy network which we will copy the original nodes and edges to 
+		// Originally I had created a text version of each edge and stored and checked 
+		// for the text version in the hiddenEdges set, but retrieving both directed 
+		// and undirected edges was dominating the run time. Thus here we 
+		// create a new network to which we will copy the original nodes and edges 
+		// with undirected edges converted to two directed edges
 		CyRootNetwork root = ((CySubNetwork) _originalNetwork).getRootNetwork();
 		// create a subnetwork of the original network without any of the original edges
 		_network = root.addSubNetwork(root.getNodeList(), null);
