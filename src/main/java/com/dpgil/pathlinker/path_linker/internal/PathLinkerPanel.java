@@ -110,6 +110,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean _allowSourcesTargetsInPaths;
 	/** Number of shared nodes between sources and targets */
 	private int _commonSourcesTargets;
+	/** Weight of edges to be used by the algorithm */
+	private HashMap<CyEdge, Double> _edgeWeights;
 
 	private boolean _allEdgesContainWeights = true;
 
@@ -292,6 +294,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// from target nodes
 		initializeHiddenEdges();
 
+		// set the edge weights of the new network to be used in the algorithm.
+		// doesn't actually set the values as edge attributes 
+		// because that dominates runtime.
+		setEdgeWeights();
 		// adds a superSource and superTarget and attaches them to the sources
 		// and targets, respectively
 		addSuperNodes();
@@ -568,7 +574,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				checkAddEdge(sourcetargetToEdge, edgeMultiWeights, target, source, w);
 		}
 
-		HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
+		_edgeWeights = new HashMap<CyEdge, Double>();
 
 		// now set the edge weight of each of the edges in the newly created network
 		// if there were any multi-edges, then average the weights
@@ -588,13 +594,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				edgeWeight = sum / weights.size();
 			}
 
-			edgeWeights.put(sourcetargetToEdge.get(sourcetarget), edgeWeight);
+			_edgeWeights.put(sourcetargetToEdge.get(sourcetarget), edgeWeight);
 		}
-		
-		// set the edge weights of the new network to be used in the algorithm.
-		// doesn't actually set the values as edge attributes 
-		// because that dominates runtime.
-		setEdgeWeights(edgeWeights);
 	}
 
 	/**
@@ -641,38 +642,29 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * Sets the edge weights to be used in the algorithm. Doesn't actually set
 	 * the weights as attributes because that dominates runtime.
 	 */
-	private void setEdgeWeights(HashMap<CyEdge, Double> edgeWeights) {
+	private void setEdgeWeights() {
 		//HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
 
 		if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED){
 			for (CyEdge edge : _network.getEdgeList()) {
-				edgeWeights.put(edge, 1.);
-				// gets the attribute edge weight value
-				//Double value = _network.getRow(edge).get("edge_weight", Double.class);
-				//double edge_weight = value != null ? value.doubleValue() : -44444;
-
-				//} else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-				//	edgeWeights.put(edge, edge_weight);
-				//} else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-				//	edgeWeights.put(edge, edge_weight);
-				//}
+				_edgeWeights.put(edge, 1.);
 			}
 		}
 
 		// applies edge penalty and then log transforms the edge weights for the
 		// probability option
 		else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-			applyMultiplicativeEdgePenalty(edgeWeights, _edgePenalty);
-			logTransformEdgeWeights(edgeWeights);
+			applyMultiplicativeEdgePenalty(_edgePenalty);
+			logTransformEdgeWeights();
 		}
 
 		// applies edge penalty for the additive option
 		else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-			applyAdditiveEdgePenalty(edgeWeights, _edgePenalty);
+			applyAdditiveEdgePenalty(_edgePenalty);
 		}
 
 		// sets the weights in the algorithms class
-		Algorithms.setEdgeWeights(edgeWeights);
+		Algorithms.setEdgeWeights(_edgeWeights);
 	}
 
 	/**
@@ -685,22 +677,20 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * outgoing target) are removed, along with probability lost to zero degree
 	 * nodes in the edge flux calculation.
 	 *
-	 * @param weights
-	 *            the map from edges to their weights
 	 * @param edgePenalty
 	 *            the penalty to apply to each edge
 	 */
-	private void applyMultiplicativeEdgePenalty(HashMap<CyEdge, Double> weights, double edgePenalty) {
+	private void applyMultiplicativeEdgePenalty(double edgePenalty) {
 		if (edgePenalty == 1.0)
 			return;
 
-		for (CyEdge edge : weights.keySet()) {
+		for (CyEdge edge : _edgeWeights.keySet()) {
 			if (_hiddenEdges.contains(edge))
 				continue;
 
-			double edgeWeight = weights.get(edge);
+			double edgeWeight = _edgeWeights.get(edge);
 			double w = edgeWeight / edgePenalty;
-			weights.put(edge, w);
+			_edgeWeights.put(edge, w);
 		}
 	}
 
@@ -709,22 +699,20 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * weight penalizes the score of every path by a factor equal to (the number
 	 * of edges in the path)*(this factor).
 	 *
-	 * @param weights
-	 *            the map from edges to their weights
 	 * @param edgePenalty
 	 *            the penalty to apply to each edge
 	 */
-	private void applyAdditiveEdgePenalty(HashMap<CyEdge, Double> weights, double edgePenalty) {
+	private void applyAdditiveEdgePenalty(double edgePenalty) {
 		if (edgePenalty == 0)
 			return;
 
-		for (CyEdge edge : weights.keySet()) {
+		for (CyEdge edge : _edgeWeights.keySet()) {
 			if (_hiddenEdges.contains(edge))
 				continue;
 
-			double edgeWeight = weights.get(edge);
+			double edgeWeight = _edgeWeights.get(edge);
 			double w = edgeWeight + edgePenalty;
-			weights.put(edge, w);
+			_edgeWeights.put(edge, w);
 		}
 	}
 
@@ -732,19 +720,17 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * Performs a log transformation on the supplied edges in place given a
 	 * mapping from edges to their initial weights
 	 *
-	 * @param weights
-	 *            the mapping from edges to their initial weights
 	 */
-	private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights) {
-		for (CyEdge edge : weights.keySet()) {
+	private void logTransformEdgeWeights() {
+		for (CyEdge edge : _edgeWeights.keySet()) {
 			if (_hiddenEdges.contains(edge))
 				continue;
 
-			double edgeWeight = weights.get(edge);
+			double edgeWeight = _edgeWeights.get(edge);
 
 			// double w = -1 * Math.log(edge_weight);
 			double w = -1 * Math.log(Math.max(0.000000001, edgeWeight)) / Math.log(10);
-			weights.put(edge, w);
+			_edgeWeights.put(edge, w);
 		}
 	}
 
