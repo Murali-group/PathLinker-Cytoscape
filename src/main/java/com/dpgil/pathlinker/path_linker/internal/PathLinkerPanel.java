@@ -287,7 +287,6 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// 1. undirected edges are converted to bidirectional edges
 		// 2. the weight of multiple source-target edges are averaged because
 		// PathLinker does not support multi-graphs
-		// 3. initializes the edge weights according to the user options
 		initializeNetwork();
 
 		// "removes" the edges that are incoming to source nodes and outgoing
@@ -298,6 +297,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// doesn't actually set the values as edge attributes 
 		// because that dominates runtime.
 		setEdgeWeights();
+
 		// adds a superSource and superTarget and attaches them to the sources
 		// and targets, respectively
 		addSuperNodes();
@@ -531,14 +531,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	
 
 	/**
-	 * Creates a copy of the original network is modified to run PathLinker
+	 * Creates a copy of the original network to run ksp 
 	 * with the following modifications:
 	 * 1. undirected edges are converted to bidirectional edges
 	 * 2. treats multiple edges as one edge with a weight of the average of the
 	 * multiple edges. This is done because pathlinker is not compatible with
 	 * multigraphs.
-	 * 3. edges weights are then modified according to the user's specified option
-	 * and passed to the ksp algorithm
 	 */
 	private void initializeNetwork() {
 		// create a copy network which we will copy the original nodes and edges to 
