@@ -27,6 +27,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -78,6 +79,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private EdgeWeightSetting _edgeWeightSetting;
 	/** Parent container of the panel to re add to when we call open */
 	private Container _parent;
+	/** The original network selected by the user */
+	private CyNetwork _originalNetwork;
 	/** The network to perform the algorithm on */
 	private CyNetwork _network;
 	/** A mapping of the name of a node to the actual node object */
@@ -107,6 +110,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean _allowSourcesTargetsInPaths;
 	/** Number of shared nodes between sources and targets */
 	private int _commonSourcesTargets;
+	/** Weight of edges to be used by the algorithm */
+	private HashMap<CyEdge, Double> _edgeWeights;
 
 	private boolean _allEdgesContainWeights = true;
 
@@ -278,17 +283,19 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		if (!success)
 			return false;
 
-		// treats multiple edges as one edge with a weight of the average of
-		// the multiple edges. this is done because pathlinker is not compatible
-		// with multigraphs
-		averageMultiEdges();
+		// creates a copy of the original network which is modified to run PathLinker
+		// 1. undirected edges are converted to bidirectional edges
+		// 2. the weight of multiple source-target edges are averaged because
+		// PathLinker does not support multi-graphs
+		initializeNetwork();
 
 		// "removes" the edges that are incoming to source nodes and outgoing
 		// from target nodes
 		initializeHiddenEdges();
 
-		// sets the edge weights to be used in the algorithm. doesn't actually
-		// set the values as edge attributes because that dominates runtime.
+		// set the edge weights of the new network to be used in the algorithm.
+		// doesn't actually set the values as edge attributes 
+		// because that dominates runtime.
 		setEdgeWeights();
 
 		// adds a superSource and superTarget and attaches them to the sources
@@ -306,10 +313,6 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// we don't want these, so we generate k + n paths and discard those n
 		// paths
 		result.subList(0, _commonSourcesTargets).clear();
-
-		// removes the superSource, superTarget, and edges associated
-		// with them
-		removeSuperNodes();
 
 		// "un log-transforms" the path scores in the weighted options
 		// as to undo the log transformations and leave the path scores
@@ -504,8 +507,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// that we have to deal with multi edges, we know whether or not to
 		// average the weights or just delete the extra edges (see
 		// averageMultiEdges method)
-		for (CyEdge edge : _network.getEdgeList()) {
-			Double value = _network.getRow(edge).get("edge_weight", Double.class);
+		for (CyEdge edge : _originalNetwork.getEdgeList()) {
+			Double value = _originalNetwork.getRow(edge).get("edge_weight", Double.class);
 
 			if (value == null) {
 				// not all the edges have weights (i.e., at least one of the
@@ -525,118 +528,211 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// successful parsing
 		return true;
 	}
+	
 
 	/**
-	 * Treats multiple edges as one edge with a weight of the average of the
+	 * Creates a copy of the original network to run ksp 
+	 * with the following modifications:
+	 * 1. undirected edges are converted to bidirectional edges.  
+	 * 2. treats multiple edges as one edge with a weight of the average of the
 	 * multiple edges. This is done because pathlinker is not compatible with
-	 * multigraphs
+	 * multigraphs.
 	 */
-	private void averageMultiEdges() {
-		// maps one edge to all the other edges connecting the same
-		// source/target pair so we can go through afterwards and remove
-		// the extra edges
-		HashMap<CyEdge, List<CyEdge>> edgeToMulti = new HashMap<CyEdge, List<CyEdge>>();
+	private void initializeNetwork() {
+		// Originally I had created a text version of each edge and stored and checked 
+		// for the text version in the hiddenEdges set, but retrieving both directed 
+		// and undirected edges was dominating the run time. Thus here we 
+		// create a new network to which we will copy the original nodes and edges 
+		// with undirected edges converted to two directed edges
+		CyRootNetwork root = ((CySubNetwork) _originalNetwork).getRootNetwork();
+		// create a subnetwork of the original network without any of the original edges
+		_network = root.addSubNetwork(root.getNodeList(), null);
+		// create a subnetwork rather than a new private network so the nodes will be the same.
+		// this way the source and target node lists will still work with the new network
+		//_network = _networkFactory.createNetworkWithPrivateTables();
 
-		// keeps track of edges we've already visited so we don't
-		// store multiple (edge:extra) entries
-		HashSet<CyEdge> seenEdges = new HashSet<CyEdge>();
+		// maps each source-target SUID string to its corresponding CyEdge in the 
+		// newly created network. Used to keep track of which edges in the original 
+		// network match the newly created edge 
+		HashMap<String, CyEdge> sourcetargetToEdge = new HashMap<String, CyEdge>();
+		// maps a source-target pair to all the weights of the edges connecting the same
+		// source/target pair in the original network 
+		// so we can go through afterwards and remove the extra edges
+		HashMap<String, List<Double>> edgeMultiWeights = new HashMap<String, List<Double>>(); 
 
-		// populates the edgeToMulti hash map
-		for (CyEdge e : _network.getEdgeList()) {
-			// don't want to have multiple (edge:extra) entries
-			if (seenEdges.contains(e))
-				continue;
+		// copy all of the edges of the original network to this network
+		// convert undirected edges to bidirectional edges
+		for (CyEdge e : _originalNetwork.getEdgeList()) {
+			
+			CyNode source = e.getSource();
+			CyNode target = e.getTarget();
+			Double w = getNetworkTableWeight(e);
 
-			CyNode eSource = e.getSource();
-			CyNode eTarget = e.getTarget();
-
-			// stores all edges except e, all the "extra" edges
-			List<CyEdge> extraEdges = new ArrayList<CyEdge>();
-			// have to go through and filter the edges that connect
-			// src->target, because the getConnectingEdgeList method gives us
-			// any edges between source and target
-			for (CyEdge potentialExtraEdge : _network.getConnectingEdgeList(e.getSource(), e.getTarget(),
-					CyEdge.Type.DIRECTED)) {
-				// e doesn't count as an extra edge; it is the single edge
-				// that we want left
-				if (potentialExtraEdge.equals(e))
-					continue;
-
-				// if the e is undirected, we don't want to lose a directed version of it 
-				// because only one direction of an undirected edge is used in our implementation of ksp
-				if (e.isDirected())
-				{
-					// verifies the edges direction
-					if (potentialExtraEdge.getSource().equals(eSource) && potentialExtraEdge.getTarget().equals(eTarget)) {
-						extraEdges.add(potentialExtraEdge);
-					}
-				}
-			}
-			// Also consider the undirected edges
-			for (CyEdge potentialExtraEdge : _network.getConnectingEdgeList(e.getSource(), e.getTarget(),
-					CyEdge.Type.UNDIRECTED)) {
-				// e doesn't count as an extra edge; it is the single edge
-				// that we want left
-				if (potentialExtraEdge.equals(e))
-					continue;
-				// if e is a directed edge (for example A->B), 
-				// then don't remove the undirected edge 
-				// because we would lose the B->A connection 
-				if (e.isDirected())
-					continue;
-
-				extraEdges.add(potentialExtraEdge);
-			}
-
-			// marks all edges as dealt with so we don't duplicate entries
-			// in the map. i.e. if we have edges A,B,C, we only want
-			// A: {B,C}. we don't want the other entries B: {C,A} and C: {A,B}
-			seenEdges.add(e);
-			seenEdges.addAll(extraEdges);
-
-			// no extra edges, we don't do anything
-			if (extraEdges.size() == 0)
-				continue;
-
-			// adds the (edge:extra) entry to the map
-			edgeToMulti.put(e, extraEdges);
+			// check if this source-target was already added as an edge. If it was, keep track of the 
+			// multiple weights. If not, add it as a new edge
+			checkAddEdge(sourcetargetToEdge, edgeMultiWeights, source, target, w);
+			// also add the reverse direction if the original edge was undirected
+			if (!e.isDirected())
+				checkAddEdge(sourcetargetToEdge, edgeMultiWeights, target, source, w);
 		}
 
-		// root network for removing nodes and edges
-		CyRootNetwork root = ((CySubNetwork) _network).getRootNetwork();
+		_edgeWeights = new HashMap<CyEdge, Double>();
 
-		// for every (edge:extra) pair, we set edge's weight to the average
-		// of all the edges, and then remove the extra edges from the network
-		for (CyEdge e : edgeToMulti.keySet()) {
-			// if not all the edges contain weights, no point in averaging the
-			// edge weights, because we'll hit null entries in the edge table.
-			// so we just remove the extra edges
-			if (!_allEdgesContainWeights) {
-				root.removeEdges(edgeToMulti.get(e));
-			}
-			// all the edges contain weights, so we should average the edge
-			// weights and transform this graph into one without multi edges
-			// regardless if it's unweighted or not. if the unweighted option
-			// is selected, it'll just treat that single edge as weight 1 anyway
-			else {
-				double sumWeight = getNetworkTableWeight(e);
-				int edgeCount = 1;
-
-				List<CyEdge> extraEdges = edgeToMulti.get(e);
-				for (CyEdge extraEdge : extraEdges) {
-					sumWeight += getNetworkTableWeight(extraEdge);
-					edgeCount++;
+		// now set the edge weight of each of the edges in the newly created network
+		// if there were any multi-edges, then average the weights
+		for (String sourcetarget : sourcetargetToEdge.keySet()){
+			
+			List<Double> weights = edgeMultiWeights.get(sourcetarget);
+			// the final weight of this edge
+			Double edgeWeight = weights.get(0);
+			
+			// if there are more than 1 weights for this edge, then average them together
+			if (weights.size() > 1){
+				Double sum = 0.0;
+				for (Double w : weights){
+					sum += w;
 				}
-
-				// averages the weights
-				double averageWeight = sumWeight / edgeCount;
-
-				// stores the new average weight as the table weight for e
-				setNetworkTableWeight(e, averageWeight);
-
-				// removes the extra edges from the graph that aren't e
-				root.removeEdges(extraEdges);
+				// divide the sum by the total number of weights to get the average
+				edgeWeight = sum / weights.size();
 			}
+
+			_edgeWeights.put(sourcetargetToEdge.get(sourcetarget), edgeWeight);
+		}
+	}
+
+	/**
+	 * Checks to see if the given source->target edge in the original network was already added 
+	 * to the new network. If it was, then add the weight of the edge to the list of weights 
+	 * for this edge. If it wasn't, then add the edge as a new edge and keep track of it in 
+	 * the HashMap for possible future duplicate edges
+	 * @param sourcetargetToEdge
+	 * 			maps the source-target SUIDs to the edge in the new network
+	 * @param edgeMultiWeights
+	 * 			maps each edge to the list of weights 
+	 * @param source 
+	 * 			source node
+	 * @param target 
+	 * 			target node
+	 * @param w 
+	 * 			edge weight
+	 */
+	private void checkAddEdge(HashMap<String, CyEdge> sourcetargetToEdge, 
+			HashMap<String, List<Double>> edgeMultiWeights,
+			CyNode source, CyNode target, Double w){
+
+			String sourceSUID = source.getSUID().toString();
+			String targetSUID = target.getSUID().toString();
+			String sourcetargetSUID = sourceSUID + "-" + targetSUID;
+			boolean duplicate = sourcetargetToEdge.containsKey(sourcetargetSUID);
+
+			// make sure we aren't adding any duplicate edges to this new network
+			if (!duplicate){
+				// add the first direction of the edge
+				CyEdge newEdge = _network.addEdge(source, target, true);
+				sourcetargetToEdge.put(sourcetargetSUID, newEdge);
+				List<Double> weights = new ArrayList<Double>();
+				weights.add(w);
+				edgeMultiWeights.put(sourcetargetSUID, weights);
+			}
+			else{
+				// if the network already contains this edge, then add the extra edge weight to this edge's list of edge weights
+				edgeMultiWeights.get(sourcetargetSUID).add(w);
+			}
+	}
+
+	/**
+	 * Sets the edge weights to be used in the algorithm. Doesn't actually set
+	 * the weights as attributes because that dominates runtime.
+	 */
+	private void setEdgeWeights() {
+		//HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
+
+		if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED){
+			for (CyEdge edge : _network.getEdgeList()) {
+				_edgeWeights.put(edge, 1.);
+			}
+		}
+
+		// applies edge penalty and then log transforms the edge weights for the
+		// probability option
+		else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+			applyMultiplicativeEdgePenalty(_edgePenalty);
+			logTransformEdgeWeights();
+		}
+
+		// applies edge penalty for the additive option
+		else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+			applyAdditiveEdgePenalty(_edgePenalty);
+		}
+
+		// sets the weights in the algorithms class
+		Algorithms.setEdgeWeights(_edgeWeights);
+	}
+
+	/**
+	 * Applies the user specified edge penalty for the multiplicative option.
+	 * This weight penalizes the score of every path by a factor equal to (the
+	 * number of edges in the path)^(this factor). This was previously done in
+	 * the logTransformEdgeWeights method with a parameter weight=(sum of all
+	 * edge weights). In the "standard" PathLinker case, this was necessary to
+	 * account for the probability that is lost when edges (incoming source or
+	 * outgoing target) are removed, along with probability lost to zero degree
+	 * nodes in the edge flux calculation.
+	 *
+	 * @param edgePenalty
+	 *            the penalty to apply to each edge
+	 */
+	private void applyMultiplicativeEdgePenalty(double edgePenalty) {
+		if (edgePenalty == 1.0)
+			return;
+
+		for (CyEdge edge : _edgeWeights.keySet()) {
+			if (_hiddenEdges.contains(edge))
+				continue;
+
+			double edgeWeight = _edgeWeights.get(edge);
+			double w = edgeWeight / edgePenalty;
+			_edgeWeights.put(edge, w);
+		}
+	}
+
+	/**
+	 * Applies the user specified edge penalty for the additive option. This
+	 * weight penalizes the score of every path by a factor equal to (the number
+	 * of edges in the path)*(this factor).
+	 *
+	 * @param edgePenalty
+	 *            the penalty to apply to each edge
+	 */
+	private void applyAdditiveEdgePenalty(double edgePenalty) {
+		if (edgePenalty == 0)
+			return;
+
+		for (CyEdge edge : _edgeWeights.keySet()) {
+			if (_hiddenEdges.contains(edge))
+				continue;
+
+			double edgeWeight = _edgeWeights.get(edge);
+			double w = edgeWeight + edgePenalty;
+			_edgeWeights.put(edge, w);
+		}
+	}
+
+	/**
+	 * Performs a log transformation on the supplied edges in place given a
+	 * mapping from edges to their initial weights
+	 *
+	 */
+	private void logTransformEdgeWeights() {
+		for (CyEdge edge : _edgeWeights.keySet()) {
+			if (_hiddenEdges.contains(edge))
+				continue;
+
+			double edgeWeight = _edgeWeights.get(edge);
+
+			// double w = -1 * Math.log(edge_weight);
+			double w = -1 * Math.log(Math.max(0.000000001, edgeWeight)) / Math.log(10);
+			_edgeWeights.put(edge, w);
 		}
 	}
 
@@ -660,116 +756,6 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		}
 
 		Algorithms.initializeHiddenEdges(_hiddenEdges);
-	}
-
-	/**
-	 * Sets the edge weights to be used in the algorithm. Doesn't actually set
-	 * the weights as attributes because that dominates runtime.
-	 */
-	private void setEdgeWeights() {
-		HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
-
-		for (CyEdge edge : _network.getEdgeList()) {
-			// gets the attribute edge weight value
-			Double value = _network.getRow(edge).get("edge_weight", Double.class);
-			double edge_weight = value != null ? value.doubleValue() : -44444;
-
-			if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED) {
-				edgeWeights.put(edge, 1.);
-			} else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-				edgeWeights.put(edge, edge_weight);
-			} else if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-				edgeWeights.put(edge, edge_weight);
-			}
-		}
-
-		// applies edge penalty and then log transforms the edge weights for the
-		// probability option
-		if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-			applyMultiplicativeEdgePenalty(edgeWeights, _edgePenalty);
-			logTransformEdgeWeights(edgeWeights);
-		}
-
-		// applies edge penalty for the additive option
-		if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-			applyAdditiveEdgePenalty(edgeWeights, _edgePenalty);
-		}
-
-		// sets the weights in the algorithms class
-		Algorithms.setEdgeWeights(edgeWeights);
-	}
-
-	/**
-	 * Applies the user specified edge penalty for the multiplicative option.
-	 * This weight penalizes the score of every path by a factor equal to (the
-	 * number of edges in the path)^(this factor). This was previously done in
-	 * the logTransformEdgeWeights method with a parameter weight=(sum of all
-	 * edge weights). In the "standard" PathLinker case, this was necessary to
-	 * account for the probability that is lost when edges (incoming source or
-	 * outgoing target) are removed, along with probability lost to zero degree
-	 * nodes in the edge flux calculation.
-	 *
-	 * @param weights
-	 *            the map from edges to their weights
-	 * @param edgePenalty
-	 *            the penalty to apply to each edge
-	 */
-	private void applyMultiplicativeEdgePenalty(HashMap<CyEdge, Double> weights, double edgePenalty) {
-		if (edgePenalty == 1.0)
-			return;
-
-		for (CyEdge edge : weights.keySet()) {
-			if (_hiddenEdges.contains(edge))
-				continue;
-
-			double edgeWeight = weights.get(edge);
-			double w = edgeWeight / edgePenalty;
-			weights.put(edge, w);
-		}
-	}
-
-	/**
-	 * Applies the user specified edge penalty for the additive option. This
-	 * weight penalizes the score of every path by a factor equal to (the number
-	 * of edges in the path)*(this factor).
-	 *
-	 * @param weights
-	 *            the map from edges to their weights
-	 * @param edgePenalty
-	 *            the penalty to apply to each edge
-	 */
-	private void applyAdditiveEdgePenalty(HashMap<CyEdge, Double> weights, double edgePenalty) {
-		if (edgePenalty == 0)
-			return;
-
-		for (CyEdge edge : weights.keySet()) {
-			if (_hiddenEdges.contains(edge))
-				continue;
-
-			double edgeWeight = weights.get(edge);
-			double w = edgeWeight + edgePenalty;
-			weights.put(edge, w);
-		}
-	}
-
-	/**
-	 * Performs a log transformation on the supplied edges in place given a
-	 * mapping from edges to their initial weights
-	 *
-	 * @param weights
-	 *            the mapping from edges to their initial weights
-	 */
-	private void logTransformEdgeWeights(HashMap<CyEdge, Double> weights) {
-		for (CyEdge edge : weights.keySet()) {
-			if (_hiddenEdges.contains(edge))
-				continue;
-
-			double edgeWeight = weights.get(edge);
-
-			// double w = -1 * Math.log(edge_weight);
-			double w = -1 * Math.log(Math.max(0.000000001, edgeWeight)) / Math.log(10);
-			weights.put(edge, w);
-		}
 	}
 
 	/**
@@ -841,12 +827,17 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 *            a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
+		// delete the copy of the network created for running pathlinker
+		_network = null;
+		
+		// If no paths were found, then exit with this error
+		// TODO This should be done before the empty kspSubgraph is created 
 		if (paths.size() == 0) {
 			JOptionPane.showMessageDialog(null, "No paths found.");
 			return;
 		}
 
-		ResultFrame resultFrame = new ResultFrame(_network, paths);
+		ResultFrame resultFrame = new ResultFrame(_originalNetwork, paths);
 		resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		resultFrame.setVisible(true);
 		resultFrame.setSize(500, 700);
@@ -862,7 +853,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private void createKSPSubgraph(ArrayList<Path> paths) {
 		// creates a new network in the same network collection
 		// as the original network
-		CyRootNetwork root = ((CySubNetwork) _network).getRootNetwork();
+		CyRootNetwork root = ((CySubNetwork) _originalNetwork).getRootNetwork();
 		
 		HashSet<CyNode> nodesToAdd = new HashSet<CyNode>();
 		HashSet<CyEdge> edgesToAdd = new HashSet<CyEdge>();
@@ -881,22 +872,22 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				nodesToAdd.add(node2);
 
 				// check if the nodes are part of the sources or targets specified
-				String node1name = _network.getRow(node1).get(CyNetwork.NAME, String.class);
-				String node2name = _network.getRow(node2).get(CyNetwork.NAME, String.class);
+				String node1name = _originalNetwork.getRow(node1).get(CyNetwork.NAME, String.class);
+				String node2name = _originalNetwork.getRow(node2).get(CyNetwork.NAME, String.class);
 				if (_sourceNames.contains(node1name))
 					sources.add(node1);
 				if (_targetNames.contains(node2name))
 					targets.add(node2);
 
 				// add all of the directed edges from node1 to node2
-				List<CyEdge> edges = _network.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+				List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
 				for (CyEdge edge : edges){
 					// verifies the edges direction
 					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
 						edgesToAdd.add(edge);
 				}
 				// also add all of the undirected edges from node1 to node2
-				edgesToAdd.addAll(_network.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
+				edgesToAdd.addAll(_originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
 
 
 			}
@@ -1020,17 +1011,17 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * Populates idToCyNode, the map of node names to their objects
 	 */
 	private boolean populateIdToCyNode() {
-		_network = _applicationManager.getCurrentNetwork();
+		_originalNetwork = _applicationManager.getCurrentNetwork();
 		_idToCyNode = new HashMap<String, CyNode>();
 
-		if (_network == null) {
+		if (_originalNetwork == null) {
 			JOptionPane.showMessageDialog(null,
 					"No current network. PathLinker cannot run without a network. Exiting...");
 			return false;
 		}
 
-		for (CyNode node : _network.getNodeList()) {
-			String nodeName = _network.getRow(node).get(CyNetwork.NAME, String.class);
+		for (CyNode node : _originalNetwork.getNodeList()) {
+			String nodeName = _originalNetwork.getRow(node).get(CyNetwork.NAME, String.class);
 			_idToCyNode.put(nodeName, node);
 		}
 
@@ -1132,7 +1123,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 */
 	private double getNetworkTableWeight(CyEdge e) {
 		// gets the attribute edge weight value
-		Double value = _network.getRow(e).get("edge_weight", Double.class);
+		Double value = _originalNetwork.getRow(e).get("edge_weight", Double.class);
 		double edge_weight = value != null ? value.doubleValue() : -44444;
 
 		return edge_weight;
