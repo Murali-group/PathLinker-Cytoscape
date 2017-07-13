@@ -52,11 +52,10 @@ public class PathLinkerModel {
 	/** Number of shared nodes between sources and targets */
 	private int commonSourcesTargets;
 	
-	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, int k) {
+	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths) {
 		this.originalNetwork = originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.idToCyNode = new HashMap<String, CyNode>();	
-		this.k = k;
 		this.commonSourcesTargets = 0;
 	}
 	
@@ -197,6 +196,14 @@ public class PathLinkerModel {
 	}
 	
 	/**
+	 * Setter method for k value
+	 * @param k value
+	 */
+	public void setK(int k) {
+		this.k = k;
+	}
+	
+	/**
 	 * Setter method for edgePenalty
 	 * @param edgePenalty
 	 */
@@ -227,11 +234,52 @@ public class PathLinkerModel {
 		}
 	}
 	
+	public ArrayList<Path> runKSP() {
+		
+		// creates a copy of the original network which is modified to run PathLinker
+		// 1. undirected edges are converted to bidirectional edges
+		// 2. the weight of multiple source-target edges are averaged because
+		// PathLinker does not support multi-graphs
+		initializeNetwork();
+
+		// "removes" the edges that are incoming to source nodes and outgoing
+		// from target nodes
+		initializeHiddenEdges();
+
+		// set the edge weights of the new network to be used in the algorithm.
+		// doesn't actually set the values as edge attributes 
+		// because that dominates runtime.
+		setEdgeWeights();
+
+		// adds a superSource and superTarget and attaches them to the sources
+		// and targets, respectively
+		addSuperNodes();
+		
+		// runs the KSP algorithm
+		ArrayList<Path> result = Algorithms.ksp(network, superSource, superTarget, k + commonSourcesTargets);
+
+		// discard first _commonSourcesTargets paths
+		// this is for a temporary hack: when there are n nodes that are both
+		// sources and targets,
+		// the algorithm will generate paths of length 0 from superSource ->
+		// node -> superTarget
+		// we don't want these, so we generate k + n paths and discard those n
+		// paths
+		result.subList(0, commonSourcesTargets).clear();
+
+		// "un log-transforms" the path scores in the weighted options
+		// as to undo the log transformations and leave the path scores
+		// in terms of the edge weights
+		undoLogTransformPathLength(result);
+		
+		return result;
+	}
+	
 	/**
 	 * Populates idToCyNode, the map of node names to their objects
 	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode and return true
 	 */
-	private boolean populateIdToCyNode() {
+	public boolean populateIdToCyNode() {
 		if (this.originalNetwork == null)
 			return false;
 		
