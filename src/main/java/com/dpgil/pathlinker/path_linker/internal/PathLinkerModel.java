@@ -54,6 +54,8 @@ public class PathLinkerModel {
 	
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths) {
 		this.originalNetwork = originalNetwork;
+		
+		// set boolean for allowing sources/targets in paths
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.idToCyNode = new HashMap<String, CyNode>();	
 		this.commonSourcesTargets = 0;
@@ -164,7 +166,7 @@ public class PathLinkerModel {
 		sourceNames.removeAll(sourcesNotInNet);
 		sources = stringsToNodes(sourceNames);
 		
-		return sourcesNotInNet.size() > 0 ? null : sourcesNotInNet;
+		return sourcesNotInNet.size() == 0 ? null : sourcesNotInNet;
 	}
 	
 	/**
@@ -192,7 +194,7 @@ public class PathLinkerModel {
 		targetNames.removeAll(targetsNotInNet);
 		targets = stringsToNodes(targetNames);
 		
-		return targetsNotInNet.size() > 0 ? null : targetsNotInNet;
+		return targetsNotInNet.size() == 0 ? null : targetsNotInNet;
 	}
 	
 	/**
