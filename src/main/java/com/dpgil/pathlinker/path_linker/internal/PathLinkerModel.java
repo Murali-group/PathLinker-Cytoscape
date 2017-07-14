@@ -51,14 +51,24 @@ public class PathLinkerModel {
 	private HashSet<CyEdge> superEdges;
 	/** Number of shared nodes between sources and targets */
 	private int commonSourcesTargets;
+	/** Whether or not to generate a subgraph */
+	private boolean generateSubgraph;
+	/** ksp subgraph */
+	private CyNetwork kspSubgraph;
+	/** sources in the ksp subgraph */
+	HashSet<CyNode> subgraphSources;
+	/** targets in the ksp subgraph */
+	HashSet<CyNode> subgraphTargets;
 	
-	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths) {
+	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean generateSubgraph) {
 		this.originalNetwork = originalNetwork;
 		
 		// set boolean for allowing sources/targets in paths
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
-		this.idToCyNode = new HashMap<String, CyNode>();	
+		this.generateSubgraph = generateSubgraph;
+		this.idToCyNode = new HashMap<String, CyNode>();
 		this.commonSourcesTargets = 0;
+		
 	}
 	
 	/**
@@ -139,6 +149,38 @@ public class PathLinkerModel {
 	 */
 	public EdgeWeightSetting getEdgeWeightSetting() {
 		return this.edgeWeightSetting;
+	}
+	
+	/**
+	 * Getter method of generateSubgraph
+	 * @return generateSubgraph
+	 */
+	public boolean getGenerateSubgraph() {
+		return this.generateSubgraph;
+	}
+	
+	/**
+	 * Getter method of kspSubgraph
+	 * @return kspSubgraph
+	 */
+	public CyNetwork getKspSubgraph() {
+		return this.kspSubgraph;
+	}
+	
+	/**
+	 * Getter method of ksp subgraph sources
+	 * @return subgraphSources
+	 */
+	public HashSet<CyNode> getSubgraphSources() {
+		return this.subgraphSources;
+	}
+	
+	/**
+	 * Getter method of ksp subgraph targets
+	 * @return subgraphTargets
+	 */
+	public HashSet<CyNode> getSubgraphTargets() {
+		return this.subgraphTargets;
 	}
 	
 	/**
@@ -274,6 +316,9 @@ public class PathLinkerModel {
 		// in terms of the edge weights
 		undoLogTransformPathLength(result);
 		
+		if(generateSubgraph)
+			createKSPSubgraph(result);
+			
 		return result;
 	}
 	
@@ -495,6 +540,55 @@ public class PathLinkerModel {
 				// if the network already contains this edge, then add the extra edge weight to this edge's list of edge weights
 				edgeMultiWeights.get(sourcetargetSUID).add(w);
 			}
+	}
+	
+	private void createKSPSubgraph(ArrayList<Path> paths) {
+		
+		// creates a new network in the same network collection
+		// as the original network
+		CyRootNetwork root = ((CySubNetwork) originalNetwork).getRootNetwork();
+
+		HashSet<CyNode> nodesToAdd = new HashSet<CyNode>();
+		HashSet<CyEdge> edgesToAdd = new HashSet<CyEdge>();
+
+		// keeps track of sources/targets in the ksp subgraph
+		// to change their visual properties later
+		subgraphSources = new HashSet<CyNode>();
+		subgraphTargets = new HashSet<CyNode>();
+
+		for (Path currPath : paths) {
+			// excluding supersource and supertarget
+			for (int i = 1; i < currPath.size() - 2; i++) {
+				CyNode node1 = currPath.get(i);
+				CyNode node2 = currPath.get(i + 1);
+				nodesToAdd.add(node1);
+				nodesToAdd.add(node2);
+
+				// check if the nodes are part of the sources or targets specified
+				String node1name = originalNetwork.getRow(node1).get(CyNetwork.NAME, String.class);
+				String node2name = originalNetwork.getRow(node2).get(CyNetwork.NAME, String.class);
+				if (sourceNames.contains(node1name))
+					subgraphSources.add(node1);
+				if (targetNames.contains(node2name))
+					subgraphTargets.add(node2);
+
+				// add all of the directed edges from node1 to node2
+				List<CyEdge> edges = originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+				for (CyEdge edge : edges){
+					// verifies the edges direction
+					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
+						edgesToAdd.add(edge);
+				}
+				// also add all of the undirected edges from node1 to node2
+				edgesToAdd.addAll(originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
+			}
+		}
+		
+		kspSubgraph = root.addSubNetwork(nodesToAdd, edgesToAdd);
+		
+		// sets the network name
+		String subgraphName = "PathLinker-subnetwork-" + k + "-paths";
+		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
 	}
 	
 	/**

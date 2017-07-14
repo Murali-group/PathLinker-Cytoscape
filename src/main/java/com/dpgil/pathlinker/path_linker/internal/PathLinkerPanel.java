@@ -83,8 +83,6 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private PanelState _state = null;
 	/** Index of the tab in the parent panel */
 	private int _tabIndex;
-	/** Whether or not to generate a subgraph */
-	private boolean _generateSubgraph;
 	private boolean _allEdgesContainWeights = true;
 	
 	/** The state of the panel */
@@ -235,7 +233,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean runKSP() {
 		boolean success;
 
-		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), _allowSourcesTargetsInPathsOption.isSelected());
+		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
+				_allowSourcesTargetsInPathsOption.isSelected(), _subgraphOption.isSelected());
 
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map
@@ -246,8 +245,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		// reads the raw values from the panel and converts them into useful
 		// objects to be used in the algorithms
-		_model = readValuesFromPanel(_model);
-		if (_model == null)
+		success = readValuesFromPanel();
+		if (!success)
 			return false;
 
 		_model.runKSP();
@@ -257,11 +256,11 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		// generates a subgraph of the nodes and edges involved in the resulting
 		// paths and displays it to the user
-		if (_generateSubgraph)
-			createKSPSubgraph(result, _model);
+		if (_model.getGenerateSubgraph())
+			createKSPSubgraphView();
 		
 		// writes the result of the algorithm to a table
-		writeResult(result, _model);
+		writeResult(result);
 
 		return true;
 	}
@@ -274,23 +273,23 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 *
 	 * @return true if the parsing was successful, false otherwise
 	 */
-	private PathLinkerModel readValuesFromPanel(PathLinkerModel model) {
+	private boolean readValuesFromPanel() {
 		// error message to report errors to the user if they occur
 		StringBuilder errorMessage = new StringBuilder();
 
-		ArrayList<String> sourcesNotInNet = model.setSourceAndSourceNames(_sourcesTextField.getText());
-		ArrayList<String> targetsNotInNet = model.setTargetAndTargetNames(_targetsTextField.getText());
-		ArrayList<CyNode> sources = model.getSourcesList();
-		ArrayList<CyNode> targets = model.getTargetsList();
+		ArrayList<String> sourcesNotInNet = _model.setSourceAndSourceNames(_sourcesTextField.getText());
+		ArrayList<String> targetsNotInNet = _model.setTargetAndTargetNames(_targetsTextField.getText());
+		ArrayList<CyNode> sources = _model.getSourcesList();
+		ArrayList<CyNode> targets = _model.getTargetsList();
 
 		// makes sure that we actually have at least one valid source and target
 		if (sources.size() == 0) {
 			JOptionPane.showMessageDialog(null, "There are no valid sources to be used. Quitting...");
-			return null;
+			return false;
 		}
 		if (targets.size() == 0) {
 			JOptionPane.showMessageDialog(null, "There are no valid targets to be used. Quitting...");
-			return null;
+			return false;
 		}
 
 		// appends all missing sources/targets to the error message
@@ -308,7 +307,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
 		}
 
-		model.setCommonSourcesTargets();
+		_model.setCommonSourcesTargets();
 
 		// parses the value inputted for k
 		// if it is an invalid value, uses 200 by default and also appends the
@@ -316,22 +315,22 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		String kInput = _kTextField.getText().trim();
 		try {
 			int kValue = Integer.parseInt(kInput);
-			model.setK(kValue);
+			_model.setK(kValue);
 		} catch (NumberFormatException exception) {
 			errorMessage.append("Invalid number " + kInput + " entered for k. Using default k=200.\n");
-			model.setK(200);
+			_model.setK(200);
 		}
 
 		// gets the option for edge weight setting
 		if (_unweighted.isSelected()) {
-			model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
+			_model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
 		} else if (_weightedAdditive.isSelected()) {
-			model.setEdgeWeightSetting(EdgeWeightSetting.ADDITIVE);
+			_model.setEdgeWeightSetting(EdgeWeightSetting.ADDITIVE);
 		} else if (_weightedProbabilities.isSelected()) {
-			model.setEdgeWeightSetting(EdgeWeightSetting.PROBABILITIES);
+			_model.setEdgeWeightSetting(EdgeWeightSetting.PROBABILITIES);
 		} else {
 			errorMessage.append("No option selected for edge weights. Using unweighted as default.\n");
-			model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
+			_model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
 		}
 
 		// parses the value inputted for edge penalty
@@ -341,47 +340,45 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
 		if (edgePenaltyInput.isEmpty()) {
 			// nothing was inputted, use the default values for the setting
-			if (model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
-				model.setEdgePenalty(1.0);
-			} else if (model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
-				model.setEdgePenalty(0.);
+			if (_model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
+				_model.setEdgePenalty(1.0);
+			} else if (_model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
+				_model.setEdgePenalty(0.);
 			}
 		} else {
 			// try to parse the user's input
 			try {
 				double edgePenalty = Double.parseDouble(edgePenaltyInput);
-				model.setEdgePenalty(edgePenalty);
+				_model.setEdgePenalty(edgePenalty);
 			} catch (NumberFormatException exception) {
 				// invalid number was entered, invoked an exception
-				if (model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
+				if (_model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
 					errorMessage.append("Invalid number " + edgePenaltyInput
 							+ " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
-					model.setEdgePenalty(1.0);
+					_model.setEdgePenalty(1.0);
 				}
 
-				if (model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
+				if (_model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
 					errorMessage.append("Invalid number " + edgePenaltyInput
 							+ " entered for edge penalty. Using default additive edge penalty=0\n");
-					model.setEdgePenalty(1.0);
+					_model.setEdgePenalty(1.0);
 				}
 			}
 
 			// valid number was entered, but not valid for the algorithm
 			// i.e., negative number
-			if (model.getEdgePenalty() <= 0 && model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
+			if (_model.getEdgePenalty() <= 0 && _model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
 				errorMessage.append(
 						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
-				model.setEdgePenalty(1.0);
+				_model.setEdgePenalty(1.0);
 			}
 
-			if (model.getEdgePenalty() < 0 && model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
+			if (_model.getEdgePenalty() < 0 && _model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
 				errorMessage.append(
 						"Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
-				model.setEdgePenalty(0);
+				_model.setEdgePenalty(0);
 			}
 		}
-
-		_generateSubgraph = _subgraphOption.isSelected();
 
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
@@ -389,7 +386,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			int choice = JOptionPane.showConfirmDialog(null, errorMessage.toString());
 			if (choice != 0) {
 				// quit if they say no or cancel
-				return null;
+				return false;
 			}
 		}
 
@@ -400,7 +397,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// that we have to deal with multi edges, we know whether or not to
 		// average the weights or just delete the extra edges (see
 		// averageMultiEdges method)
-		CyNetwork originalNetwork = model.getOriginalNetwork();
+		CyNetwork originalNetwork = _model.getOriginalNetwork();
 		
 		for (CyEdge edge : originalNetwork.getEdgeList()) {
 			Double value = originalNetwork.getRow(edge).get("edge_weight", Double.class);
@@ -412,16 +409,16 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 				// only want to warn the user about not having all weighted
 				// edges if a weighted option is selected
-				if (model.getEdgeWeightSetting() != EdgeWeightSetting.UNWEIGHTED) {
+				if (_model.getEdgeWeightSetting() != EdgeWeightSetting.UNWEIGHTED) {
 					JOptionPane.showMessageDialog(null,
 							"Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
-					return null;
+					return false;
 				}
 			}
 		}
 
 		// successful parsing
-		return model;
+		return true;
 	}
 
 	/**
@@ -431,7 +428,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * @param paths
 	 *            a list of paths generated from the ksp algorithm
 	 */
-	private void writeResult(ArrayList<Path> paths, PathLinkerModel model) {
+	private void writeResult(ArrayList<Path> paths) {
 		// delete the copy of the network created for running pathlinker
 		_network = null;
 
@@ -442,7 +439,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			return;
 		}
 
-		ResultFrame resultFrame = new ResultFrame(model.getOriginalNetwork(), paths);
+		ResultFrame resultFrame = new ResultFrame(_model.getOriginalNetwork(), paths);
 		resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		resultFrame.setVisible(true);
 		resultFrame.setSize(500, 700);
@@ -455,57 +452,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * @param paths
 	 *            the list of paths generated by ksp algorithm
 	 */
-	private void createKSPSubgraph(ArrayList<Path> paths, PathLinkerModel model) {
+	private void createKSPSubgraphView() {
+
+		CyNetwork kspSubgraph = _model.getKspSubgraph();
 		
-		CyNetwork originalNetwork = model.getOriginalNetwork();
-		HashSet<String> sourceNames = model.getSourceNames();
-		HashSet<String> targetNames = model.getTargetNames();
-		
-		// creates a new network in the same network collection
-		// as the original network
-		CyRootNetwork root = ((CySubNetwork) originalNetwork).getRootNetwork();
-
-		HashSet<CyNode> nodesToAdd = new HashSet<CyNode>();
-		HashSet<CyEdge> edgesToAdd = new HashSet<CyEdge>();
-
-		// keeps track of sources/targets in the ksp subgraph
-		// to change their visual properties later
-		HashSet<CyNode> sources = new HashSet<CyNode>();
-		HashSet<CyNode> targets = new HashSet<CyNode>();
-
-		for (Path currPath : paths) {
-			// excluding supersource and supertarget
-			for (int i = 1; i < currPath.size() - 2; i++) {
-				CyNode node1 = currPath.get(i);
-				CyNode node2 = currPath.get(i + 1);
-				nodesToAdd.add(node1);
-				nodesToAdd.add(node2);
-
-				// check if the nodes are part of the sources or targets specified
-				String node1name = originalNetwork.getRow(node1).get(CyNetwork.NAME, String.class);
-				String node2name = originalNetwork.getRow(node2).get(CyNetwork.NAME, String.class);
-				if (sourceNames.contains(node1name))
-					sources.add(node1);
-				if (targetNames.contains(node2name))
-					targets.add(node2);
-
-				// add all of the directed edges from node1 to node2
-				List<CyEdge> edges = originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
-				for (CyEdge edge : edges){
-					// verifies the edges direction
-					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
-						edgesToAdd.add(edge);
-				}
-				// also add all of the undirected edges from node1 to node2
-				edgesToAdd.addAll(originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
-			}
-		}
-		CyNetwork kspSubgraph = root.addSubNetwork(nodesToAdd, edgesToAdd);
-
-		// sets the network name
-		String subgraphName = "PathLinker-subnetwork-" + model.getK() + "-paths";
-		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
-
 		// creates the new network and its view
 		CyNetworkView kspSubgraphView = _networkViewFactory.createNetworkView(kspSubgraph);
 		_networkManager.addNetwork(kspSubgraph);
@@ -514,19 +464,19 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		Color targetColor = new Color(255, 223, 0);
 
 		// use a visual bypass to color the sources and targets
-		for (CyNode source : sources) {
+		for (CyNode source : _model.getSubgraphSources()) {
 			View<CyNode> currView = kspSubgraphView.getNodeView(source);
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
 			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
 		}
-		for (CyNode target : targets) {
+		for (CyNode target : _model.getSubgraphTargets()) {
 			View<CyNode> currView = kspSubgraphView.getNodeView(target);
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
 			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, targetColor);
 
 		}
 
-		applyLayout(kspSubgraph, kspSubgraphView, model);
+		applyLayout(kspSubgraph, kspSubgraphView);
 	}
 
 	/**
@@ -535,8 +485,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * 
 	 * @param kspSubgraphView
 	 */
-	private void applyLayout(CyNetwork kspSubgraph, CyNetworkView kspSubgraphView, PathLinkerModel model) {
-		boolean hierarchical = model.getK() <= 200;
+	private void applyLayout(CyNetwork kspSubgraph, CyNetworkView kspSubgraphView) {
+		boolean hierarchical = _model.getK() <= 200;
 
 		// set node layout by applying the default layout algorithm
 		CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
