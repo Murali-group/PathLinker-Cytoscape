@@ -25,10 +25,10 @@ public class PathLinkerModel {
 	private HashMap<String, CyNode> idToCyNode;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
-	
+
 	private HashSet<String> sourceNames;
 	private HashSet<String> targetNames;
-	
+
 	/** The sources to be used in the algorithm */
 	private ArrayList<CyNode> sources;
 	/** The targets to be used in the algorithm */
@@ -59,18 +59,24 @@ public class PathLinkerModel {
 	HashSet<CyNode> subgraphSources;
 	/** targets in the ksp subgraph */
 	HashSet<CyNode> subgraphTargets;
-	
+
+	/**
+	 * Constructor of the model
+	 * @param originalNetwork the original network given by the view
+	 * @param allowSourcesTargetsInPaths obtain from _allowSourcesTargetsInPathsOption checkbox
+	 * @param generateSubgraph obtain from _subgraphOption checkbox
+	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean generateSubgraph) {
 		this.originalNetwork = originalNetwork;
-		
+
 		// set boolean for allowing sources/targets in paths
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.generateSubgraph = generateSubgraph;
 		this.idToCyNode = new HashMap<String, CyNode>();
 		this.commonSourcesTargets = 0;
-		
+
 	}
-	
+
 	/**
 	 * Getter method of originalNetwork
 	 * @return originalNetwork
@@ -78,7 +84,7 @@ public class PathLinkerModel {
 	public CyNetwork getOriginalNetwork() {
 		return this.originalNetwork;
 	}
-	
+
 	/**
 	 * Getter method of idToCyNode
 	 * @return idToCyNode
@@ -86,7 +92,7 @@ public class PathLinkerModel {
 	public HashMap<String, CyNode> getIdToCyNode() {
 		return this.idToCyNode;
 	}
-	
+
 	/**
 	 * Getter method of allowSourcesTargetsInPaths
 	 * @return allowSourcesTargetsInPaths
@@ -94,7 +100,7 @@ public class PathLinkerModel {
 	public boolean getAllowSourcesTargetsInPaths() {
 		return this.allowSourcesTargetsInPaths;
 	}
-	
+
 	/**
 	 * Getter method of sourceNames
 	 * @return
@@ -102,7 +108,7 @@ public class PathLinkerModel {
 	public HashSet<String> getSourceNames() {
 		return this.sourceNames;
 	}
-	
+
 	/**
 	 * Getter method of targetNames
 	 * @return targetNames
@@ -110,7 +116,7 @@ public class PathLinkerModel {
 	public HashSet<String> getTargetNames() {
 		return this.targetNames;
 	}
-	
+
 	/**
 	 * Getter method of sources
 	 * @return sources
@@ -118,7 +124,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getSourcesList() {
 		return this.sources;
 	}
-	
+
 	/**
 	 * Getter method of targets
 	 * @return targets
@@ -126,7 +132,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getTargetsList() {
 		return this.targets;
 	}
-	
+
 	/**
 	 * Getter method of k value
 	 * @return k value
@@ -134,7 +140,7 @@ public class PathLinkerModel {
 	public int getK() {
 		return this.k;
 	}
-	
+
 	/**
 	 * Getter method of edge penalty
 	 * @return edgePenalty
@@ -142,7 +148,7 @@ public class PathLinkerModel {
 	public double getEdgePenalty() {
 		return this.edgePenalty;
 	}
-	
+
 	/**
 	 * Getter method of edgeWeightSetting
 	 * @return edgeWeightSetting
@@ -150,7 +156,7 @@ public class PathLinkerModel {
 	public EdgeWeightSetting getEdgeWeightSetting() {
 		return this.edgeWeightSetting;
 	}
-	
+
 	/**
 	 * Getter method of generateSubgraph
 	 * @return generateSubgraph
@@ -158,7 +164,7 @@ public class PathLinkerModel {
 	public boolean getGenerateSubgraph() {
 		return this.generateSubgraph;
 	}
-	
+
 	/**
 	 * Getter method of kspSubgraph
 	 * @return kspSubgraph
@@ -166,7 +172,7 @@ public class PathLinkerModel {
 	public CyNetwork getKspSubgraph() {
 		return this.kspSubgraph;
 	}
-	
+
 	/**
 	 * Getter method of ksp subgraph sources
 	 * @return subgraphSources
@@ -174,7 +180,7 @@ public class PathLinkerModel {
 	public HashSet<CyNode> getSubgraphSources() {
 		return this.subgraphSources;
 	}
-	
+
 	/**
 	 * Getter method of ksp subgraph targets
 	 * @return subgraphTargets
@@ -182,63 +188,63 @@ public class PathLinkerModel {
 	public HashSet<CyNode> getSubgraphTargets() {
 		return this.subgraphTargets;
 	}
-	
+
 	/**
 	 * Setter method for both sourceNames and sources
 	 * @param sourcesTextFieldValue string of source names separate by spaces
 	 * @return return null if no mistyped source names, else return the list of mistyped source names
 	 */
 	public ArrayList<String> setSourceAndSourceNames(String sourcesTextFieldValue) {
-		
+
 		// splits the names by spaces
 		String[] rawSourceNames = sourcesTextFieldValue.split(" ");
-		
+
 		sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
-		
+
 		// stores the sources that were inputted but are not actually in the network, may have been mistyped
 		ArrayList<String> sourcesNotInNet = new ArrayList<String>();
-		
+
 		// checks for mistyped source names
 		for (String sourceName : sourceNames) {
 			if (!idToCyNode.containsKey(sourceName))
 				sourcesNotInNet.add(sourceName);
 		}
-		
+
 		// generates a list of the valid source nodes to be used in the graph
 		sourceNames.removeAll(sourcesNotInNet);
 		sources = stringsToNodes(sourceNames);
-		
+
 		return sourcesNotInNet.size() == 0 ? null : sourcesNotInNet;
 	}
-	
+
 	/**
 	 * Setter method for both targetNames and targets
 	 * @param targetsTextField string of target names separate by spaces
 	 * @return return null if no mistyped target names, else return the list of mistyped target names
 	 */
 	public ArrayList<String> setTargetAndTargetNames(String targetsTextField) {
-		
+
 		// splits the names by spaces
 		String[] rawTargetNames = targetsTextField.split(" ");
-		
+
 		targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
-		
+
 		// stores the targets that were inputted but are not actually in the network, may have been mistyped
 		ArrayList<String> targetsNotInNet = new ArrayList<String>();
-		
+
 		// checks for mistyped target  names
 		for (String targetName : targetNames) {
 			if (!idToCyNode.containsKey(targetName))
 				targetsNotInNet.add(targetName);
 		}
-		
+
 		// generates a list of the valid target nodes to be used in the graph
 		targetNames.removeAll(targetsNotInNet);
 		targets = stringsToNodes(targetNames);
-		
+
 		return targetsNotInNet.size() == 0 ? null : targetsNotInNet;
 	}
-	
+
 	/**
 	 * Setter method for k value
 	 * @param k value
@@ -246,7 +252,7 @@ public class PathLinkerModel {
 	public void setK(int k) {
 		this.k = k;
 	}
-	
+
 	/**
 	 * Setter method for edgePenalty
 	 * @param edgePenalty
@@ -254,7 +260,7 @@ public class PathLinkerModel {
 	public void setEdgePenalty(double edgePenalty) {
 		this.edgePenalty = edgePenalty;
 	}
-	
+
 	/**
 	 * Setter method for edgeWeightSetting
 	 * @param setting passed from the PathLinkerPanel
@@ -262,9 +268,9 @@ public class PathLinkerModel {
 	public void setEdgeWeightSetting (EdgeWeightSetting setting) {
 		this.edgeWeightSetting = setting;
 	}
-	
+
 	/**
-	 * Setter method for commonSOurcesTargets
+	 * Setter method for commonSourcesTargets
 	 * sets the number of common sources and targets
 	 * this is for a temporary hack: when there are n nodes that are both sources and targets,
 	 * the algorithm will generate paths of length 0 from superSource -> node -> superTarget
@@ -277,9 +283,13 @@ public class PathLinkerModel {
 				commonSourcesTargets++;
 		}
 	}
-	
+
+	/**
+	 * runs all the necessary algorithms to calculate kth shortest path
+	 * @return result, the list of paths
+	 */
 	public ArrayList<Path> runKSP() {
-		
+
 		// creates a copy of the original network which is modified to run PathLinker
 		// 1. undirected edges are converted to bidirectional edges
 		// 2. the weight of multiple source-target edges are averaged because
@@ -298,7 +308,7 @@ public class PathLinkerModel {
 		// adds a superSource and superTarget and attaches them to the sources
 		// and targets, respectively
 		addSuperNodes();
-		
+
 		// runs the KSP algorithm
 		ArrayList<Path> result = Algorithms.ksp(network, superSource, superTarget, k + commonSourcesTargets);
 
@@ -315,13 +325,14 @@ public class PathLinkerModel {
 		// as to undo the log transformations and leave the path scores
 		// in terms of the edge weights
 		undoLogTransformPathLength(result);
-		
+
+		// generates a subgraph of the nodes and edges involved in the resulting
 		if(generateSubgraph)
 			createKSPSubgraph(result);
-			
+
 		return result;
 	}
-	
+
 	/**
 	 * Populates idToCyNode, the map of node names to their objects
 	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode and return true
@@ -329,15 +340,15 @@ public class PathLinkerModel {
 	public boolean populateIdToCyNode() {
 		if (this.originalNetwork == null)
 			return false;
-		
+
 		for (CyNode node : originalNetwork.getNodeList()) {
 			String nodeName = originalNetwork.getRow(node).get(CyNetwork.NAME, String.class);
 			idToCyNode.put(nodeName, node);
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Creates a copy of the original network to run ksp 
 	 * with the following modifications:
@@ -371,7 +382,7 @@ public class PathLinkerModel {
 		// copy all of the edges of the original network to this network
 		// convert undirected edges to bidirectional edges
 		for (CyEdge e : originalNetwork.getEdgeList()) {
-			
+
 			CyNode source = e.getSource();
 			CyNode target = e.getTarget();
 			Double w = getNetworkTableWeight(e);
@@ -389,11 +400,11 @@ public class PathLinkerModel {
 		// now set the edge weight of each of the edges in the newly created network
 		// if there were any multi-edges, then average the weights
 		for (String sourcetarget : sourcetargetToEdge.keySet()){
-			
+
 			List<Double> weights = edgeMultiWeights.get(sourcetarget);
 			// the final weight of this edge
 			Double edgeWeight = weights.get(0);
-			
+
 			// if there are more than 1 weights for this edge, then average them together
 			if (weights.size() > 1){
 				Double sum = 0.0;
@@ -407,7 +418,7 @@ public class PathLinkerModel {
 			edgeWeights.put(sourcetargetToEdge.get(sourcetarget), edgeWeight);
 		}
 	}
-	
+
 	/**
 	 * Initializes the edges that we are hiding from the algorithm. Doesn't
 	 * actually remove the edges as that dominates runtime.
@@ -429,7 +440,7 @@ public class PathLinkerModel {
 
 		Algorithms.initializeHiddenEdges(hiddenEdges);
 	}
-	
+
 	/**
 	 * Sets the edge weights to be used in the algorithm. Doesn't actually set
 	 * the weights as attributes because that dominates runtime.
@@ -458,7 +469,7 @@ public class PathLinkerModel {
 		// sets the weights in the algorithms class
 		Algorithms.setEdgeWeights(edgeWeights);
 	}
-	
+
 	/**
 	 * Adds a superSource and superTarget and attaches them to the sources and
 	 * targets, respectively. Sets _superSource, _superTarget, and populates the
@@ -489,7 +500,7 @@ public class PathLinkerModel {
 			superEdges.add(superEdge);
 		}
 	}
-	
+
 	/**
 	 * Gets the edge weight value from the network table. Expensive operation,
 	 * so we try to minimize how often we use this
@@ -501,7 +512,7 @@ public class PathLinkerModel {
 
 		return edge_weight;
 	}
-	
+
 	/**
 	 * Checks to see if the given source->target edge in the original network was already added 
 	 * to the new network. If it was, then add the weight of the edge to the list of weights 
@@ -522,28 +533,33 @@ public class PathLinkerModel {
 			HashMap<String, List<Double>> edgeMultiWeights,
 			CyNode source, CyNode target, Double w){
 
-			String sourceSUID = source.getSUID().toString();
-			String targetSUID = target.getSUID().toString();
-			String sourcetargetSUID = sourceSUID + "-" + targetSUID;
-			boolean duplicate = sourcetargetToEdge.containsKey(sourcetargetSUID);
+		String sourceSUID = source.getSUID().toString();
+		String targetSUID = target.getSUID().toString();
+		String sourcetargetSUID = sourceSUID + "-" + targetSUID;
+		boolean duplicate = sourcetargetToEdge.containsKey(sourcetargetSUID);
 
-			// make sure we aren't adding any duplicate edges to this new network
-			if (!duplicate){
-				// add the first direction of the edge
-				CyEdge newEdge = network.addEdge(source, target, true);
-				sourcetargetToEdge.put(sourcetargetSUID, newEdge);
-				List<Double> weights = new ArrayList<Double>();
-				weights.add(w);
-				edgeMultiWeights.put(sourcetargetSUID, weights);
-			}
-			else{
-				// if the network already contains this edge, then add the extra edge weight to this edge's list of edge weights
-				edgeMultiWeights.get(sourcetargetSUID).add(w);
-			}
+		// make sure we aren't adding any duplicate edges to this new network
+		if (!duplicate){
+			// add the first direction of the edge
+			CyEdge newEdge = network.addEdge(source, target, true);
+			sourcetargetToEdge.put(sourcetargetSUID, newEdge);
+			List<Double> weights = new ArrayList<Double>();
+			weights.add(w);
+			edgeMultiWeights.put(sourcetargetSUID, weights);
+		}
+		else{
+			// if the network already contains this edge, then add the extra edge weight to this edge's list of edge weights
+			edgeMultiWeights.get(sourcetargetSUID).add(w);
+		}
 	}
-	
+
+	/**
+	 * Generates a subgraph of the user supplied graph that contains only the
+	 * nodes and edges that are in the k shortest paths
+	 * @param paths the list of paths generated by ksp algorithm
+	 */
 	private void createKSPSubgraph(ArrayList<Path> paths) {
-		
+
 		// creates a new network in the same network collection
 		// as the original network
 		CyRootNetwork root = ((CySubNetwork) originalNetwork).getRootNetwork();
@@ -583,14 +599,14 @@ public class PathLinkerModel {
 				edgesToAdd.addAll(originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED));
 			}
 		}
-		
+
 		kspSubgraph = root.addSubNetwork(nodesToAdd, edgesToAdd);
-		
+
 		// sets the network name
 		String subgraphName = "PathLinker-subnetwork-" + k + "-paths";
 		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
 	}
-	
+
 	/**
 	 * Applies the user specified edge penalty for the multiplicative option.
 	 * This weight penalizes the score of every path by a factor equal to (the
@@ -617,7 +633,7 @@ public class PathLinkerModel {
 			edgeWeights.put(edge, w);
 		}
 	}
-	
+
 	/**
 	 * Performs a log transformation on the supplied edges in place given a
 	 * mapping from edges to their initial weights
@@ -634,7 +650,7 @@ public class PathLinkerModel {
 			edgeWeights.put(edge, w);
 		}
 	}
-	
+
 	/**
 	 * "un log-transforms" the path scores in the weighted options to undo the
 	 * log transformations and leave the path scores in terms of the original
@@ -653,7 +669,7 @@ public class PathLinkerModel {
 
 		// don't have to do anything for unweighted or additive option
 	}
-	
+
 	/**
 	 * Applies the user specified edge penalty for the additive option. This
 	 * weight penalizes the score of every path by a factor equal to (the number
@@ -675,7 +691,7 @@ public class PathLinkerModel {
 			edgeWeights.put(edge, w);
 		}
 	}
-	
+
 	/**
 	 * Converts an array of node names to a list of the actual corresponding nodes
 	 * @param names the names of the nodes that we want
