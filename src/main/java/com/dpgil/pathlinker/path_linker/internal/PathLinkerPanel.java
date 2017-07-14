@@ -73,6 +73,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private CyNetworkViewManager _networkViewManager;
 	private CyAppAdapter _adapter;
 
+	/** The model that runs ksp algorithm from the user input */
+	private PathLinkerModel _model;
 	/** The network to perform the algorithm on */
 	private CyNetwork _network;
 	/** Parent container of the panel to re add to when we call open */
@@ -233,34 +235,33 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean runKSP() {
 		boolean success;
 
-		PathLinkerModel model = new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
-				_allowSourcesTargetsInPathsOption.isSelected());
+		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), _allowSourcesTargetsInPathsOption.isSelected());
 
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
-		success = model.populateIdToCyNode();
+		success = _model.populateIdToCyNode();
 		if (!success)
 			return false;
 
 		// reads the raw values from the panel and converts them into useful
 		// objects to be used in the algorithms
-		model = readValuesFromPanel(model);
-		if (model == null)
+		_model = readValuesFromPanel(_model);
+		if (_model == null)
 			return false;
 
-		model.runKSP();
+		_model.runKSP();
 
 		// runs the KSP algorithm
-		ArrayList<Path> result = model.runKSP();
+		ArrayList<Path> result = _model.runKSP();
 		
 		// generates a subgraph of the nodes and edges involved in the resulting
 		// paths and displays it to the user
 		if (_generateSubgraph)
-			createKSPSubgraph(result, model);
+			createKSPSubgraph(result, _model);
 		
 		// writes the result of the algorithm to a table
-		writeResult(result, model);
+		writeResult(result, _model);
 
 		return true;
 	}
