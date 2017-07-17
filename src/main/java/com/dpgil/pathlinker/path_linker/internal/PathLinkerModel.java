@@ -84,6 +84,14 @@ public class PathLinkerModel {
 	public CyNetwork getOriginalNetwork() {
 		return this.originalNetwork;
 	}
+	
+	/**
+	 * Getter method of network
+	 * @return network
+	 */
+	public CyNetwork getNetwork() {
+		return this.network;
+	}
 
 	/**
 	 * Getter method of idToCyNode
