@@ -429,7 +429,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			return;
 		}
 
-		ResultFrame resultFrame = new ResultFrame(_model.getOriginalNetwork(), paths);
+		// passed edge weight setting for sorting purposes
+		ResultFrame resultFrame = new ResultFrame(_model.getOriginalNetwork(), _model.getEdgeWeightSetting(), paths);
 		resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		resultFrame.setVisible(true);
 		resultFrame.setSize(500, 700);
