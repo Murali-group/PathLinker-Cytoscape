@@ -73,7 +73,17 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	/** Index of the tab in the parent panel */
 	private int _tabIndex;
 	private boolean _allEdgesContainWeights = true;
-
+	/** The original network selected by the user */
+	private CyNetwork _originalNetwork;
+	/** The k value to be used in the algorithm */
+	private int _kValue;
+	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
+	private EdgeWeightSetting _edgeWeightSetting;
+	/** The value by which to penalize each edge weight */
+	private double _edgePenalty;
+	/** The StringBuilder that construct error messages if any to the user */
+	private StringBuilder errorMessage;
+	
 	/** The state of the panel */
 	public enum PanelState {
 		/** The panel is hidden */
@@ -191,7 +201,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// runKSP and thus peforming these events in the order we want
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				if (runKSP()) {
+				if (callRunKSP()) {
 					hideRunningMessage();
 				} else {
 					hideRunningMessage();
@@ -216,29 +226,34 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	}
 
 	/**
-	 * Main driving method for the KSP algorithm Makes all the calls for
-	 * preprocessing and displaying the results
+	 * access user inputs to create the model for running ksp algorithm
+	 * check user inputs for errors prior running ksp algorithm
+	 * generate result panel and/or sub network graph for the user
 	 */
-	private boolean runKSP() {
+	private boolean callRunKSP() {
 		boolean success;
 
-		// initialize the model to do all the algorithm works 
-		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
-				_allowSourcesTargetsInPathsOption.isSelected(), _subgraphOption.isSelected());
-
-		// populates a mapping from the name of a node to the actual node object
-		// used for converting user input to node objects. populates the map
-		// named _idToCyNode. is unsuccessful if there is no network
-		success = _model.populateIdToCyNode();
-		if (!success)
-			return false;
-
 		// reads the raw values from the panel and converts them into useful
-		// objects to be used in the algorithms
-		success = readValuesFromPanel();
+		readValuesFromPanel();
+		
+		// initialize the model from the user inputs
+		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
+				_allowSourcesTargetsInPathsOption.isSelected(), _subgraphOption.isSelected(), 
+				_sourcesTextField.getText(), _targetsTextField.getText(), 
+				_kValue, _edgeWeightSetting, _edgePenalty);
+
+
+		// sets up the source and targets, and check to see if network is construct correctly
+		success = _model.prepareIdSourceTarget();
+		
 		if (!success)
 			return false;
-
+		
+		// check to see if source, targets, and edges are set up correctly
+		success = checkSourceTargetEdge();
+		if (!success)
+			return false;
+		
 		// runs the setup and KSP algorithm
 		ArrayList<Path> result = _model.runKSP();
 
@@ -252,21 +267,16 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		return true;
 	}
-
+	
 	/**
-	 * Reads in the raw values from the panel and converts them to useful
-	 * objects that can be used for the algorithm. Performs error checking on
-	 * the values and warns the user if it is a minor error or quits if there
-	 * are any major errors.
-	 *
-	 * @return true if the parsing was successful, false otherwise
+	 * Check user inputs on source, target, and edge weights
+	 * @return true if check passes, otherwise false
 	 */
-	private boolean readValuesFromPanel() {
-		// error message to report errors to the user if they occur
-		StringBuilder errorMessage = new StringBuilder();
+	private boolean checkSourceTargetEdge() {
 
-		ArrayList<String> sourcesNotInNet = _model.setSourceAndSourceNames(_sourcesTextField.getText());
-		ArrayList<String> targetsNotInNet = _model.setTargetAndTargetNames(_targetsTextField.getText());
+		// obtain sources and targets from the model
+		ArrayList<String> sourcesNotInNet = _model.getSourcesNotInNet();
+		ArrayList<String> targetsNotInNet = _model.getTargetsNotInNet();
 		ArrayList<CyNode> sources = _model.getSourcesList();
 		ArrayList<CyNode> targets = _model.getTargetsList();
 
@@ -280,12 +290,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			return false;
 		}
 
-		// appends all missing sources/targets to the error message
-		if (sourcesNotInNet != null) {
-			errorMessage.append("The sources " + sourcesNotInNet.toString() + " are not in the network.\n");
+		// insert all missing sources/targets to the error message in the beginning
+		if (targetsNotInNet.size() > 0) {
+			errorMessage.insert(0, "The targets " + targetsNotInNet.toString() + " are not in the network.\n");
 		}
-		if (targetsNotInNet != null) {
-			errorMessage.append("The targets " + targetsNotInNet.toString() + " are not in the network.\n");
+		if (sourcesNotInNet.size() > 0) {
+			errorMessage.insert(0, "The sources " + sourcesNotInNet.toString() + " are not in the network.\n");
 		}
 
 		// edge case where only one source and one target are inputted,
@@ -294,82 +304,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			JOptionPane.showMessageDialog(null,
 					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
 		}
-
-		// sets the number of common sources and targets
-		// this is for a temporary hack
-		_model.setCommonSourcesTargets();
-
-		// parses the value inputted for k
-		// if it is an invalid value, uses 200 by default and also appends the
-		// error to the error message
-		String kInput = _kTextField.getText().trim();
-		try {
-			int kValue = Integer.parseInt(kInput);
-			_model.setK(kValue);
-		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid number " + kInput + " entered for k. Using default k=200.\n");
-			_model.setK(200);
-		}
-
-		// gets the option for edge weight setting
-		if (_unweighted.isSelected()) {
-			_model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
-		} else if (_weightedAdditive.isSelected()) {
-			_model.setEdgeWeightSetting(EdgeWeightSetting.ADDITIVE);
-		} else if (_weightedProbabilities.isSelected()) {
-			_model.setEdgeWeightSetting(EdgeWeightSetting.PROBABILITIES);
-		} else {
-			errorMessage.append("No option selected for edge weights. Using unweighted as default.\n");
-			_model.setEdgeWeightSetting(EdgeWeightSetting.UNWEIGHTED);
-		}
-
-		// parses the value inputted for edge penalty
-		// if it is an invalid value, uses 1.0 by default for multiplicative
-		// option or 0.0 by default for additive option and also appends the
-		// error to the error message
-		String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
-		if (edgePenaltyInput.isEmpty()) {
-			// nothing was inputted, use the default values for the setting
-			if (_model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
-				_model.setEdgePenalty(1.0);
-			} else if (_model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
-				_model.setEdgePenalty(0.);
-			}
-		} else {
-			// try to parse the user's input
-			try {
-				double edgePenalty = Double.parseDouble(edgePenaltyInput);
-				_model.setEdgePenalty(edgePenalty);
-			} catch (NumberFormatException exception) {
-				// invalid number was entered, invoked an exception
-				if (_model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
-					errorMessage.append("Invalid number " + edgePenaltyInput
-							+ " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
-					_model.setEdgePenalty(1.0);
-				}
-
-				if (_model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
-					errorMessage.append("Invalid number " + edgePenaltyInput
-							+ " entered for edge penalty. Using default additive edge penalty=0\n");
-					_model.setEdgePenalty(1.0);
-				}
-			}
-
-			// valid number was entered, but not valid for the algorithm
-			// i.e., negative number
-			if (_model.getEdgePenalty() <= 0 && _model.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES) {
-				errorMessage.append(
-						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
-				_model.setEdgePenalty(1.0);
-			}
-
-			if (_model.getEdgePenalty() < 0 && _model.getEdgeWeightSetting() == EdgeWeightSetting.ADDITIVE) {
-				errorMessage.append(
-						"Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
-				_model.setEdgePenalty(0);
-			}
-		}
-
+		
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
 			errorMessage.append("Continue anyway?");
@@ -379,7 +314,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				return false;
 			}
 		}
-
+		
 		// checks if all the edges in the graph have weights.
 		// if a weighted option was selected, but not all edges have weights
 		// then we say something to the user.
@@ -387,10 +322,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// that we have to deal with multi edges, we know whether or not to
 		// average the weights or just delete the extra edges (see
 		// averageMultiEdges method)
-		CyNetwork originalNetwork = _model.getOriginalNetwork();
-
-		for (CyEdge edge : originalNetwork.getEdgeList()) {
-			Double value = originalNetwork.getRow(edge).get("edge_weight", Double.class);
+		_originalNetwork = _model.getOriginalNetwork();
+		
+		for (CyEdge edge : _originalNetwork.getEdgeList()) {
+			Double value = _originalNetwork.getRow(edge).get("edge_weight", Double.class);
 
 			if (value == null) {
 				// not all the edges have weights (i.e., at least one of the
@@ -399,7 +334,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 				// only want to warn the user about not having all weighted
 				// edges if a weighted option is selected
-				if (_model.getEdgeWeightSetting() != EdgeWeightSetting.UNWEIGHTED) {
+				if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED) {
 					JOptionPane.showMessageDialog(null,
 							"Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
 					return false;
@@ -409,6 +344,85 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		// successful parsing
 		return true;
+	}
+
+	/**
+	 * Reads in the raw values from the panel and converts them to useful
+	 * objects that can be used for the algorithm. Performs error checking on
+	 * the values and warns the user
+	 */
+	private void readValuesFromPanel() {
+		// error message to report errors to the user if they occur
+		errorMessage = new StringBuilder();
+
+		// parses the value inputted for k
+		// if it is an invalid value, uses 200 by default and also appends the
+		// error to the error message
+		String kInput = _kTextField.getText().trim();
+		try {
+			_kValue = Integer.parseInt(kInput);
+		} catch (NumberFormatException exception) {
+			errorMessage.append("Invalid number " + kInput + " entered for k. Using default k=200.\n");
+			_kValue = 200;
+		}
+
+		// gets the option for edge weight setting
+		if (_unweighted.isSelected()) {
+			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+		} else if (_weightedAdditive.isSelected()) {
+			_edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
+		} else if (_weightedProbabilities.isSelected()) {
+			_edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+		} else {
+			errorMessage.append("No option selected for edge weights. Using unweighted as default.\n");
+			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+		}
+
+		// parses the value inputted for edge penalty
+		// if it is an invalid value, uses 1.0 by default for multiplicative
+		// option or 0.0 by default for additive option and also appends the
+		// error to the error message
+		String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
+		if (edgePenaltyInput.isEmpty()) {
+			// nothing was inputted, use the default values for the setting
+			if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+				_edgePenalty = 1.0;
+			} else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+				_edgePenalty = 0.0;
+			}
+		} else {
+			// try to parse the user's input
+			try {
+				_edgePenalty = Double.parseDouble(edgePenaltyInput);
+			} catch (NumberFormatException exception) {
+				// invalid number was entered, invoked an exception
+				if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+					errorMessage.append("Invalid number " + edgePenaltyInput
+							+ " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
+					_edgePenalty = 1.0;
+				}
+
+				if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+					errorMessage.append("Invalid number " + edgePenaltyInput
+							+ " entered for edge penalty. Using default additive edge penalty=0\n");
+					_edgePenalty = 1.0;
+				}
+			}
+
+			// valid number was entered, but not valid for the algorithm
+			// i.e., negative number
+			if (_edgePenalty <= 0 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+				errorMessage.append(
+						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
+				_edgePenalty = 1.0;
+			}
+
+			if (_edgePenalty < 0 && _edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+				errorMessage.append(
+						"Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
+				_edgePenalty = 0.0;
+			}
+		}
 	}
 
 	/**

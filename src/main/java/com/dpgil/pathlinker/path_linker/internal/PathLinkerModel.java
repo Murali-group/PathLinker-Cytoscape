@@ -25,14 +25,22 @@ public class PathLinkerModel {
 	private HashMap<String, CyNode> idToCyNode;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
-
+	/** original user input strings that contains sources*/
+	private String sourcesTextField;
+	/** original user input strings that contains targets*/
+	private String targetsTextField;
+	/** list of source names */
 	private HashSet<String> sourceNames;
+	/** list of target names */
 	private HashSet<String> targetNames;
-
+	/** list of source names that is not in the network */
+	private ArrayList<String> sourcesNotInNet; 
+	/** list of target names that is not in the network */
+	private ArrayList<String> targetsNotInNet;
 	/** The sources to be used in the algorithm */
-	private ArrayList<CyNode> sources;
+	private ArrayList<CyNode> sourcesList;
 	/** The targets to be used in the algorithm */
-	private ArrayList<CyNode> targets;
+	private ArrayList<CyNode> targetsList;
 	/** The k value to be used in the algorithm */
 	private int k;
 	/** The value by which to penalize each edge weight */
@@ -56,25 +64,36 @@ public class PathLinkerModel {
 	/** ksp subgraph */
 	private CyNetwork kspSubgraph;
 	/** sources in the ksp subgraph */
-	HashSet<CyNode> subgraphSources;
+	private HashSet<CyNode> subgraphSources;
 	/** targets in the ksp subgraph */
-	HashSet<CyNode> subgraphTargets;
+	private HashSet<CyNode> subgraphTargets;
 
 	/**
 	 * Constructor of the model
-	 * @param originalNetwork the original network given by the view
-	 * @param allowSourcesTargetsInPaths obtain from _allowSourcesTargetsInPathsOption checkbox
-	 * @param generateSubgraph obtain from _subgraphOption checkbox
+	 * @param originalNetwork 			 the original network given by the view
+	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
+	 * @param generateSubgraph 			 boolean deciding if need to generate subgraph
+	 * @param sourcesTextField 			 source node names in string
+	 * @param targetsTextField 			 target node names in string
+	 * @param k					 		 k value
+	 * @param edgeWeightSetting			 edge weight setting
+	 * @param edgePenalty				 edge penalty
 	 */
-	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean generateSubgraph) {
-		this.originalNetwork = originalNetwork;
-
-		// set boolean for allowing sources/targets in paths
+	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean generateSubgraph, 
+			String sourcesTextField, String targetsTextField, int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
+		
+		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
-		this.generateSubgraph = generateSubgraph;
-		this.idToCyNode = new HashMap<String, CyNode>();
+		this.generateSubgraph 			= generateSubgraph;
+		this.sourcesTextField 			= sourcesTextField;
+		this.targetsTextField 			= targetsTextField;
+		this.k 							= k;
+		this.edgeWeightSetting 			= edgeWeightSetting;
+		this.edgePenalty 				= edgePenalty;
+		
+		// initialize for future use
+		this.idToCyNode 		  = new HashMap<String, CyNode>();
 		this.commonSourcesTargets = 0;
-
 	}
 
 	/**
@@ -102,13 +121,37 @@ public class PathLinkerModel {
 	}
 
 	/**
+	 * Getter method of sourcesList
+	 * @return sourcesList
+	 */
+	public ArrayList<CyNode> getSourcesList() {
+		return this.sourcesList;
+	}
+	
+	/**
 	 * Getter method of sourceNames
-	 * @return
+	 * @return sourceNames
 	 */
 	public HashSet<String> getSourceNames() {
 		return this.sourceNames;
 	}
-
+	
+	/**
+	 * Getter method of sourcesNotInNet
+	 * @return sourcesNotInNet
+	 */
+	public ArrayList<String> getSourcesNotInNet() {
+		return this.sourcesNotInNet;
+	}
+	
+	/**
+	 * Getter method of targetsList
+	 * @return targetsList
+	 */
+	public ArrayList<CyNode> getTargetsList() {
+		return this.targetsList;
+	}
+	
 	/**
 	 * Getter method of targetNames
 	 * @return targetNames
@@ -116,21 +159,13 @@ public class PathLinkerModel {
 	public HashSet<String> getTargetNames() {
 		return this.targetNames;
 	}
-
+	
 	/**
-	 * Getter method of sources
-	 * @return sources
+	 * Getter method of targetsNotInNet
+	 * @return targetsNotInNet;
 	 */
-	public ArrayList<CyNode> getSourcesList() {
-		return this.sources;
-	}
-
-	/**
-	 * Getter method of targets
-	 * @return targets
-	 */
-	public ArrayList<CyNode> getTargetsList() {
-		return this.targets;
+	public ArrayList<String> getTargetsNotInNet() {
+		return this.targetsNotInNet;
 	}
 
 	/**
@@ -190,19 +225,17 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Setter method for both sourceNames and sources
-	 * @param sourcesTextFieldValue string of source names separate by spaces
-	 * @return return null if no mistyped source names, else return the list of mistyped source names
+	 * Setter method for sourcesList, sourceNames, and sourcesNotInNet
 	 */
-	public ArrayList<String> setSourceAndSourceNames(String sourcesTextFieldValue) {
+	public void setSources() {
 
 		// splits the names by spaces
-		String[] rawSourceNames = sourcesTextFieldValue.split(" ");
+		String[] rawSourceNames = sourcesTextField.split(" ");
 
 		sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
 
 		// stores the sources that were inputted but are not actually in the network, may have been mistyped
-		ArrayList<String> sourcesNotInNet = new ArrayList<String>();
+		sourcesNotInNet = new ArrayList<String>();
 
 		// checks for mistyped source names
 		for (String sourceName : sourceNames) {
@@ -212,17 +245,13 @@ public class PathLinkerModel {
 
 		// generates a list of the valid source nodes to be used in the graph
 		sourceNames.removeAll(sourcesNotInNet);
-		sources = stringsToNodes(sourceNames);
-
-		return sourcesNotInNet.size() == 0 ? null : sourcesNotInNet;
+		sourcesList = stringsToNodes(sourceNames);
 	}
 
 	/**
-	 * Setter method for both targetNames and targets
-	 * @param targetsTextField string of target names separate by spaces
-	 * @return return null if no mistyped target names, else return the list of mistyped target names
+	 * Setter method for targetsList, targetNames, and targetsNotInNet
 	 */
-	public ArrayList<String> setTargetAndTargetNames(String targetsTextField) {
+	public void setTargets() {
 
 		// splits the names by spaces
 		String[] rawTargetNames = targetsTextField.split(" ");
@@ -230,7 +259,7 @@ public class PathLinkerModel {
 		targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
 
 		// stores the targets that were inputted but are not actually in the network, may have been mistyped
-		ArrayList<String> targetsNotInNet = new ArrayList<String>();
+		targetsNotInNet = new ArrayList<String>();
 
 		// checks for mistyped target  names
 		for (String targetName : targetNames) {
@@ -240,9 +269,7 @@ public class PathLinkerModel {
 
 		// generates a list of the valid target nodes to be used in the graph
 		targetNames.removeAll(targetsNotInNet);
-		targets = stringsToNodes(targetNames);
-
-		return targetsNotInNet.size() == 0 ? null : targetsNotInNet;
+		targetsList = stringsToNodes(targetNames);
 	}
 
 	/**
@@ -270,26 +297,37 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Setter method for commonSourcesTargets
-	 * sets the number of common sources and targets
-	 * this is for a temporary hack: when there are n nodes that are both sources and targets,
-	 * the algorithm will generate paths of length 0 from superSource -> node -> superTarget
-	 * we don't want these, so we generate k + n paths and discard those n paths
+	 * set up the following variables:
+	 * 		sourcesList, sourceNames, sourcesNotInNet
+	 * 		targetsList, targetNames, targetsNoInNet
+	 * 		idToCyNode
+	 * @return true if success, otherwise false
 	 */
-	public void setCommonSourcesTargets() {
-		Set<CyNode> targetSet = new HashSet<CyNode>(targets);
-		for (CyNode source : sources) {
-			if (targetSet.contains(source))
-				commonSourcesTargets++;
-		}
-	}
+	public boolean prepareIdSourceTarget() {
 
+		// populates a mapping from the name of a node to the actual node object
+		// used for converting user input to node objects. populates the map
+		// named _idToCyNode. is unsuccessful if there is no network
+		if (!populateIdToCyNode()) return false;
+		
+		// sets source and target
+		setSources();
+		setTargets();
+		
+		return true;
+	}
+	
 	/**
 	 * runs all the necessary algorithms to calculate kth shortest path
 	 * @return result, the list of paths
 	 */
 	public ArrayList<Path> runKSP() {
 
+		
+		// sets the number of common sources and targets
+		// this is for a temporary hack
+		setCommonSourcesTargets();
+		
 		// creates a copy of the original network which is modified to run PathLinker
 		// 1. undirected edges are converted to bidirectional edges
 		// 2. the weight of multiple source-target edges are averaged because
@@ -337,7 +375,7 @@ public class PathLinkerModel {
 	 * Populates idToCyNode, the map of node names to their objects
 	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode and return true
 	 */
-	public boolean populateIdToCyNode() {
+	private boolean populateIdToCyNode() {
 		if (this.originalNetwork == null)
 			return false;
 
@@ -347,6 +385,21 @@ public class PathLinkerModel {
 		}
 
 		return true;
+	}
+	
+	/**
+	 * Setter method for commonSourcesTargets
+	 * sets the number of common sources and targets
+	 * this is for a temporary hack: when there are n nodes that are both sources and targets,
+	 * the algorithm will generate paths of length 0 from superSource -> node -> superTarget
+	 * we don't want these, so we generate k + n paths and discard those n paths
+	 */
+	private void setCommonSourcesTargets() {
+		Set<CyNode> targetSet = new HashSet<CyNode>(targetsList);
+		for (CyNode source : sourcesList) {
+			if (targetSet.contains(source))
+				commonSourcesTargets++;
+		}
 	}
 
 	/**
@@ -429,11 +482,11 @@ public class PathLinkerModel {
 		// only if we don't allow sources and targets internal to paths
 		if (!allowSourcesTargetsInPaths) {
 			// hides all incoming directed edges to source nodes
-			for (CyNode source : sources) {
+			for (CyNode source : sourcesList) {
 				hiddenEdges.addAll(network.getAdjacentEdgeList(source, CyEdge.Type.INCOMING));
 			}
 			// hides all outgoing directed edges from target nodes
-			for (CyNode target : targets) {
+			for (CyNode target : targetsList) {
 				hiddenEdges.addAll(network.getAdjacentEdgeList(target, CyEdge.Type.OUTGOING));
 			}
 		}
@@ -482,7 +535,7 @@ public class PathLinkerModel {
 		superEdges = new HashSet<CyEdge>();
 
 		// attaches super source to all sources
-		for (CyNode source : sources) {
+		for (CyNode source : sourcesList) {
 			CyEdge superEdge = network.addEdge(superSource, source, true);
 
 			// sets an edge weight of 0, so the edges connecting the super nodes
@@ -491,7 +544,7 @@ public class PathLinkerModel {
 			superEdges.add(superEdge);
 		}
 		// attaches all targets to super target
-		for (CyNode target : targets) {
+		for (CyNode target : targetsList) {
 			CyEdge superEdge = network.addEdge(target, superTarget, true);
 
 			// sets an edge weight of 0, so the edges connecting the super nodes
