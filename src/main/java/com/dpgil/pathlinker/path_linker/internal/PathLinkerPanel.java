@@ -416,9 +416,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 			// valid number was entered, but not valid for the algorithm
 			// i.e., negative number
-			if (_edgePenalty <= 0 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+			if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
 				errorMessage.append(
-						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
+						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than or equal to 1. Using default penalty=1.0\n");
 				_edgePenalty = 1.0;
 			}
 
