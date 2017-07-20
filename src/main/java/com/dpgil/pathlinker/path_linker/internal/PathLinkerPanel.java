@@ -83,7 +83,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private double _edgePenalty;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
-	
+
 	/** The state of the panel */
 	public enum PanelState {
 		/** The panel is hidden */
@@ -233,27 +233,32 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean callRunKSP() {
 		boolean success;
 
+		// Check to see if network exists before starting reading the values from the panel
+		_originalNetwork = _applicationManager.getCurrentNetwork();
+		if (_originalNetwork == null) {
+			JOptionPane.showMessageDialog(null, "Network not found. Please load a valid network");
+			return false;
+		}
+
 		// reads the raw values from the panel and converts them into useful
 		readValuesFromPanel();
-		
-		// initialize the model from the user inputs
-		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
-				_allowSourcesTargetsInPathsOption.isSelected(), _subgraphOption.isSelected(), 
-				_sourcesTextField.getText(), _targetsTextField.getText(), 
-				_kValue, _edgeWeightSetting, _edgePenalty);
 
+		// initialize the model from the user inputs
+		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
+				_subgraphOption.isSelected(), _sourcesTextField.getText(), _targetsTextField.getText(), 
+				_kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
-		
+
 		if (!success)
 			return false;
-		
+
 		// check to see if source, targets, and edges are set up correctly
 		success = checkSourceTargetEdge();
 		if (!success)
 			return false;
-		
+
 		// runs the setup and KSP algorithm
 		ArrayList<Path> result = _model.runKSP();
 
@@ -267,7 +272,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		return true;
 	}
-	
+
 	/**
 	 * Check user inputs on source, target, and edge weights
 	 * @return true if check passes, otherwise false
@@ -304,7 +309,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			JOptionPane.showMessageDialog(null,
 					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
 		}
-		
+
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
 			errorMessage.append("Continue anyway?");
@@ -314,7 +319,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				return false;
 			}
 		}
-		
+
 		// checks if all the edges in the graph have weights.
 		// if a weighted option was selected, but not all edges have weights
 		// then we say something to the user.
@@ -323,7 +328,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// average the weights or just delete the extra edges (see
 		// averageMultiEdges method)
 		_originalNetwork = _model.getOriginalNetwork();
-		
+
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
 			Double value = _originalNetwork.getRow(edge).get("edge_weight", Double.class);
 
