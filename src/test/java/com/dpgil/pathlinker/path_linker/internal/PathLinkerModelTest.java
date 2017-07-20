@@ -333,6 +333,17 @@ public class PathLinkerModelTest {
 	 */
 	@Test
 	public void testDiff() throws IOException {
+
+		//construct paths for direct graph
+		modelSetUp(originalNetworkDir, EdgeWeightSetting.PROBABILITIES, false); //create the model for algorithm
+		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		Collections.sort(resultDir); //sort the lists before comparison
+
+		//construct paths for undirect graph
+		modelSetUp(originalNetworkUndir, EdgeWeightSetting.PROBABILITIES, false); //create the model for algorithm
+		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		Collections.sort(resultUndir); //sort the lists before comparison
+
 		assertThat(resultDir, not(resultUndir));
 	}
 
@@ -368,7 +379,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultDir); //test the result
 	}
-	
+
 	/**
 	 * Test: to test that the option of targets are dientical to sources produce the correct result
 	 * network file (input file): graph-dir_human-interactome.txt
@@ -395,7 +406,7 @@ public class PathLinkerModelTest {
 		testModel = new PathLinkerModel(originalNetworkDir, true, false, 
 				source, source, k, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
-		
+
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
