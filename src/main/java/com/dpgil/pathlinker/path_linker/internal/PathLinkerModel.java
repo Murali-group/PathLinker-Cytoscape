@@ -15,8 +15,8 @@ import org.cytoscape.model.subnetwork.CySubNetwork;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 
+/** Back end model for the PathLinker plugin */
 public class PathLinkerModel {
-
 	/** The original network selected by the user */
 	private CyNetwork originalNetwork;
 	/** The network to perform the algorithm on */
@@ -25,9 +25,9 @@ public class PathLinkerModel {
 	private HashMap<String, CyNode> idToCyNode;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
-	/** original user input strings that contains sources*/
+	/** original user input strings that contains sources */
 	private String sourcesTextField;
-	/** original user input strings that contains targets*/
+	/** original user input strings that contains targets */
 	private String targetsTextField;
 	/** list of source names */
 	private HashSet<String> sourceNames;
@@ -228,7 +228,6 @@ public class PathLinkerModel {
 	 * Setter method for sourcesList, sourceNames, and sourcesNotInNet
 	 */
 	public void setSources() {
-
 		// splits the names by spaces
 		String[] rawSourceNames = sourcesTextField.split(" ");
 
@@ -252,7 +251,6 @@ public class PathLinkerModel {
 	 * Setter method for targetsList, targetNames, and targetsNotInNet
 	 */
 	public void setTargets() {
-
 		// splits the names by spaces
 		String[] rawTargetNames = targetsTextField.split(" ");
 
@@ -304,7 +302,6 @@ public class PathLinkerModel {
 	 * @return true if success, otherwise false
 	 */
 	public boolean prepareIdSourceTarget() {
-
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
@@ -318,12 +315,10 @@ public class PathLinkerModel {
 	}
 	
 	/**
-	 * runs all the necessary algorithms to calculate kth shortest path
+	 * Runs all the necessary algorithms to calculate kth shortest path
 	 * @return result, the list of paths
 	 */
 	public ArrayList<Path> runKSP() {
-
-		
 		// sets the number of common sources and targets
 		// this is for a temporary hack
 		setCommonSourcesTargets();
