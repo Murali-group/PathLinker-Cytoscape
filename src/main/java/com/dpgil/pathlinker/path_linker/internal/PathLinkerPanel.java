@@ -9,6 +9,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -23,6 +24,7 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -44,6 +46,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JTextField _targetsTextField;
 	private JTextField _kTextField;
 	private JTextField _edgePenaltyTextField;
+	private JButton _loadNodeToSourceButton;
+	private JButton _loadNodeToTargetButton;
 	private JButton _submitButton;
 	private ButtonGroup _weightedOptionGroup;
 	private JRadioButton _unweighted;
@@ -169,6 +173,49 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_networkViewManager = networkViewManager;
 		_adapter = adapter;
 		_parent = this.getParent();
+	}
+
+	/**
+	 * Listener for the select node to source button in the panel
+	 * Obtain selected node names from the network, construct a string of them
+	 * separate by space, and pass it onto sources text field
+	 */
+	class LoadNodeToSourceButtonListener implements ActionListener {
+		/**
+		 * Responds to a click of the button
+		 */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			StringBuilder sources = new StringBuilder();
+			CyNetwork network = _applicationManager.getCurrentNetwork();
+			List<CyNode> nodes = CyTableUtil.getNodesInState(network,"selected",true);
+			for (CyNode node : nodes)
+				sources.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
+
+			_sourcesTextField.setText(sources.toString());
+		}
+	}
+
+	/**
+	 * Listener for the select node to target button in the panel
+	 * Obtain selected node names from the network, construct a string of them
+	 * separate by space, and pass it onto target text field
+	 */
+	class LoadNodeToTargetButtonListener implements ActionListener {
+		
+		/**
+		 * Responds to a click of the button
+		 */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			StringBuilder targets = new StringBuilder();
+			CyNetwork network = _applicationManager.getCurrentNetwork();
+			List<CyNode> nodes = CyTableUtil.getNodesInState(network,"selected",true);
+			for (CyNode node : nodes)
+				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
+
+			_targetsTextField.setText(targets.toString());
+		}
 	}
 
 	/** Listener for the submit button in the panel */
@@ -560,10 +607,14 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 		_sourcesTextField = new JTextField(20);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+		_loadNodeToSourceButton = new JButton("Selected node(s) to source");
+		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
 
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 		_targetsTextField = new JTextField(20);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+		_loadNodeToTargetButton = new JButton("Selected node(s) to target");
+		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
@@ -598,8 +649,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		sourceTargetPanel.setBorder(sourceTargetBorder);
 		sourceTargetPanel.add(_sourcesLabel);
 		sourceTargetPanel.add(_sourcesTextField);
+		sourceTargetPanel.add(_loadNodeToSourceButton);
 		sourceTargetPanel.add(_targetsLabel);
 		sourceTargetPanel.add(_targetsTextField);
+		sourceTargetPanel.add(_loadNodeToTargetButton);
 		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
 		sourceTargetPanel.add(_targetsSameAsSourcesOption);
 		this.add(sourceTargetPanel);
