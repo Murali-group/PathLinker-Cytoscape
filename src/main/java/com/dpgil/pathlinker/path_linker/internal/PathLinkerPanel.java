@@ -8,11 +8,16 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -25,6 +30,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -46,8 +52,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JTextField _targetsTextField;
 	private JTextField _kTextField;
 	private JTextField _edgePenaltyTextField;
-	private JButton _loadNodeToSourceButton;
-	private JButton _loadNodeToTargetButton;
+	protected static JButton _loadNodeToSourceButton;
+	protected static JButton _loadNodeToTargetButton;
+	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
 	private ButtonGroup _weightedOptionGroup;
 	private JRadioButton _unweighted;
@@ -60,7 +67,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
-	private CyApplicationManager _applicationManager;
+	protected static CyApplicationManager _applicationManager;
 	private CyNetworkManager _networkManager;
 	private CyNetworkViewFactory _networkViewFactory;
 	private CyNetworkViewManager _networkViewManager;
@@ -174,6 +181,34 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_adapter = adapter;
 		_parent = this.getParent();
 	}
+	
+	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
+	class CheckBoxListener implements ItemListener {
+		/** Enable/disable the button based on the check boxes */
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			enableClearButton();
+		}
+	}
+	
+	/**
+	 * Listener for the source and target text fields in the panel
+	 * enable/disable the _clearSourceTargetPanelButton based on the text fields
+	 */
+	class TextFieldListener implements DocumentListener {
+		@Override
+		  public void changedUpdate(DocumentEvent e) {
+			enableClearButton();
+		  }
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			enableClearButton();
+		}
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			enableClearButton();
+		}
+	}
 
 	/**
 	 * Listener for the select node to source button in the panel
@@ -181,9 +216,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * separate by space, and pass it onto sources text field
 	 */
 	class LoadNodeToSourceButtonListener implements ActionListener {
-		/**
-		 * Responds to a click of the button
-		 */
+		/** Responds to a click of the button */
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			StringBuilder sources = new StringBuilder();
@@ -202,10 +235,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * separate by space, and pass it onto target text field
 	 */
 	class LoadNodeToTargetButtonListener implements ActionListener {
-		
-		/**
-		 * Responds to a click of the button
-		 */
+		/** Responds to a click of the button */
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			StringBuilder targets = new StringBuilder();
@@ -215,6 +245,21 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
 			_targetsTextField.setText(targets.toString());
+		}
+	}
+	
+	/**
+	 * Listener for the clear button in the source target panel
+	 * clear all the user inputs inside the source target panel
+	 */
+	class ClearSourceTargetPanelButtonListener implements ActionListener {
+		/** Responds to a click of the button */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			_sourcesTextField.setText("");
+			_targetsTextField.setText("");
+			_allowSourcesTargetsInPathsOption.setSelected(false);
+			_targetsSameAsSourcesOption.setSelected(false);
 		}
 	}
 
@@ -227,6 +272,16 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		public void actionPerformed(ActionEvent e) {
 			prepareAndRunKSP();
 		}
+	}
+	
+	/** enables/disable the _clearSourceTargetPanelButton 
+	 * based on the source/target text fields and the check boxes
+	 */
+	private void enableClearButton() {
+		if (_sourcesTextField.getText().equals("") && _targetsTextField.getText().equals("") 
+				&& !_allowSourcesTargetsInPathsOption.isSelected() && !_targetsSameAsSourcesOption.isSelected())
+				_clearSourceTargetPanelButton.setEnabled(false);
+		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
 	private void prepareAndRunKSP() {
@@ -607,18 +662,28 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 		_sourcesTextField = new JTextField(20);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 		_loadNodeToSourceButton = new JButton("Selected node(s) to source");
+		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
-
+		
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 		_targetsTextField = new JTextField(20);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 		_loadNodeToTargetButton = new JButton("Selected node(s) to target");
+		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
-
+		
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
-
+		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+		
+		_clearSourceTargetPanelButton = new JButton("Clear");
+		_clearSourceTargetPanelButton.setEnabled(false);
+		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
+		
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
@@ -655,6 +720,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		sourceTargetPanel.add(_loadNodeToTargetButton);
 		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
 		sourceTargetPanel.add(_targetsSameAsSourcesOption);
+		sourceTargetPanel.add(_clearSourceTargetPanelButton);
 		this.add(sourceTargetPanel);
 
 		JPanel kPanel = new JPanel();
