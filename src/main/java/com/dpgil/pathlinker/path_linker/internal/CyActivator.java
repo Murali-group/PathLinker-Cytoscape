@@ -1,6 +1,8 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.events.RowsSetListener;
+
 import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
@@ -66,5 +68,9 @@ public class CyActivator
 
         // starts off the panel in a closed state
         panel.setPanelState(PanelState.CLOSED);
+        
+        // Handle load node to source/target button enable/disable events
+        PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
+        registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
     }
 }

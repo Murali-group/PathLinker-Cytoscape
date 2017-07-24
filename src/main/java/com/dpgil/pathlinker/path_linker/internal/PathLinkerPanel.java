@@ -8,10 +8,16 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -23,6 +29,8 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -44,6 +52,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JTextField _targetsTextField;
 	private JTextField _kTextField;
 	private JTextField _edgePenaltyTextField;
+	protected static JButton _loadNodeToSourceButton;
+	protected static JButton _loadNodeToTargetButton;
+	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
 	private ButtonGroup _weightedOptionGroup;
 	private JRadioButton _unweighted;
@@ -56,7 +67,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
-	private CyApplicationManager _applicationManager;
+	protected static CyApplicationManager _applicationManager;
 	private CyNetworkManager _networkManager;
 	private CyNetworkViewFactory _networkViewFactory;
 	private CyNetworkViewManager _networkViewManager;
@@ -83,7 +94,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private double _edgePenalty;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
-	
+
 	/** The state of the panel */
 	public enum PanelState {
 		/** The panel is hidden */
@@ -170,6 +181,87 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_adapter = adapter;
 		_parent = this.getParent();
 	}
+	
+	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
+	class CheckBoxListener implements ItemListener {
+		/** Enable/disable the button based on the check boxes */
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			enableClearButton();
+		}
+	}
+	
+	/**
+	 * Listener for the source and target text fields in the panel
+	 * enable/disable the _clearSourceTargetPanelButton based on the text fields
+	 */
+	class TextFieldListener implements DocumentListener {
+		@Override
+		  public void changedUpdate(DocumentEvent e) {
+			enableClearButton();
+		  }
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			enableClearButton();
+		}
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			enableClearButton();
+		}
+	}
+
+	/**
+	 * Listener for the select node to source button in the panel
+	 * Obtain selected node names from the network, construct a string of them
+	 * separate by space, and pass it onto sources text field
+	 */
+	class LoadNodeToSourceButtonListener implements ActionListener {
+		/** Responds to a click of the button */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			StringBuilder sources = new StringBuilder();
+			CyNetwork network = _applicationManager.getCurrentNetwork();
+			List<CyNode> nodes = CyTableUtil.getNodesInState(network,"selected",true);
+			for (CyNode node : nodes)
+				sources.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
+
+			_sourcesTextField.setText(sources.toString());
+		}
+	}
+
+	/**
+	 * Listener for the select node to target button in the panel
+	 * Obtain selected node names from the network, construct a string of them
+	 * separate by space, and pass it onto target text field
+	 */
+	class LoadNodeToTargetButtonListener implements ActionListener {
+		/** Responds to a click of the button */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			StringBuilder targets = new StringBuilder();
+			CyNetwork network = _applicationManager.getCurrentNetwork();
+			List<CyNode> nodes = CyTableUtil.getNodesInState(network,"selected",true);
+			for (CyNode node : nodes)
+				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
+
+			_targetsTextField.setText(targets.toString());
+		}
+	}
+	
+	/**
+	 * Listener for the clear button in the source target panel
+	 * clear all the user inputs inside the source target panel
+	 */
+	class ClearSourceTargetPanelButtonListener implements ActionListener {
+		/** Responds to a click of the button */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			_sourcesTextField.setText("");
+			_targetsTextField.setText("");
+			_allowSourcesTargetsInPathsOption.setSelected(false);
+			_targetsSameAsSourcesOption.setSelected(false);
+		}
+	}
 
 	/** Listener for the submit button in the panel */
 	class SubmitButtonListener implements ActionListener {
@@ -180,6 +272,16 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		public void actionPerformed(ActionEvent e) {
 			prepareAndRunKSP();
 		}
+	}
+	
+	/** enables/disable the _clearSourceTargetPanelButton 
+	 * based on the source/target text fields and the check boxes
+	 */
+	private void enableClearButton() {
+		if (_sourcesTextField.getText().equals("") && _targetsTextField.getText().equals("") 
+				&& !_allowSourcesTargetsInPathsOption.isSelected() && !_targetsSameAsSourcesOption.isSelected())
+				_clearSourceTargetPanelButton.setEnabled(false);
+		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
 	private void prepareAndRunKSP() {
@@ -233,27 +335,32 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean callRunKSP() {
 		boolean success;
 
+		// Check to see if network exists before starting reading the values from the panel
+		_originalNetwork = _applicationManager.getCurrentNetwork();
+		if (_originalNetwork == null) {
+			JOptionPane.showMessageDialog(null, "Network not found. Please load a valid network");
+			return false;
+		}
+
 		// reads the raw values from the panel and converts them into useful
 		readValuesFromPanel();
-		
-		// initialize the model from the user inputs
-		_model= new PathLinkerModel(_applicationManager.getCurrentNetwork(), 
-				_allowSourcesTargetsInPathsOption.isSelected(), _subgraphOption.isSelected(), 
-				_sourcesTextField.getText(), _targetsTextField.getText(), 
-				_kValue, _edgeWeightSetting, _edgePenalty);
 
+		// initialize the model from the user inputs
+		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
+				_subgraphOption.isSelected(), _sourcesTextField.getText(), _targetsTextField.getText(), 
+				_kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
-		
+
 		if (!success)
 			return false;
-		
+
 		// check to see if source, targets, and edges are set up correctly
 		success = checkSourceTargetEdge();
 		if (!success)
 			return false;
-		
+
 		// runs the setup and KSP algorithm
 		ArrayList<Path> result = _model.runKSP();
 
@@ -267,7 +374,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		return true;
 	}
-	
+
 	/**
 	 * Check user inputs on source, target, and edge weights
 	 * @return true if check passes, otherwise false
@@ -304,7 +411,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			JOptionPane.showMessageDialog(null,
 					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
 		}
-		
+
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
 			errorMessage.append("Continue anyway?");
@@ -314,7 +421,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				return false;
 			}
 		}
-		
+
 		// checks if all the edges in the graph have weights.
 		// if a weighted option was selected, but not all edges have weights
 		// then we say something to the user.
@@ -323,7 +430,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		// average the weights or just delete the extra edges (see
 		// averageMultiEdges method)
 		_originalNetwork = _model.getOriginalNetwork();
-		
+
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
 			Double value = _originalNetwork.getRow(edge).get("edge_weight", Double.class);
 
@@ -411,9 +518,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 			// valid number was entered, but not valid for the algorithm
 			// i.e., negative number
-			if (_edgePenalty <= 0 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+			if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
 				errorMessage.append(
-						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than 0. Using default penalty=1.0\n");
+						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than or equal to 1. Using default penalty=1.0\n");
 				_edgePenalty = 1.0;
 			}
 
@@ -555,14 +662,28 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 		_sourcesTextField = new JTextField(20);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
-
+		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
+		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+		_loadNodeToSourceButton.setEnabled(false);
+		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
+		
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 		_targetsTextField = new JTextField(20);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-
+		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
+		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+		_loadNodeToTargetButton.setEnabled(false);
+		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
+		
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
-
+		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+		
+		_clearSourceTargetPanelButton = new JButton("Clear");
+		_clearSourceTargetPanelButton.setEnabled(false);
+		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
+		
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
@@ -593,10 +714,13 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		sourceTargetPanel.setBorder(sourceTargetBorder);
 		sourceTargetPanel.add(_sourcesLabel);
 		sourceTargetPanel.add(_sourcesTextField);
+		sourceTargetPanel.add(_loadNodeToSourceButton);
 		sourceTargetPanel.add(_targetsLabel);
 		sourceTargetPanel.add(_targetsTextField);
+		sourceTargetPanel.add(_loadNodeToTargetButton);
 		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
 		sourceTargetPanel.add(_targetsSameAsSourcesOption);
+		sourceTargetPanel.add(_clearSourceTargetPanelButton);
 		this.add(sourceTargetPanel);
 
 		JPanel kPanel = new JPanel();
