@@ -663,7 +663,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_sourcesTextField = new JTextField(20);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
-		_loadNodeToSourceButton = new JButton("Selected node(s) to source");
+		_loadNodeToSourceButton = new JButton("Add selected node(s)");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
 		
@@ -671,7 +671,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_targetsTextField = new JTextField(20);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
-		_loadNodeToTargetButton = new JButton("Selected node(s) to target");
+		_loadNodeToTargetButton = new JButton("Add selected node(s)");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 		
