@@ -143,13 +143,16 @@ public class Algorithms
      *            the target node
      * @param maxK
      *            the number of shortest paths
+     * @param includePathScoreTies
+     * 			  the option to include all paths of equal length
      * @return a list of k-shortest paths in sorted order by cost
      */
     public static ArrayList<Path> ksp(
         CyNetwork network,
         CyNode source,
         CyNode target,
-        int maxK)
+        int maxK,
+        boolean includePathScoreTies)
     {
         // the list of shortest paths
         ArrayList<Path> A = new ArrayList<Path>();
@@ -192,8 +195,9 @@ public class Algorithms
                     .put(subPath, new ArrayList<CyNode>(Arrays.asList(node)));
             }
         }
-
-        for (int k = 1; k < maxK; k++)
+        
+        // continue the loop if includePathScoreTies is true even if k is greater or equal to than maxK
+        for (int k = 1; k < maxK || includePathScoreTies; k++)
         {
             // previously computed shortest path
             Path latestPath = A.get(A.size() - 1);
@@ -293,6 +297,10 @@ public class Algorithms
                         cachedPath.add(currNode);
                 }
 
+                // If the ties stops then break the loop, don't add the newShortest
+                if (k >= maxK && A.size() > 2 && A.get(A.size() - 1).weight != newShortest.weight)
+                	break;
+                
                 // adds the next shortest path to the accepted list of paths
                 A.add(newShortest);
             }
@@ -303,7 +311,7 @@ public class Algorithms
                 break;
             }
         }
-
+        
         return A;
     }
 

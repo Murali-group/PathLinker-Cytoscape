@@ -59,6 +59,8 @@ public class PathLinkerModel {
 	private HashSet<CyEdge> superEdges;
 	/** Number of shared nodes between sources and targets */
 	private int commonSourcesTargets;
+	/** Whether or not to treat all paths with same weight as one "k" path */
+	private boolean includePathScoreTies;
 	/** Whether or not to generate a subgraph */
 	private boolean generateSubgraph;
 	/** ksp subgraph */
@@ -72,6 +74,7 @@ public class PathLinkerModel {
 	 * Constructor of the model
 	 * @param originalNetwork 			 the original network given by the view
 	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
+	 * @param includePathScoreTies		 the option to include all paths of equal length
 	 * @param generateSubgraph 			 boolean deciding if need to generate subgraph
 	 * @param sourcesTextField 			 source node names in string
 	 * @param targetsTextField 			 target node names in string
@@ -79,11 +82,13 @@ public class PathLinkerModel {
 	 * @param edgeWeightSetting			 edge weight setting
 	 * @param edgePenalty				 edge penalty
 	 */
-	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean generateSubgraph, 
-			String sourcesTextField, String targetsTextField, int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
+	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
+			boolean generateSubgraph, String sourcesTextField, String targetsTextField, int k, 
+			EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
 		
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
+		this.includePathScoreTies		= includePathScoreTies;
 		this.generateSubgraph 			= generateSubgraph;
 		this.sourcesTextField 			= sourcesTextField;
 		this.targetsTextField 			= targetsTextField;
@@ -343,7 +348,8 @@ public class PathLinkerModel {
 		addSuperNodes();
 
 		// runs the KSP algorithm
-		ArrayList<Path> result = Algorithms.ksp(network, superSource, superTarget, k + commonSourcesTargets);
+		ArrayList<Path> result = Algorithms.ksp(network, superSource, superTarget, 
+				k + commonSourcesTargets, includePathScoreTies);
 
 		// discard first _commonSourcesTargets paths
 		// this is for a temporary hack: when there are n nodes that are both

@@ -43,6 +43,8 @@ public class PathLinkerModelTest {
 
 	/** model for running the algorithms on different networks */
 	private PathLinkerModel testModel;
+	/** Whether or not to treat all paths with same weight as one "k" path */
+	private boolean includePathScoreTies;
 	/** Whether or not to generate a subgraph */
 	private boolean generateSubgraph;
 	/** original test input strings that contains sources */
@@ -75,6 +77,7 @@ public class PathLinkerModelTest {
 		setUpNetwork();
 
 		//setting up the required variables for generating the result (same throughout the test cases)
+		includePathScoreTies = false;
 		generateSubgraph = false;
 		source = "P35968 P00533 Q02763";
 		target = "Q15797 Q14872 Q16236 P14859 P36956";
@@ -435,7 +438,7 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with source = target and k = 37
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		testModel = new PathLinkerModel(originalNetworkDir, true, false, 
+		testModel = new PathLinkerModel(originalNetworkDir, true, true, false, 
 				source, source, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
 		testModel.prepareIdSourceTarget();
 
@@ -565,7 +568,7 @@ public class PathLinkerModelTest {
 	 */
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
 		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, generateSubgraph, 
-				source, target, k, edgeWeightSetting, edgePenalty); //construct model
+				includePathScoreTies, source, target, k, edgeWeightSetting, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 	}
 
