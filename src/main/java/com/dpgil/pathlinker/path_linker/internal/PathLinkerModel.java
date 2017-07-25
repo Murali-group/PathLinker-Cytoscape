@@ -650,9 +650,6 @@ public class PathLinkerModel {
 
 		kspSubgraph = root.addSubNetwork(nodesToAdd, edgesToAdd);
 
-		// create a new attribute "rank" in the network edge table
-		kspSubgraph.getTable(CyEdge.class, CyNetwork.LOCAL_ATTRS).createColumn("rank", Boolean.class, false);
-		
 		// sets the network name
 		String subgraphName = "PathLinker-subnetwork-" + k + "-paths";
 		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
