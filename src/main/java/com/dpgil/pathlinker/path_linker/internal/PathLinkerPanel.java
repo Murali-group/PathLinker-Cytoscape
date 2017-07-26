@@ -561,9 +561,11 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				// add all of the directed edges from node1 to node2
 				List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
 				for (CyEdge edge : edges)
-					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null)
+				{
+					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null &&
+							edge.getSource().equals(node1) && edge.getTarget().equals(node2)) // verifies the edges direction
 						_originalNetwork.getRow(edge).set(columnName, i + 1);
-
+				}
 				// also add all of the undirected edges from node1 to node2
 				edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
 				for (CyEdge edge : edges) 
