@@ -59,7 +59,7 @@ public class PathLinkerModel {
 	private HashSet<CyEdge> superEdges;
 	/** Number of shared nodes between sources and targets */
 	private int commonSourcesTargets;
-	/** Whether or not to treat all paths with same weight as one "k" path */
+	/** Whether or not to include more than k paths if the path length/score is equal to the kth path's */
 	private boolean includePathScoreTies;
 	/** Whether or not to generate a subgraph */
 	private boolean generateSubgraph;

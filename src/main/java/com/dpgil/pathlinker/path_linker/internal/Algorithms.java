@@ -144,7 +144,8 @@ public class Algorithms
      * @param maxK
      *            the number of shortest paths
      * @param includePathScoreTies
-     * 			  the option to include all paths of equal length
+     * 			  the option to include all paths with the same weight 
+     * 			  when the maxK path is reached
      * @return a list of k-shortest paths in sorted order by cost
      */
     public static ArrayList<Path> ksp(

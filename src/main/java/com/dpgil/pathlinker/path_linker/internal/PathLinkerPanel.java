@@ -689,7 +689,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-
+		
 		_edgePenaltyLabel = new JLabel("Edge penalty");
 		_edgePenaltyTextField = new JTextField(7);
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
@@ -704,8 +704,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_weightedOptionGroup.add(_unweighted);
 		_weightedOptionGroup.add(_weightedAdditive);
 		_weightedOptionGroup.add(_weightedProbabilities);
-
-		_includePathScoreTiesOption = new JCheckBox("<html>Include paths above k if equal path score</html>");
+		
+		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
 		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
 				true);
 
