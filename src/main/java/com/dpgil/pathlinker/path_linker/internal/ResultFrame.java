@@ -66,22 +66,22 @@ extends JFrame
 		// sort the paths based on the alphabet
 		// example: path A|B|C will be before B|B|C even if they have the same weight
 		// if else statement for different edge weight settings
-		if (_setting == EdgeWeightSetting.PROBABILITIES)
-			Arrays.sort(rowData, new Comparator<Object[]>() {
-				@Override
-				public int compare(Object[] o1, Object[] o2) {
-					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
-							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o2[1], (double)o1[1]);
-				}
-			});
-		else
-			Arrays.sort(rowData, new Comparator<Object[]>() {
-				@Override
-				public int compare(Object[] o1, Object[] o2) {
-					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
-							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o1[1], (double)o2[1]);
-				}
-			});
+//		if (_setting == EdgeWeightSetting.PROBABILITIES)
+//			Arrays.sort(rowData, new Comparator<Object[]>() {
+//				@Override
+//				public int compare(Object[] o1, Object[] o2) {
+//					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
+//							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o2[1], (double)o1[1]);
+//				}
+//			});
+//		else
+//			Arrays.sort(rowData, new Comparator<Object[]>() {
+//				@Override
+//				public int compare(Object[] o1, Object[] o2) {
+//					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
+//							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o1[1], (double)o2[1]);
+//				}
+//			});
 
 		// "rank" the paths after sorting
 		for (int j = 0; j < results.size(); j++)
@@ -143,9 +143,7 @@ extends JFrame
 		StringBuilder currPath = new StringBuilder();
 		for (int i = 1; i < p.size() - 1; i++)
 		{
-			currPath.append(
-					_network.getRow(p.get(i)).get(CyNetwork.NAME, String.class)
-					+ "|");
+			currPath.append(p.nodeIdMap.get(p.get(i)) + "|");
 		}
 		currPath.setLength(currPath.length() - 1);
 
