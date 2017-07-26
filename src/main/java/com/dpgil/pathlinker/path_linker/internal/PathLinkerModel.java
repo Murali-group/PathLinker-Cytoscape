@@ -363,6 +363,7 @@ public class PathLinkerModel {
 		// paths
 		result.subList(0, commonSourcesTargets).clear();
 
+		// sort the result paths in alphabetical order if weight is same
 		Algorithms.sortResult(result);
 		
 		// "un log-transforms" the path scores in the weighted options
