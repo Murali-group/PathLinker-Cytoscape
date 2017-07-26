@@ -58,8 +58,8 @@ public class Algorithms
 
 
 	/**
-	 * Represents a pathway. Stores the list of nodes in order in the path and
-	 * the weight of the path
+	 * Represents a pathway. Stores the list of nodes in order in the path,
+	 * the string name of each nodes, and the weight of the path
 	 */
 	public static class Path implements Comparable<Path>
 	{
@@ -75,6 +75,8 @@ public class Algorithms
 		 *
 		 * @param nodeList
 		 *            the list of nodes in order in the path
+		 * @param map
+		 * 			  the map of the original network, use to find names of the nodes
 		 * @param weight
 		 *            the total weight of the path
 		 */
@@ -83,11 +85,8 @@ public class Algorithms
 			this.nodeList = nodeList;
 			this.weight = weight;
 			this.nodeIdMap = new HashMap<CyNode, String>();
-			if (nodeList != null)
-			{
-				for (int i = 0; i < nodeList.size(); i++)
-					nodeIdMap.put(nodeList.get(i), map.get(nodeList.get(i)));
-			}
+			for (int i = 0; i < nodeList.size(); i++)
+				nodeIdMap.put(nodeList.get(i), map.get(nodeList.get(i)));
 		}
 
 
@@ -133,6 +132,11 @@ public class Algorithms
 			return nodeList.hashCode();
 		}
 
+		/**
+		 * Use for sorting the path results
+		 * Sort by weight, if weight is equal then sort by the name of the nodes
+		 * if name is equal then return the path with less nodes
+		 */
 		@Override
 		public int compareTo(Path o) {
 			if (Double.compare(this.weight, o.weight) != 0) return Double.compare(this.weight, o.weight);
@@ -907,6 +911,10 @@ public class Algorithms
 		return sum;
 	}
 
+	/**
+	 * Sort the list of the paths using its custom compareTo method
+	 * @param result the sorted list of pathss
+	 */
 	public static void sortResult(ArrayList<Path> result)
 	{
 		Collections.sort(result);

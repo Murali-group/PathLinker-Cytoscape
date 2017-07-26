@@ -313,7 +313,7 @@ public class PathLinkerModel {
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
-		if (!populateIdToCyNode()) return false;
+		if (!populateIdCyNodePair()) return false;
 		
 		// sets source and target
 		setSources();
@@ -380,9 +380,10 @@ public class PathLinkerModel {
 
 	/**
 	 * Populates idToCyNode, the map of node names to their objects
-	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode and return true
+	 * Populates cyNodeToId, the map of node objects to their names
+	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode, cyNodeToId, and return true
 	 */
-	private boolean populateIdToCyNode() {
+	private boolean populateIdCyNodePair() {
 		if (this.originalNetwork == null)
 			return false;
 
