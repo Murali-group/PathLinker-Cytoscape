@@ -51,6 +51,8 @@ public class PathLinkerModelTest {
 	private String source;
 	/** original test input strings that contains targets */
 	private String target;
+	/** column name that contains edge_weight */
+	private String edgeWeightColumnName;
 	/** The value by which to penalize each edge weight */
 	private double edgePenalty;
 
@@ -81,6 +83,7 @@ public class PathLinkerModelTest {
 		generateSubgraph = false;
 		source = "P35968 P00533 Q02763";
 		target = "Q15797 Q14872 Q16236 P14859 P36956";
+		edgeWeightColumnName = "edge_weight";
 		edgePenalty = 1;
 	}
 
@@ -440,7 +443,7 @@ public class PathLinkerModelTest {
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		boolean allowSourceTargetInPaths = true;
 		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, generateSubgraph, 
-				source, source, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
+				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
 		testModel.prepareIdSourceTarget();
 
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
@@ -569,7 +572,7 @@ public class PathLinkerModelTest {
 	 */
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
 		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, generateSubgraph, 
-				source, target, k, edgeWeightSetting, edgePenalty); //construct model
+				source, target, edgeWeightColumnName, k, edgeWeightSetting, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 	}
 
