@@ -371,6 +371,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		if (_model.getGenerateSubgraph())
 			createKSPSubgraphView();
 
+		// update the table path index attribute
+		updatePathIndexAttribute(result);
+		
 		// writes the result of the algorithm to a table
 		writeResult(result);
 
@@ -533,6 +536,46 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			}
 		}
 	}
+	
+	/**
+	 * Creates a path index attribute to the network edge tables
+	 * that rank each edge in the newly generated paths according to its weight
+	 * @param paths 
+	 * 			the sorted paths of the network generated from the algorithm
+	 */
+	private void updatePathIndexAttribute(ArrayList<Path> paths) {
+		// create a new attribute "path index n" in the network edge table, where n is an unique number
+		int columnNum = 1;
+		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + columnNum) != null)
+			columnNum++;
+
+		String columnName = "path index " + (columnNum);
+		_originalNetwork.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
+
+		for (int i = 0; i < paths.size(); i++) {
+			Path currPath = paths.get(i);
+
+			// excluding supersource and supertarget
+			for (int j = 1; j < currPath.size() - 2; j++) {
+				CyNode node1 = currPath.get(j);
+				CyNode node2 = currPath.get(j + 1);
+
+				// add all of the directed edges from node1 to node2
+				List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+				for (CyEdge edge : edges)
+				{
+					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null &&
+							edge.getSource().equals(node1) && edge.getTarget().equals(node2)) // verifies the edges direction
+						_originalNetwork.getRow(edge).set(columnName, i + 1);
+				}
+				// also add all of the undirected edges from node1 to node2
+				edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
+				for (CyEdge edge : edges) 
+					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null)
+						_originalNetwork.getRow(edge).set(columnName,  i + 1);
+			}
+		}
+	}
 
 	/**
 	 * Writes the ksp results to a table given the results from the ksp
@@ -689,7 +732,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-
+		
 		_edgePenaltyLabel = new JLabel("Edge penalty");
 		_edgePenaltyTextField = new JTextField(7);
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
@@ -704,8 +747,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_weightedOptionGroup.add(_unweighted);
 		_weightedOptionGroup.add(_weightedAdditive);
 		_weightedOptionGroup.add(_weightedProbabilities);
-
-		_includePathScoreTiesOption = new JCheckBox("<html>Include paths above k if equal path score</html>");
+		
+		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
 		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
 				true);
 

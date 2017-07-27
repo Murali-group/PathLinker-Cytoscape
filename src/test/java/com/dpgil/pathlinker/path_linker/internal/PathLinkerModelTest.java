@@ -438,7 +438,8 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with source = target and k = 37
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		testModel = new PathLinkerModel(originalNetworkDir, true, true, false, 
+		boolean allowSourceTargetInPaths = true;
+		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, generateSubgraph, 
 				source, source, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
 		testModel.prepareIdSourceTarget();
 
@@ -567,8 +568,8 @@ public class PathLinkerModelTest {
 	 * Sets up the test model before testing
 	 */
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
-		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, generateSubgraph, 
-				includePathScoreTies, source, target, k, edgeWeightSetting, edgePenalty); //construct model
+		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, generateSubgraph, 
+				source, target, k, edgeWeightSetting, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 	}
 
