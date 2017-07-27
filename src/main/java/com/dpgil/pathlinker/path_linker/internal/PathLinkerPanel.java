@@ -63,6 +63,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JCheckBox _subgraphOption;
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
+	private JCheckBox _includePathScoreTiesOption;
 	private JLabel _runningMessage;
 
 	/** Cytoscape class for network and view management */
@@ -347,7 +348,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		// initialize the model from the user inputs
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
-				_subgraphOption.isSelected(), _sourcesTextField.getText(), _targetsTextField.getText(), 
+				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
+				_sourcesTextField.getText(), _targetsTextField.getText(), 
 				_kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
@@ -730,7 +732,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-
+		
 		_edgePenaltyLabel = new JLabel("Edge penalty");
 		_edgePenaltyTextField = new JTextField(7);
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
@@ -745,7 +747,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_weightedOptionGroup.add(_unweighted);
 		_weightedOptionGroup.add(_weightedAdditive);
 		_weightedOptionGroup.add(_weightedProbabilities);
-
+		
+		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
 		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
 				true);
 
@@ -789,6 +792,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		subgraphPanel.setLayout(new BoxLayout(subgraphPanel, BoxLayout.PAGE_AXIS));
 		TitledBorder subgraphBorder = BorderFactory.createTitledBorder("Output");
 		subgraphPanel.setBorder(subgraphBorder);
+		subgraphPanel.add(_includePathScoreTiesOption);
 		subgraphPanel.add(_subgraphOption);
 		this.add(subgraphPanel);
 
