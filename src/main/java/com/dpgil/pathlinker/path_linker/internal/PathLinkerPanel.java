@@ -292,7 +292,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		Collection<CyColumn> columns = _applicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();	
 		for (CyColumn column : columns) {
-			if (column.getType() == Double.class || column.getType() == Integer.class)
+			if (column.getType() == Double.class)
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
