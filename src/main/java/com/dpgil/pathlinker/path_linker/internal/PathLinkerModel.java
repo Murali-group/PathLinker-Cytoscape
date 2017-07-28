@@ -23,6 +23,8 @@ public class PathLinkerModel {
 	private CyNetwork network;
 	/** A mapping of the name of a node to the actual node object */
 	private HashMap<String, CyNode> idToCyNode;
+	/** A mapping of the node object to its name*/
+	private HashMap<CyNode, String> cyNodeToId;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
 	/** original user input strings that contains sources */
@@ -98,6 +100,7 @@ public class PathLinkerModel {
 		
 		// initialize for future use
 		this.idToCyNode 		  = new HashMap<String, CyNode>();
+		this.cyNodeToId			  = new HashMap<CyNode, String>();
 		this.commonSourcesTargets = 0;
 	}
 
@@ -310,7 +313,7 @@ public class PathLinkerModel {
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
-		if (!populateIdToCyNode()) return false;
+		if (!populateIdCyNodePair()) return false;
 		
 		// sets source and target
 		setSources();
@@ -348,7 +351,7 @@ public class PathLinkerModel {
 		addSuperNodes();
 
 		// runs the KSP algorithm
-		ArrayList<Path> result = Algorithms.ksp(network, superSource, superTarget, 
+		ArrayList<Path> result = Algorithms.ksp(network, cyNodeToId, superSource, superTarget, 
 				k + commonSourcesTargets, includePathScoreTies);
 
 		// discard first _commonSourcesTargets paths
@@ -360,6 +363,9 @@ public class PathLinkerModel {
 		// paths
 		result.subList(0, commonSourcesTargets).clear();
 
+		// sort the result paths in alphabetical order if weight is same
+		Algorithms.sortResult(result);
+		
 		// "un log-transforms" the path scores in the weighted options
 		// as to undo the log transformations and leave the path scores
 		// in terms of the edge weights
@@ -374,15 +380,17 @@ public class PathLinkerModel {
 
 	/**
 	 * Populates idToCyNode, the map of node names to their objects
-	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode and return true
+	 * Populates cyNodeToId, the map of node objects to their names
+	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode, cyNodeToId, and return true
 	 */
-	private boolean populateIdToCyNode() {
+	private boolean populateIdCyNodePair() {
 		if (this.originalNetwork == null)
 			return false;
 
 		for (CyNode node : originalNetwork.getNodeList()) {
 			String nodeName = originalNetwork.getRow(node).get(CyNetwork.NAME, String.class);
 			idToCyNode.put(nodeName, node);
+			cyNodeToId.put(node, nodeName);
 		}
 
 		return true;
