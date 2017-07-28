@@ -292,7 +292,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		Collection<CyColumn> columns = _applicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();	
 		for (CyColumn column : columns) {
-			if (column.getType() == Double.class)
+			if (column.getType() == Double.class || column.getType() == Integer.class 
+					|| column.getType() == Float.class || column.getType() == Long.class)
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
@@ -459,8 +460,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_originalNetwork = _model.getOriginalNetwork();
 
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-			Double value = _originalNetwork.getRow(edge).get(_edgeWeightColumnBox.getSelectedItem().toString(), Double.class);
-
+			Double value =  Double.parseDouble(_originalNetwork.getRow(edge).getRaw(
+					_edgeWeightColumnBox.getSelectedItem().toString()).toString());
 			if (value == null) {
 				// not all the edges have weights (i.e., at least one of the
 				// entries in the table is null)

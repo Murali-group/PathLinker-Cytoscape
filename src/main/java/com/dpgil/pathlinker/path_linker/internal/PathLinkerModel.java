@@ -571,7 +571,7 @@ public class PathLinkerModel {
 	 */
 	private double getNetworkTableWeight(CyEdge e) {
 		// gets the attribute edge weight value
-		Double value = originalNetwork.getRow(e).get(edgeWeightColumnName, Double.class);
+		Double value = Double.parseDouble((originalNetwork.getRow(e).getRaw(edgeWeightColumnName).toString()));
 		double edge_weight = value != null ? value.doubleValue() : -44444;
 
 		return edge_weight;
