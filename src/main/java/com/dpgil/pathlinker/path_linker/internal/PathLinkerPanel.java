@@ -6,6 +6,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -697,6 +699,75 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			kspSubgraphView.updateView();
 		}
 	}
+	
+	private void setUpSourceTargetPanel() {
+		
+		JPanel sourceTargetPanel = new JPanel();
+		sourceTargetPanel.setLayout(new GridBagLayout());
+		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
+		sourceTargetPanel.setBorder(sourceTargetBorder);
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.fill = GridBagConstraints.HORIZONTAL;
+		
+		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 0;
+		constraint.gridwidth = 5;
+		sourceTargetPanel.add(_sourcesLabel, constraint);
+		
+		_sourcesTextField = new JTextField(20);
+		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
+		constraint.gridy = 1;
+		sourceTargetPanel.add(_sourcesTextField, constraint);
+		
+		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+		_loadNodeToSourceButton.setEnabled(false);
+		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
+		constraint.weightx = 0.0;
+		constraint.gridy = 2;
+		constraint.gridwidth = 1;
+		sourceTargetPanel.add(_loadNodeToSourceButton, constraint);
+		
+		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
+		constraint.weightx = 1;
+		constraint.gridy = 3;
+		constraint.gridwidth = 5;
+		sourceTargetPanel.add(_targetsLabel, constraint);
+		
+		_targetsTextField = new JTextField(20);
+		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
+		constraint.gridy = 4;
+		sourceTargetPanel.add(_targetsTextField, constraint);
+		
+		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+		_loadNodeToTargetButton.setEnabled(false);
+		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
+		constraint.weightx = 0;
+		constraint.gridy = 5;
+		constraint.gridwidth = 1;
+		sourceTargetPanel.add(_loadNodeToTargetButton, constraint);
+		
+		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
+		constraint.gridy = 6;
+		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption, constraint);
+		
+		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
+		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+		constraint.gridy = 7;
+		sourceTargetPanel.add(_targetsSameAsSourcesOption, constraint);
+		
+		_clearSourceTargetPanelButton = new JButton("Clear");
+		_clearSourceTargetPanelButton.setEnabled(false);
+		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
+		constraint.gridy = 7;
+		constraint.anchor = GridBagConstraints.LAST_LINE_END;
+		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
+		this.add(sourceTargetPanel);
+	}
 
 	/**
 	 * Sets up all the components in the panel
@@ -704,30 +775,32 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private void initializePanelItems() {
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
-		_sourcesTextField = new JTextField(20);
-		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
-		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
-		_loadNodeToSourceButton = new JButton("Add selected node(s)");
-		_loadNodeToSourceButton.setEnabled(false);
-		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
+		setUpSourceTargetPanel();
 		
-		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
-		_targetsTextField = new JTextField(20);
-		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
-		_loadNodeToTargetButton = new JButton("Add selected node(s)");
-		_loadNodeToTargetButton.setEnabled(false);
-		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
-		
-		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
-		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
-		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
-		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
-		
-		_clearSourceTargetPanelButton = new JButton("Clear");
-		_clearSourceTargetPanelButton.setEnabled(false);
-		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
+//		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
+//		_sourcesTextField = new JTextField(20);
+//		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+//		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
+//		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+//		_loadNodeToSourceButton.setEnabled(false);
+//		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
+//		
+//		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
+//		_targetsTextField = new JTextField(20);
+//		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+//		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
+//		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+//		_loadNodeToTargetButton.setEnabled(false);
+//		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
+//		
+//		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+//		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
+//		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
+//		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+//		
+//		_clearSourceTargetPanelButton = new JButton("Clear");
+//		_clearSourceTargetPanelButton.setEnabled(false);
+//		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
 		
 		_kLabel = new JLabel("k (# of paths)");
 		_kTextField = new JTextField(7);
@@ -754,21 +827,21 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 		_runningMessage = new JLabel("PathLinker is running...");
 
-		JPanel sourceTargetPanel = new JPanel();
-		sourceTargetPanel.setLayout(new BoxLayout(sourceTargetPanel, BoxLayout.PAGE_AXIS));
-		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
-		sourceTargetPanel.setBorder(sourceTargetBorder);
-		sourceTargetPanel.add(_sourcesLabel);
-		sourceTargetPanel.add(_sourcesTextField);
-		sourceTargetPanel.add(_loadNodeToSourceButton);
-		sourceTargetPanel.add(_targetsLabel);
-		sourceTargetPanel.add(_targetsTextField);
-		sourceTargetPanel.add(_loadNodeToTargetButton);
-		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
-		sourceTargetPanel.add(_targetsSameAsSourcesOption);
-		sourceTargetPanel.add(_clearSourceTargetPanelButton);
-		this.add(sourceTargetPanel);
-
+//		JPanel sourceTargetPanel = new JPanel();
+//		sourceTargetPanel.setLayout(new BoxLayout(sourceTargetPanel, BoxLayout.PAGE_AXIS));
+//		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
+//		sourceTargetPanel.setBorder(sourceTargetBorder);
+//		sourceTargetPanel.add(_sourcesLabel);
+//		sourceTargetPanel.add(_sourcesTextField);
+//		sourceTargetPanel.add(_loadNodeToSourceButton);
+//		sourceTargetPanel.add(_targetsLabel);
+//		sourceTargetPanel.add(_targetsTextField);
+//		sourceTargetPanel.add(_loadNodeToTargetButton);
+//		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
+//		sourceTargetPanel.add(_targetsSameAsSourcesOption);
+//		sourceTargetPanel.add(_clearSourceTargetPanelButton);
+//		this.add(sourceTargetPanel);		
+		
 		JPanel kPanel = new JPanel();
 		kPanel.setLayout(new BoxLayout(kPanel, BoxLayout.PAGE_AXIS));
 		TitledBorder kBorder = BorderFactory.createTitledBorder("Algorithm");
