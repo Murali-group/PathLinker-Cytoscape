@@ -398,11 +398,14 @@ public class PathLinkerModelTest {
 			String[] arr = line.split("\\s+");
 			ans.add(arr[0] + " " + arr[1] + " " + arr[2]);
 		}
-
-		//create the model for algorithm with k = 50
-		//includePathScoreTies is set to true to include all 236 path score <= 0.42187500000000006
-		testModel = new PathLinkerModel(originalNetworkDir, true, true, generateSubgraph, 
-				source, target, 50, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
+		
+		// set up custom source and target to ensure that graph contains source and targets in paths
+		source = "P35968 P16333";
+		target = "P14859 P51610";
+		
+		//create the model for algorithm with k = 26 to ensure relatively small output
+		testModel = new PathLinkerModel(originalNetworkDir, true, false, generateSubgraph, 
+				source, target, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
