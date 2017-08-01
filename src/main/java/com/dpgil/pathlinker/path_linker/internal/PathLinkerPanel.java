@@ -60,7 +60,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JLabel _edgeWeightColumnBoxLabel;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private ButtonGroup _weightedOptionGroup;
-	private JRadioButton _unweighted;
+	private static JRadioButton _unweighted;
 	private JRadioButton _weightedAdditive;
 	private JRadioButton _weightedProbabilities;
 	private JCheckBox _subgraphOption;
@@ -196,6 +196,14 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		}
 	}
 	
+	/** Listener for the edge weight radio buttons */
+	class RadioButtonListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+				updateEdgeWeightColumn();
+		}
+	}
+	
 	/**
 	 * Listener for the source and target text fields in the panel
 	 * enable/disable the _clearSourceTargetPanelButton based on the text fields
@@ -287,7 +295,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		_edgeWeightColumnBox.removeAllItems(); //remove all items for update
 		
-		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null) //keep box empty if no network found 
+		//keep box empty if no network found or user selected unweighted as edge weight setting
+		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null || _unweighted.isSelected()) 
 			return;
 		
 		Collection<CyColumn> columns = _applicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();	
@@ -769,10 +778,13 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_weightedOptionGroup = new ButtonGroup();
 		_unweighted = new JRadioButton(
 				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+		_unweighted.addActionListener(new RadioButtonListener());
 		_weightedAdditive = new JRadioButton(
 				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+		_weightedAdditive.addActionListener(new RadioButtonListener());
 		_weightedProbabilities = new JRadioButton(
 				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		_weightedOptionGroup.add(_unweighted);
 		_weightedOptionGroup.add(_weightedAdditive);
 		_weightedOptionGroup.add(_weightedProbabilities);
