@@ -817,10 +817,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
 		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
 		graphPanel.setBorder(graphBorder);
-		graphPanel.add(edgeWeightColumnBoxPanel);
 		graphPanel.add(_unweighted);
 		graphPanel.add(_weightedAdditive);
 		graphPanel.add(_weightedProbabilities);
+		graphPanel.add(edgeWeightColumnBoxPanel);
 		this.add(graphPanel);
 
 		JPanel subgraphPanel = new JPanel();
