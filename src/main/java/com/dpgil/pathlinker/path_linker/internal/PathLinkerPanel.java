@@ -713,58 +713,75 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 0;
-		constraint.gridwidth = 5;
+		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_sourcesLabel, constraint);
 		
 		_sourcesTextField = new JTextField(20);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
+		constraint.weightx = 1;
+		constraint.gridx = 0;
 		constraint.gridy = 1;
+		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_sourcesTextField, constraint);
 		
 		_loadNodeToSourceButton = new JButton("Add selected node(s)");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
-		constraint.weightx = 0.0;
+		constraint.weightx = 0;
+		constraint.gridx = 0;
 		constraint.gridy = 2;
 		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_loadNodeToSourceButton, constraint);
 		
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 		constraint.weightx = 1;
+		constraint.gridx = 0;
 		constraint.gridy = 3;
-		constraint.gridwidth = 5;
+		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_targetsLabel, constraint);
 		
 		_targetsTextField = new JTextField(20);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
+		constraint.weightx = 1;
+		constraint.gridx = 0;
 		constraint.gridy = 4;
+		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_targetsTextField, constraint);
 		
 		_loadNodeToTargetButton = new JButton("Add selected node(s)");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 		constraint.weightx = 0;
+		constraint.gridx = 0;
 		constraint.gridy = 5;
 		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_loadNodeToTargetButton, constraint);
 		
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
+		constraint.weightx = 1;
+		constraint.gridx = 0;
 		constraint.gridy = 6;
+		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption, constraint);
 		
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
 		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+		constraint.weightx = 1;
+		constraint.gridx = 0;
 		constraint.gridy = 7;
+		constraint.gridwidth = 2;
 		sourceTargetPanel.add(_targetsSameAsSourcesOption, constraint);
 		
 		_clearSourceTargetPanelButton = new JButton("Clear");
 		_clearSourceTargetPanelButton.setEnabled(false);
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
+		constraint.weightx = 0;
+		constraint.gridx = 2;
 		constraint.gridy = 7;
-		constraint.anchor = GridBagConstraints.LAST_LINE_END;
+		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
 		this.add(sourceTargetPanel);
 	}
