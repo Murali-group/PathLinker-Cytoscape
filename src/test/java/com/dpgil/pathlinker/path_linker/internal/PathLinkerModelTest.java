@@ -399,10 +399,11 @@ public class PathLinkerModelTest {
 			ans.add(arr[0] + " " + arr[1] + " " + arr[2]);
 		}
 
-		//create the model for algorithm with k = 13
-		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
-		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkDir, 13, EdgeWeightSetting.PROBABILITIES, true);
+		//create the model for algorithm with k = 50
+		//includePathScoreTies is set to true to include all 236 path score <= 0.42187500000000006
+		testModel = new PathLinkerModel(originalNetworkDir, true, true, generateSubgraph, 
+				source, target, 50, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
+		testModel.prepareIdSourceTarget();
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
