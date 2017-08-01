@@ -558,7 +558,7 @@ public class PathLinkerModelTest {
 			} else target = originalNetworkMixed.getNode(originalNetworkMap.get(arr[1]));
 
 			boolean isDirected = arr[3].equals("directed") ? true : false;
-			
+
 			CyEdge edge = originalNetworkMixed.addEdge(source, target, isDirected);
 			originalNetworkMixed.getRow(edge).set("edge_weight", Double.parseDouble(arr[2]));
 		}
@@ -583,7 +583,7 @@ public class PathLinkerModelTest {
 		//builds the path string without supersource/supertarget [1,len-1]
 		StringBuilder currPath = new StringBuilder();
 		for (int i = 1; i < p.size() - 1; i++)
-			currPath.append(testModel.getOriginalNetwork().getRow(p.get(i)).get(CyNetwork.NAME, String.class) + "|");
+			currPath.append(p.nodeIdMap.get(p.nodeList.get(i)) + "|");
 
 		currPath.setLength(currPath.length() - 1);
 
@@ -597,35 +597,9 @@ public class PathLinkerModelTest {
 	 */
 	private ArrayList<String> pathListToStringList(ArrayList<Path> result) {
 		ArrayList<String> output = new ArrayList<String>();
-		Object[][] rowData = new Object[result.size()][3];
 
-		for (int i = 0; i < result.size(); i++) {
-			rowData[i][1] = result.get(i).weight;
-			rowData[i][2] = pathAsString(result.get(i));
-		}
-
-		// sort the paths based on the alphabet
-		// if else statement for different edge weight settings
-		if (testModel.getEdgeWeightSetting() == EdgeWeightSetting.PROBABILITIES)
-			Arrays.sort(rowData, new Comparator<Object[]>() {
-				@Override
-				public int compare(Object[] o1, Object[] o2) {
-					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
-							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o2[1], (double)o1[1]);
-				}
-			});
-		else
-			Arrays.sort(rowData, new Comparator<Object[]>() {
-				@Override
-				public int compare(Object[] o1, Object[] o2) {
-					return Double.compare((double)o1[1], (double)o2[1]) == 0 ? 
-							(String.valueOf(o1[2])).compareTo(String.valueOf(o2[2])) : Double.compare((double)o1[1], (double)o2[1]);
-				}
-			});
-
-		// adds sorted paths to output
-		for (int j = 0; j < result.size(); j++)
-			output.add(j + 1 + " " + rowData[j][1] + " " + rowData[j][2]);
+		for (int i = 0; i < result.size(); i++) 
+			output.add(i + 1 + " " + result.get(i).weight + " " + pathAsString(result.get(i)));
 
 		return output;
 	}
