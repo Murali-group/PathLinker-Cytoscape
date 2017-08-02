@@ -978,16 +978,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		this.add(subGraphPanel, framePanelConstraints);
 	}
 
-
 	/**
 	 * Sets up all the components in the panel
 	 */
 	private void initializePanelItems() {
-		
-		_runningMessage = new JLabel("PathLinker is running...");
-		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);
-		
 		this.setLayout(new GridBagLayout());
 		framePanelConstraints = new GridBagConstraints();
 
@@ -995,22 +989,20 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpSubGraphPanel();
-//		
-//		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
-//		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
-//				true);
 
-//		JPanel subgraphPanel = new JPanel();
-//		subgraphPanel.setLayout(new BoxLayout(subgraphPanel, BoxLayout.PAGE_AXIS));
-//		TitledBorder subgraphBorder = BorderFactory.createTitledBorder("Output");
-//		subgraphPanel.setBorder(subgraphBorder);
-//		subgraphPanel.add(_includePathScoreTiesOption);
-//		subgraphPanel.add(_subgraphOption);
-//		this.add(subgraphPanel);
-//
-//		_submitButton = new JButton("Submit");
-//		_submitButton.addActionListener(new SubmitButtonListener());
-//		this.add(_submitButton, BorderLayout.SOUTH);
+		_submitButton = new JButton("Submit");
+		_submitButton.addActionListener(new SubmitButtonListener());
+		framePanelConstraints.weightx = 0;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 4;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		framePanelConstraints.fill = GridBagConstraints.NONE;
+		this.add(_submitButton, framePanelConstraints);
+		
+		_runningMessage = new JLabel("PathLinker is running...");
+		_runningMessage.setForeground(Color.BLUE);
+		_runningMessage.setVisible(false);
 	}
 
 	/**
