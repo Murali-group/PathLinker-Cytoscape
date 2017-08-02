@@ -401,11 +401,15 @@ public class PathLinkerModelTest {
 			String[] arr = line.split("\\s+");
 			ans.add(arr[0] + " " + arr[1] + " " + arr[2]);
 		}
-
-		//create the model for algorithm with k = 13
-		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
-		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkDir, 13, EdgeWeightSetting.PROBABILITIES, true);
+		
+		// set up custom source and target to ensure that graph contains source and targets in paths
+		source = "P35968 P16333";
+		target = "P14859 P51610";
+		
+		//create the model for algorithm with k = 26 to ensure relatively small output
+		testModel = new PathLinkerModel(originalNetworkDir, true, false, generateSubgraph, 
+				source, target, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
+		testModel.prepareIdSourceTarget();
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
