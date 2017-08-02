@@ -31,6 +31,7 @@ public class PathLinkerModel {
 	private String sourcesTextField;
 	/** original user input strings that contains targets */
 	private String targetsTextField;
+	/** column name that links to the edge weight values */
 	private String edgeWeightColumnName;
 	/** list of source names */
 	private HashSet<String> sourceNames;

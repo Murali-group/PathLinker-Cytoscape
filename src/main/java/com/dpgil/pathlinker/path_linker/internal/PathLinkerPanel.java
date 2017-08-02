@@ -96,6 +96,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private boolean _allEdgesContainWeights = true;
 	/** The original network selected by the user */
 	private CyNetwork _originalNetwork;
+	/** column name that links to the edge weight values */
+	private String _edgeWeightColumnName;
 	/** The k value to be used in the algorithm */
 	private int _kValue;
 	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
@@ -398,7 +400,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
 				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
 				_sourcesTextField.getText(), _targetsTextField.getText(), 
-				_edgeWeightColumnBox.getSelectedItem().toString(), _kValue, _edgeWeightSetting, _edgePenalty);
+				_edgeWeightColumnName, _kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
@@ -449,7 +451,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			JOptionPane.showMessageDialog(null, "There are no valid targets to be used. Quitting...");
 			return false;
 		}
-
+		
 		// insert all missing sources/targets to the error message in the beginning
 		if (targetsNotInNet.size() > 0) {
 			errorMessage.insert(0, "The targets " + targetsNotInNet.toString() + " are not in the network.\n");
@@ -583,6 +585,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 				_edgePenalty = 0.0;
 			}
 		}
+		
+		// set _edgeWeightColumnName to empty string if no item is selected in _edgeWeightColumnBox
+		_edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : _edgeWeightColumnBox.getSelectedItem().toString();
 	}
 	
 	/**
