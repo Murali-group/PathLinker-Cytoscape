@@ -1,12 +1,16 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.events.ColumnCreatedListener;
+import org.cytoscape.model.events.ColumnDeletedListener;
+import org.cytoscape.model.events.ColumnNameChangedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
 import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
@@ -69,8 +73,18 @@ public class CyActivator
         // starts off the panel in a closed state
         panel.setPanelState(PanelState.CLOSED);
         
-        // Handle load node to source/target button enable/disable events
+        // handle load node to source/target button enable/disable events
         PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
         registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
+        
+        // handle events triggered by editing table columns
+        PathLinkerColumnUpdateListener columnUpdateListener = new PathLinkerColumnUpdateListener();
+        registerService(context, columnUpdateListener, ColumnCreatedListener.class, new Properties());
+        registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
+        registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
+        
+        // handle events triggered by changing current network
+        PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
+        registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
     }
 }

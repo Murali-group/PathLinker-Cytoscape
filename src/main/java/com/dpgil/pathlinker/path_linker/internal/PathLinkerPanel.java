@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.*;
@@ -25,12 +26,12 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
+import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -56,8 +57,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	protected static JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
+	private JLabel _edgeWeightColumnBoxLabel;
+	protected static JComboBox<String> _edgeWeightColumnBox;
 	private ButtonGroup _weightedOptionGroup;
-	private JRadioButton _unweighted;
+	private static JRadioButton _unweighted;
 	private JRadioButton _weightedAdditive;
 	private JRadioButton _weightedProbabilities;
 	private JCheckBox _subgraphOption;
@@ -150,10 +153,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	}
 
 	/**
-	 * Constructor for the panel Initializes the visual elements in the panel
+	 * Default constructor for the panel
 	 */
 	public PathLinkerPanel() {
-		initializePanelItems();
 	}
 
 	/**
@@ -181,6 +183,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_networkViewManager = networkViewManager;
 		_adapter = adapter;
 		_parent = this.getParent();
+		
+		initializePanelItems(); // construct the GUI
 	}
 	
 	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
@@ -189,6 +193,14 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			enableClearButton();
+		}
+	}
+	
+	/** Listener for the edge weight radio buttons */
+	class RadioButtonListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+				updateEdgeWeightColumn();
 		}
 	}
 	
@@ -275,6 +287,27 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		}
 	}
 	
+	/**
+	 * construct/update the combo box items for selecting edge weight
+	 * Called by PathLinkerNetworkEventListener and PathLinkerColumnUpdateListener class if event triggered
+	 */
+	protected static void updateEdgeWeightColumn() {
+		
+		_edgeWeightColumnBox.removeAllItems(); //remove all items for update
+		
+		//keep box empty if no network found or user selected unweighted as edge weight setting
+		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null || _unweighted.isSelected()) 
+			return;
+		
+		Collection<CyColumn> columns = _applicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();	
+		for (CyColumn column : columns) {
+			if (!column.getName().equals(CyNetwork.SUID) && (column.getType() == Double.class 
+					|| column.getType() == Integer.class || column.getType() == Float.class 
+					|| column.getType() == Long.class))
+				_edgeWeightColumnBox.addItem(column.getName());		
+		}
+	}
+	
 	/** enables/disable the _clearSourceTargetPanelButton 
 	 * based on the source/target text fields and the check boxes
 	 */
@@ -350,7 +383,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
 				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
 				_sourcesTextField.getText(), _targetsTextField.getText(), 
-				_kValue, _edgeWeightSetting, _edgePenalty);
+				_edgeWeightColumnBox.getSelectedItem().toString(), _kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
@@ -437,8 +470,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_originalNetwork = _model.getOriginalNetwork();
 
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-			Double value = _originalNetwork.getRow(edge).get("edge_weight", Double.class);
-
+			Double value =  Double.parseDouble(_originalNetwork.getRow(edge).getRaw(
+					_edgeWeightColumnBox.getSelectedItem().toString()).toString());
 			if (value == null) {
 				// not all the edges have weights (i.e., at least one of the
 				// entries in the table is null)
@@ -736,14 +769,22 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_edgePenaltyLabel = new JLabel("Edge penalty");
 		_edgePenaltyTextField = new JTextField(7);
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
-
+		
+		
+		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
+		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
+		updateEdgeWeightColumn();
+		
 		_weightedOptionGroup = new ButtonGroup();
 		_unweighted = new JRadioButton(
 				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+		_unweighted.addActionListener(new RadioButtonListener());
 		_weightedAdditive = new JRadioButton(
 				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+		_weightedAdditive.addActionListener(new RadioButtonListener());
 		_weightedProbabilities = new JRadioButton(
 				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		_weightedOptionGroup.add(_unweighted);
 		_weightedOptionGroup.add(_weightedAdditive);
 		_weightedOptionGroup.add(_weightedProbabilities);
@@ -779,6 +820,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		kPanel.add(_edgePenaltyTextField);
 		this.add(kPanel);
 
+		JPanel edgeWeightColumnBoxPanel = new JPanel();
+		edgeWeightColumnBoxPanel.setLayout(new BoxLayout(edgeWeightColumnBoxPanel, BoxLayout.X_AXIS));
+		edgeWeightColumnBoxPanel.add(_edgeWeightColumnBoxLabel);
+		edgeWeightColumnBoxPanel.add(_edgeWeightColumnBox);
+		edgeWeightColumnBoxPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		
 		JPanel graphPanel = new JPanel();
 		graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
 		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
@@ -786,6 +833,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		graphPanel.add(_unweighted);
 		graphPanel.add(_weightedAdditive);
 		graphPanel.add(_weightedProbabilities);
+		graphPanel.add(edgeWeightColumnBoxPanel);
 		this.add(graphPanel);
 
 		JPanel subgraphPanel = new JPanel();
