@@ -709,6 +709,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		sourceTargetPanel.setBorder(sourceTargetBorder);
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.HORIZONTAL;
+		constraint.anchor = GridBagConstraints.WEST;
 		
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 		constraint.weightx = 1;
@@ -719,6 +720,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		_sourcesTextField = new JTextField(30);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+		_sourcesTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -744,6 +746,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		
 		_targetsTextField = new JTextField(30);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+		_targetsTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -799,6 +802,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
 		algorithmPanel.setBorder(algorithmBorder);
 		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.anchor = GridBagConstraints.WEST;
 		
 		_kLabel = new JLabel("k (# of paths): ");
 		constraint.weightx = 1;
@@ -807,8 +811,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 1;
 		algorithmPanel.add(_kLabel, constraint);
 		
-		_kTextField = new JTextField(7);
-		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
+		_kTextField = new JTextField(5);
+		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
+		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		constraint.weightx = 1;
 		constraint.gridx = 1;
 		constraint.gridy = 0;
@@ -822,7 +827,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 1;
 		algorithmPanel.add(_edgePenaltyLabel, constraint);
 		
-		_edgePenaltyTextField = new JTextField(7);
+		_edgePenaltyTextField = new JTextField(5);
+		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 		constraint.weightx = 1;
 		constraint.gridx = 1;
@@ -834,8 +840,55 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		framePanelConstraints.gridx = 0;
 		framePanelConstraints.gridy = 1;
 		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.FIRST_LINE_START;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
 		this.add(algorithmPanel, framePanelConstraints);
+	}
+	
+	private void setUpGraphPanel() {
+		JPanel graphPanel = new JPanel();
+		graphPanel.setLayout(new GridBagLayout());
+		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
+		graphPanel.setBorder(graphBorder);
+		GridBagConstraints constraint = new GridBagConstraints();
+		graphPanel.setMinimumSize(this.getMinimumSize());
+		constraint.anchor = GridBagConstraints.WEST;
+		constraint.fill = GridBagConstraints.HORIZONTAL;
+		
+		_unweighted = new JRadioButton(
+				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 0;
+		constraint.gridwidth = 1;
+		graphPanel.add(_unweighted, constraint);
+		
+		_weightedAdditive = new JRadioButton(
+				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+		constraint.weightx = 0;
+		constraint.gridx = 0;
+		constraint.gridy = 1;
+		constraint.gridwidth = 1;
+		graphPanel.add(_weightedAdditive, constraint);
+		
+		_weightedProbabilities = new JRadioButton(
+				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+		constraint.weightx = 0;
+		constraint.gridx = 0;
+		constraint.gridy = 2;
+		constraint.gridwidth = 1;
+		graphPanel.add(_weightedProbabilities, constraint);
+		
+		_weightedOptionGroup = new ButtonGroup();
+		_weightedOptionGroup.add(_unweighted);
+		_weightedOptionGroup.add(_weightedAdditive);
+		_weightedOptionGroup.add(_weightedProbabilities);
+		
+		framePanelConstraints.weightx = 1;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 2;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		this.add(graphPanel, framePanelConstraints);
 	}
 
 	/**
@@ -844,11 +897,10 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private void initializePanelItems() {
 		this.setLayout(new GridBagLayout());
 		framePanelConstraints = new GridBagConstraints();
-		framePanelConstraints.fill = GridBagConstraints.VERTICAL;
-		
+
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
-
+		setUpGraphPanel();
 
 //		_weightedOptionGroup = new ButtonGroup();
 //		_unweighted = new JRadioButton(
