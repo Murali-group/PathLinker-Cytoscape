@@ -68,6 +68,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JCheckBox _includePathScoreTiesOption;
 	private JLabel _runningMessage;
 
+	private GridBagConstraints framePanelConstraints;
+	
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
@@ -701,7 +703,6 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	}
 	
 	private void setUpSourceTargetPanel() {
-		
 		JPanel sourceTargetPanel = new JPanel();
 		sourceTargetPanel.setLayout(new GridBagLayout());
 		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
@@ -716,7 +717,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_sourcesLabel, constraint);
 		
-		_sourcesTextField = new JTextField(20);
+		_sourcesTextField = new JTextField(30);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 		constraint.weightx = 1;
@@ -741,7 +742,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_targetsLabel, constraint);
 		
-		_targetsTextField = new JTextField(20);
+		_targetsTextField = new JTextField(30);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 		constraint.weightx = 1;
@@ -764,7 +765,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 6;
-		constraint.gridwidth = 3;
+		constraint.gridwidth = 2;
 		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption, constraint);
 		
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
@@ -783,117 +784,114 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridy = 7;
 		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
-		this.add(sourceTargetPanel);
+
+		framePanelConstraints.weightx = 1;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 0;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		this.add(sourceTargetPanel, framePanelConstraints);
+	}
+	
+	private void setUpAlgorithmPanel() {	
+		JPanel algorithmPanel = new JPanel();
+		algorithmPanel.setLayout(new GridBagLayout());
+		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
+		algorithmPanel.setBorder(algorithmBorder);
+		GridBagConstraints constraint = new GridBagConstraints();
+		
+		_kLabel = new JLabel("k (# of paths): ");
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 0;
+		constraint.gridwidth = 1;
+		algorithmPanel.add(_kLabel, constraint);
+		
+		_kTextField = new JTextField(7);
+		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
+		constraint.weightx = 1;
+		constraint.gridx = 1;
+		constraint.gridy = 0;
+		constraint.gridwidth = 1;
+		algorithmPanel.add(_kTextField, constraint);
+		
+		_edgePenaltyLabel = new JLabel("Edge penalty: ");
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 1;
+		constraint.gridwidth = 1;
+		algorithmPanel.add(_edgePenaltyLabel, constraint);
+		
+		_edgePenaltyTextField = new JTextField(7);
+		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
+		constraint.weightx = 1;
+		constraint.gridx = 1;
+		constraint.gridy = 1;
+		constraint.gridwidth = 1;
+		algorithmPanel.add(_edgePenaltyTextField, constraint);
+		
+		framePanelConstraints.weightx = 1;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 1;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.FIRST_LINE_START;
+		this.add(algorithmPanel, framePanelConstraints);
 	}
 
 	/**
 	 * Sets up all the components in the panel
 	 */
 	private void initializePanelItems() {
-		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-
+		this.setLayout(new GridBagLayout());
+		framePanelConstraints = new GridBagConstraints();
+		framePanelConstraints.fill = GridBagConstraints.VERTICAL;
+		
 		setUpSourceTargetPanel();
-		
-//		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
-//		_sourcesTextField = new JTextField(20);
-//		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
-//		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
-//		_loadNodeToSourceButton = new JButton("Add selected node(s)");
-//		_loadNodeToSourceButton.setEnabled(false);
-//		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
+		setUpAlgorithmPanel();
+
+
+//		_weightedOptionGroup = new ButtonGroup();
+//		_unweighted = new JRadioButton(
+//				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+//		_weightedAdditive = new JRadioButton(
+//				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+//		_weightedProbabilities = new JRadioButton(
+//				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+//		_weightedOptionGroup.add(_unweighted);
+//		_weightedOptionGroup.add(_weightedAdditive);
+//		_weightedOptionGroup.add(_weightedProbabilities);
 //		
-//		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
-//		_targetsTextField = new JTextField(20);
-//		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-//		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
-//		_loadNodeToTargetButton = new JButton("Add selected node(s)");
-//		_loadNodeToTargetButton.setEnabled(false);
-//		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
-//		
-//		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
-//		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
-//		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
-//		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
-//		
-//		_clearSourceTargetPanelButton = new JButton("Clear");
-//		_clearSourceTargetPanelButton.setEnabled(false);
-//		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
-		
-		_kLabel = new JLabel("k (# of paths)");
-		_kTextField = new JTextField(7);
-		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-		
-		_edgePenaltyLabel = new JLabel("Edge penalty");
-		_edgePenaltyTextField = new JTextField(7);
-		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
-
-		_weightedOptionGroup = new ButtonGroup();
-		_unweighted = new JRadioButton(
-				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
-		_weightedAdditive = new JRadioButton(
-				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
-		_weightedProbabilities = new JRadioButton(
-				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
-		_weightedOptionGroup.add(_unweighted);
-		_weightedOptionGroup.add(_weightedAdditive);
-		_weightedOptionGroup.add(_weightedProbabilities);
-		
-		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
-		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
-				true);
-
-		_runningMessage = new JLabel("PathLinker is running...");
-
-//		JPanel sourceTargetPanel = new JPanel();
-//		sourceTargetPanel.setLayout(new BoxLayout(sourceTargetPanel, BoxLayout.PAGE_AXIS));
-//		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
-//		sourceTargetPanel.setBorder(sourceTargetBorder);
-//		sourceTargetPanel.add(_sourcesLabel);
-//		sourceTargetPanel.add(_sourcesTextField);
-//		sourceTargetPanel.add(_loadNodeToSourceButton);
-//		sourceTargetPanel.add(_targetsLabel);
-//		sourceTargetPanel.add(_targetsTextField);
-//		sourceTargetPanel.add(_loadNodeToTargetButton);
-//		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption);
-//		sourceTargetPanel.add(_targetsSameAsSourcesOption);
-//		sourceTargetPanel.add(_clearSourceTargetPanelButton);
-//		this.add(sourceTargetPanel);		
-		
-		JPanel kPanel = new JPanel();
-		kPanel.setLayout(new BoxLayout(kPanel, BoxLayout.PAGE_AXIS));
-		TitledBorder kBorder = BorderFactory.createTitledBorder("Algorithm");
-		kPanel.setBorder(kBorder);
-		kPanel.add(_kLabel);
-		kPanel.add(_kTextField);
-		kPanel.add(_edgePenaltyLabel);
-		kPanel.add(_edgePenaltyTextField);
-		this.add(kPanel);
-
-		JPanel graphPanel = new JPanel();
-		graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
-		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
-		graphPanel.setBorder(graphBorder);
-		graphPanel.add(_unweighted);
-		graphPanel.add(_weightedAdditive);
-		graphPanel.add(_weightedProbabilities);
-		this.add(graphPanel);
-
-		JPanel subgraphPanel = new JPanel();
-		subgraphPanel.setLayout(new BoxLayout(subgraphPanel, BoxLayout.PAGE_AXIS));
-		TitledBorder subgraphBorder = BorderFactory.createTitledBorder("Output");
-		subgraphPanel.setBorder(subgraphBorder);
-		subgraphPanel.add(_includePathScoreTiesOption);
-		subgraphPanel.add(_subgraphOption);
-		this.add(subgraphPanel);
-
-		_submitButton = new JButton("Submit");
-		_submitButton.addActionListener(new SubmitButtonListener());
-		this.add(_submitButton, BorderLayout.SOUTH);
-
-		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);
-
-		_unweighted.setSelected(true);
+//		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
+//		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
+//				true);
+//
+//		_runningMessage = new JLabel("PathLinker is running...");
+//
+//		JPanel graphPanel = new JPanel();
+//		graphPanel.setLayout(new BoxLayout(graphPanel, BoxLayout.PAGE_AXIS));
+//		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
+//		graphPanel.setBorder(graphBorder);
+//		graphPanel.add(_unweighted);
+//		graphPanel.add(_weightedAdditive);
+//		graphPanel.add(_weightedProbabilities);
+//		this.add(graphPanel);
+//
+//		JPanel subgraphPanel = new JPanel();
+//		subgraphPanel.setLayout(new BoxLayout(subgraphPanel, BoxLayout.PAGE_AXIS));
+//		TitledBorder subgraphBorder = BorderFactory.createTitledBorder("Output");
+//		subgraphPanel.setBorder(subgraphBorder);
+//		subgraphPanel.add(_includePathScoreTiesOption);
+//		subgraphPanel.add(_subgraphOption);
+//		this.add(subgraphPanel);
+//
+//		_submitButton = new JButton("Submit");
+//		_submitButton.addActionListener(new SubmitButtonListener());
+//		this.add(_submitButton, BorderLayout.SOUTH);
+//
+//		_runningMessage.setForeground(Color.BLUE);
+//		_runningMessage.setVisible(false);
+//
+//		_unweighted.setSelected(true);
 	}
 
 	/**
