@@ -942,7 +942,40 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		framePanelConstraints.gridy = 2;
 		framePanelConstraints.gridwidth = 1;
 		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
 		this.add(graphPanel, framePanelConstraints);
+	}
+	
+	private void setUpSubGraphPanel() {
+		JPanel subGraphPanel = new JPanel();
+		subGraphPanel.setLayout(new GridBagLayout());
+		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
+		subGraphPanel.setBorder(subGraphBorder);
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.fill = GridBagConstraints.HORIZONTAL;
+		constraint.anchor = GridBagConstraints.LINE_START;
+		
+		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 0;
+		constraint.gridwidth = 1;
+		subGraphPanel.add(_includePathScoreTiesOption, constraint);
+		
+		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>", true);
+		constraint.weightx = 1;
+		constraint.gridx = 0;
+		constraint.gridy = 1;
+		constraint.gridwidth = 1;
+		subGraphPanel.add(_subgraphOption, constraint);
+		
+		framePanelConstraints.weightx = 1;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 3;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		this.add(subGraphPanel, framePanelConstraints);
 	}
 
 
@@ -961,7 +994,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
-
+		setUpSubGraphPanel();
 //		
 //		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
 //		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>",
