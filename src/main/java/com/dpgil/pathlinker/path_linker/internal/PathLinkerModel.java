@@ -31,6 +31,7 @@ public class PathLinkerModel {
 	private String sourcesTextField;
 	/** original user input strings that contains targets */
 	private String targetsTextField;
+	private String edgeWeightColumnName;
 	/** list of source names */
 	private HashSet<String> sourceNames;
 	/** list of target names */
@@ -85,8 +86,8 @@ public class PathLinkerModel {
 	 * @param edgePenalty				 edge penalty
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
-			boolean generateSubgraph, String sourcesTextField, String targetsTextField, int k, 
-			EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
+			boolean generateSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
+			int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
 		
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
@@ -94,6 +95,7 @@ public class PathLinkerModel {
 		this.generateSubgraph 			= generateSubgraph;
 		this.sourcesTextField 			= sourcesTextField;
 		this.targetsTextField 			= targetsTextField;
+		this.edgeWeightColumnName		= edgeWeightColumnName;
 		this.k 							= k;
 		this.edgeWeightSetting 			= edgeWeightSetting;
 		this.edgePenalty 				= edgePenalty;
@@ -569,7 +571,7 @@ public class PathLinkerModel {
 	 */
 	private double getNetworkTableWeight(CyEdge e) {
 		// gets the attribute edge weight value
-		Double value = originalNetwork.getRow(e).get("edge_weight", Double.class);
+		Double value = Double.parseDouble((originalNetwork.getRow(e).getRaw(edgeWeightColumnName).toString()));
 		double edge_weight = value != null ? value.doubleValue() : -44444;
 
 		return edge_weight;
