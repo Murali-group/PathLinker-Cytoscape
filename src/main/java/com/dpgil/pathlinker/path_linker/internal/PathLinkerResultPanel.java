@@ -1,15 +1,19 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 
-import javax.swing.JFrame;
+import java.awt.Component;
+import java.util.ArrayList;
+
+import javax.swing.Icon;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 
 /**
@@ -19,12 +23,10 @@ import org.cytoscape.model.CyNetwork;
  * @author Daniel Gil
  * @version Nov 23, 2015
  */
-public class ResultFrame
-extends JFrame
+@SuppressWarnings("serial")
+public class PathLinkerResultPanel
+extends JPanel implements CytoPanelComponent
 {
-	private CyNetwork _network;
-	private EdgeWeightSetting _setting;
-
 	/**
 	 * Constructor for the result frame class
 	 *
@@ -35,12 +37,9 @@ extends JFrame
 	 * @param results
 	 *            the results from pathlinker
 	 */
-	public ResultFrame(CyNetwork network, EdgeWeightSetting setting, ArrayList<Path> results)
+	public PathLinkerResultPanel(ArrayList<Path> results)
 	{
-		super("PathLinker Results");
-		_network = network;
-		_setting = setting;
-
+		super();
 		// creates and writes to the table
 		initializeTable(results);
 	}
@@ -124,5 +123,26 @@ extends JFrame
 		currPath.setLength(currPath.length() - 1);
 
 		return currPath.toString();
+	}
+
+	@Override
+	public Component getComponent() {
+		return this;
+	}
+
+	@Override
+	public CytoPanelName getCytoPanelName() {
+		return CytoPanelName.EAST;
+	}
+
+	@Override
+	public Icon getIcon() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getTitle() {
+		return "PathLinker Result";
 	}
 }

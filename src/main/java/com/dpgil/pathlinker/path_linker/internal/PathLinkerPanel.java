@@ -8,6 +8,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -15,6 +16,7 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -354,7 +356,16 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private void showRunningMessage() {
 		_runningMessage.setVisible(true);
 		_runningMessage.setForeground(Color.BLUE);
-		add(_runningMessage, BorderLayout.SOUTH);
+		
+		
+		framePanelConstraints.weightx = 1;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 5;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		framePanelConstraints.fill = GridBagConstraints.NONE;
+		this.add(_runningMessage, framePanelConstraints);
+		
 		repaint();
 		revalidate();
 	}
@@ -633,10 +644,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		}
 
 		// passed edge weight setting for sorting purposes
-		ResultFrame resultFrame = new ResultFrame(_model.getOriginalNetwork(), _model.getEdgeWeightSetting(), paths);
-		resultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		resultFrame.setVisible(true);
-		resultFrame.setSize(500, 700);
+		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(paths);
+		_adapter.getCyServiceRegistrar().registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 	}
 
 	/**
@@ -977,6 +986,23 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
 		this.add(subGraphPanel, framePanelConstraints);
 	}
+	
+	private void setUpMisc() {
+		_submitButton = new JButton("Submit");
+		_submitButton.addActionListener(new SubmitButtonListener());
+		framePanelConstraints.weightx = 0;
+		framePanelConstraints.gridx = 0;
+		framePanelConstraints.gridy = 4;
+		framePanelConstraints.gridwidth = 1;
+		framePanelConstraints.insets = new Insets(0, 10, 0, 0);
+		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		framePanelConstraints.fill = GridBagConstraints.NONE;
+		this.add(_submitButton, framePanelConstraints);
+		
+		_runningMessage = new JLabel("PathLinker is running...");
+		_runningMessage.setForeground(Color.BLUE);
+		_runningMessage.setVisible(false);
+	}
 
 	/**
 	 * Sets up all the components in the panel
@@ -989,20 +1015,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpSubGraphPanel();
-
-		_submitButton = new JButton("Submit");
-		_submitButton.addActionListener(new SubmitButtonListener());
-		framePanelConstraints.weightx = 0;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 4;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		framePanelConstraints.fill = GridBagConstraints.NONE;
-		this.add(_submitButton, framePanelConstraints);
-		
-		_runningMessage = new JLabel("PathLinker is running...");
-		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);
+		setUpMisc();
 	}
 
 	/**
