@@ -35,6 +35,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -72,7 +73,8 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	private JCheckBox _includePathScoreTiesOption;
 	private JLabel _runningMessage;
 
-	private GridBagConstraints framePanelConstraints;
+	private CyServiceRegistrar _serviceRegistrar;
+	private GridBagConstraints _framePanelConstraints;
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
@@ -180,10 +182,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 * @param adapter
 	 *            the cy application adapter
 	 */
-	public void initialize(CySwingApplication cySwingApp, CyApplicationManager applicationManager,
+	public void initialize(CySwingApplication cySwingApp, CyServiceRegistrar serviceRegistrar,
+			CyApplicationManager applicationManager,
 			CyNetworkManager networkManager, CyNetworkViewFactory networkViewFactory,
 			CyNetworkViewManager networkViewManager, CyAppAdapter adapter) {
 		_cySwingApp = cySwingApp;
+		_serviceRegistrar  = serviceRegistrar;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
 		_networkViewFactory = networkViewFactory;
@@ -359,13 +363,13 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_runningMessage.setForeground(Color.BLUE);
 
 
-		framePanelConstraints.weightx = 1;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 5;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		framePanelConstraints.fill = GridBagConstraints.NONE;
-		this.add(_runningMessage, framePanelConstraints);
+		_framePanelConstraints.weightx = 1;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 5;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_framePanelConstraints.fill = GridBagConstraints.NONE;
+		this.add(_runningMessage, _framePanelConstraints);
 
 		repaint();
 		revalidate();
@@ -634,10 +638,9 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			JOptionPane.showMessageDialog(null, "No paths found.");
 			return;
 		}
-
-		// passed edge weight setting for sorting purposes
-		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(paths);
-		_adapter.getCyServiceRegistrar().registerService(resultsPanel, CytoPanelComponent.class, new Properties());
+		
+    	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(paths);
+    	_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 	}
 
 	/**
@@ -822,12 +825,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
 
-		framePanelConstraints.weightx = 1;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 0;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		this.add(sourceTargetPanel, framePanelConstraints);
+		_framePanelConstraints.weightx = 1;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 0;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		this.add(sourceTargetPanel, _framePanelConstraints);
 	}
 
 	private void setUpAlgorithmPanel() {
@@ -871,12 +874,12 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 1;
 		algorithmPanel.add(_edgePenaltyTextField, constraint);
 
-		framePanelConstraints.weightx = 1;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 1;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		this.add(algorithmPanel, framePanelConstraints);
+		_framePanelConstraints.weightx = 1;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 1;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		this.add(algorithmPanel, _framePanelConstraints);
 	}
 
 	private void setUpGraphPanel() {
@@ -938,13 +941,13 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
 
-		framePanelConstraints.weightx = 1;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 2;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		this.add(graphPanel, framePanelConstraints);
+		_framePanelConstraints.weightx = 1;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 2;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		this.add(graphPanel, _framePanelConstraints);
 	}
 
 	private void setUpSubGraphPanel() {
@@ -970,26 +973,26 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_subgraphOption, constraint);
 
-		framePanelConstraints.weightx = 1;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 3;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		this.add(subGraphPanel, framePanelConstraints);
+		_framePanelConstraints.weightx = 1;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 3;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		this.add(subGraphPanel, _framePanelConstraints);
 	}
 
 	private void setUpMisc() {
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
-		framePanelConstraints.weightx = 0;
-		framePanelConstraints.gridx = 0;
-		framePanelConstraints.gridy = 4;
-		framePanelConstraints.gridwidth = 1;
-		framePanelConstraints.insets = new Insets(0, 10, 0, 0);
-		framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		framePanelConstraints.fill = GridBagConstraints.NONE;
-		this.add(_submitButton, framePanelConstraints);
+		_framePanelConstraints.weightx = 0;
+		_framePanelConstraints.gridx = 0;
+		_framePanelConstraints.gridy = 4;
+		_framePanelConstraints.gridwidth = 1;
+		_framePanelConstraints.insets = new Insets(0, 10, 0, 0);
+		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_framePanelConstraints.fill = GridBagConstraints.NONE;
+		this.add(_submitButton, _framePanelConstraints);
 
 		_runningMessage = new JLabel("PathLinker is running...");
 		_runningMessage.setForeground(Color.BLUE);
@@ -1001,7 +1004,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	 */
 	private void initializePanelItems() {
 		this.setLayout(new GridBagLayout());
-		framePanelConstraints = new GridBagConstraints();
+		_framePanelConstraints = new GridBagConstraints();
 
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();

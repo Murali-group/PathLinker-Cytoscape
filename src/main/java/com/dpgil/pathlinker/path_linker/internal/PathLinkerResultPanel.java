@@ -42,6 +42,7 @@ extends JPanel implements CytoPanelComponent
 		super();
 		// creates and writes to the table
 		initializeTable(results);
+		this.setVisible(true);
 	}
 
 
