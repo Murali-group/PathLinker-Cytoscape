@@ -639,6 +639,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 			return;
 		}
 		
+		// create and register a new panel in result panel
     	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(paths);
     	_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 	}
