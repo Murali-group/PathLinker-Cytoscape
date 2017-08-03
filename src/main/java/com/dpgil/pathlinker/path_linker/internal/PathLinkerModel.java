@@ -89,7 +89,7 @@ public class PathLinkerModel {
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
 			boolean generateSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
 			int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
-		
+
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.includePathScoreTies		= includePathScoreTies;
@@ -100,7 +100,7 @@ public class PathLinkerModel {
 		this.k 							= k;
 		this.edgeWeightSetting 			= edgeWeightSetting;
 		this.edgePenalty 				= edgePenalty;
-		
+
 		// initialize for future use
 		this.idToCyNode 		  = new HashMap<String, CyNode>();
 		this.cyNodeToId			  = new HashMap<CyNode, String>();
@@ -138,7 +138,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getSourcesList() {
 		return this.sourcesList;
 	}
-	
+
 	/**
 	 * Getter method of sourceNames
 	 * @return sourceNames
@@ -146,7 +146,7 @@ public class PathLinkerModel {
 	public HashSet<String> getSourceNames() {
 		return this.sourceNames;
 	}
-	
+
 	/**
 	 * Getter method of sourcesNotInNet
 	 * @return sourcesNotInNet
@@ -154,7 +154,7 @@ public class PathLinkerModel {
 	public ArrayList<String> getSourcesNotInNet() {
 		return this.sourcesNotInNet;
 	}
-	
+
 	/**
 	 * Getter method of targetsList
 	 * @return targetsList
@@ -162,7 +162,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getTargetsList() {
 		return this.targetsList;
 	}
-	
+
 	/**
 	 * Getter method of targetNames
 	 * @return targetNames
@@ -170,7 +170,7 @@ public class PathLinkerModel {
 	public HashSet<String> getTargetNames() {
 		return this.targetNames;
 	}
-	
+
 	/**
 	 * Getter method of targetsNotInNet
 	 * @return targetsNotInNet;
@@ -317,14 +317,14 @@ public class PathLinkerModel {
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
 		if (!populateIdCyNodePair()) return false;
-		
+
 		// sets source and target
 		setSources();
 		setTargets();
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Runs all the necessary algorithms to calculate kth shortest path
 	 * @return result, the list of paths
@@ -333,7 +333,7 @@ public class PathLinkerModel {
 		// sets the number of common sources and targets
 		// this is for a temporary hack
 		setCommonSourcesTargets();
-		
+
 		// creates a copy of the original network which is modified to run PathLinker
 		// 1. undirected edges are converted to bidirectional edges
 		// 2. the weight of multiple source-target edges are averaged because
@@ -368,7 +368,7 @@ public class PathLinkerModel {
 
 		// sort the result paths in alphabetical order if weight is same
 		Algorithms.sortResult(result);
-		
+
 		// "un log-transforms" the path scores in the weighted options
 		// as to undo the log transformations and leave the path scores
 		// in terms of the edge weights
@@ -398,7 +398,7 @@ public class PathLinkerModel {
 
 		return true;
 	}
-	
+
 	/**
 	 * Setter method for commonSourcesTargets
 	 * sets the number of common sources and targets
@@ -450,7 +450,10 @@ public class PathLinkerModel {
 
 			CyNode source = e.getSource();
 			CyNode target = e.getTarget();
-			Double w = getNetworkTableWeight(e);
+			
+			// a hack for unweighted edge to avoid calling getNetworkTableWeight
+			// should be edit in the future to avoid constant checks
+			Double w = edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED ? 1 : getNetworkTableWeight(e);
 
 			// check if this source-target was already added as an edge. If it was, keep track of the 
 			// multiple weights. If not, add it as a new edge
@@ -511,7 +514,6 @@ public class PathLinkerModel {
 	 * the weights as attributes because that dominates runtime.
 	 */
 	private void setEdgeWeights() {
-		//HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
 
 		if (edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED){
 			for (CyEdge edge : network.getEdgeList()) {
