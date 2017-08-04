@@ -3,6 +3,7 @@ package com.dpgil.pathlinker.path_linker.internal;
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -34,11 +35,11 @@ import org.cytoscape.application.swing.CytoPanelName;
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
 
-	ArrayList<Path> _results;
-	String _title;
-	JButton _deleteBtn;
-	JButton _downloadBtn;
-	JTable _resultTable;
+	private ArrayList<Path> _results;
+	private String _title;
+	private JButton _discardBtn;
+	private JButton _downloadBtn;
+	private JTable _resultTable;
 
 	/**
 	 * Constructor for the result frame class
@@ -63,6 +64,22 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			}
 		}
 	}
+	
+	/** Listener for the discard button */
+	class DiscardButtonListener implements ActionListener {
+		
+		// Discard the entire currently selected result panel tab if user chooses yes
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			
+			int choice = JOptionPane.showConfirmDialog(null, "Discarded result will be remove permanently. Continue?");
+			if (choice != 0) return; // quit if they say no or cancel
+			
+			Container btnParent = _discardBtn.getParent();
+			Container panelParent = btnParent.getParent();
+			panelParent.remove(btnParent);
+		}
+	}
 
 	/**
 	 * Sets up all the components in the panel 
@@ -71,7 +88,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		this.setLayout(new GridBagLayout());
 
 		setUpDownloadBtn();
-		setUpDeleteBtn();
+		setUpDiscardBtn();
 		setupTable();
 	}
 
@@ -97,10 +114,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/**
 	 * Sets up the delete button
 	 */
-	private void setUpDeleteBtn()
+	private void setUpDiscardBtn()
 	{
-		_deleteBtn = new JButton("Delete");
-
+		_discardBtn = new JButton("Discard");
+		_discardBtn.addActionListener(new DiscardButtonListener());
+		
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.NONE;
 		constraint.anchor = GridBagConstraints.LINE_START;
@@ -109,7 +127,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
 
-		this.add(_deleteBtn, constraint);
+		this.add(_discardBtn, constraint);
 	}
 
 	/**
