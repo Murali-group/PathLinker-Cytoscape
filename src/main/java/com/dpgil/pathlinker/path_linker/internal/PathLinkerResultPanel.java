@@ -9,12 +9,14 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -52,9 +54,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		this._results = results;
 		initializePanel();
 	}
-	
+
 	/** Listener for the Download button */
 	class DownloadButtonListener implements ActionListener {
+		// calls downloadResultTable method if no error
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
@@ -64,17 +67,17 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			}
 		}
 	}
-	
+
 	/** Listener for the discard button */
 	class DiscardButtonListener implements ActionListener {
-		
+
 		// Discard the entire currently selected result panel tab if user chooses yes
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			
+
 			int choice = JOptionPane.showConfirmDialog(null, "Discarded result will be remove permanently. Continue?");
 			if (choice != 0) return; // quit if they say no or cancel
-			
+
 			Container btnParent = _discardBtn.getParent();
 			Container panelParent = btnParent.getParent();
 			panelParent.remove(btnParent);
@@ -99,7 +102,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	{
 		_downloadBtn = new JButton("Download");
 		_downloadBtn.addActionListener(new DownloadButtonListener());
-		
+
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.NONE;
 		constraint.anchor = GridBagConstraints.LINE_START;
@@ -118,7 +121,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	{
 		_discardBtn = new JButton("Discard");
 		_discardBtn.addActionListener(new DiscardButtonListener());
-		
+
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.NONE;
 		constraint.anchor = GridBagConstraints.LINE_START;
@@ -199,22 +202,64 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		this.add(scrollPane, constraint);
 	}
 
+	/**
+	 * The method is triggered by DownloadButtonListener
+	 * Creates a dialogue for user to save the result tables
+	 * @throws IOException
+	 */
 	private void downloadResultTable() throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter("test.txt"));
 
-		for(int i = 0; i < _resultTable.getColumnCount(); i++) {
-			writer.write(_resultTable.getColumnName(i));
-			writer.write("\t");
-		}
-
-		for (int i = 0; i < _resultTable.getRowCount(); i++) {
-			writer.newLine();
-			for(int j = 0; j < _resultTable.getColumnCount(); j++) {
-				writer.write((_resultTable.getValueAt(i, j).toString()));
-				writer.write("\t");;
+		// override approveSelection method to warn if user overwrites a existing file when saving
+		JFileChooser fc = new JFileChooser() {
+			@Override
+			public void approveSelection(){
+				File f = getSelectedFile();
+				if (f.exists() && getDialogType() == SAVE_DIALOG) {
+					int result = JOptionPane.showConfirmDialog(this,
+							"The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+					switch(result) {
+					case JOptionPane.YES_OPTION:
+						super.approveSelection();
+						return;
+					case JOptionPane.NO_OPTION:
+						return;
+					case JOptionPane.CLOSED_OPTION:
+						return;
+					case JOptionPane.CANCEL_OPTION:
+						cancelSelection();
+						return;
+					}
+				}
+				super.approveSelection();
 			}
+		};
+		
+		fc.setDialogTitle("Sepcify the file to save"); // title of the dialogue
+		int userSelection = fc.showSaveDialog(null);
+
+		if (userSelection == JFileChooser.APPROVE_OPTION) {
+			File fileToSave = fc.getSelectedFile();
+			BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave.getAbsolutePath()));
+
+			for(int i = 0; i < _resultTable.getColumnCount(); i++) {
+				writer.write(_resultTable.getColumnName(i));
+				writer.write("\t");
+			}
+
+			for (int i = 0; i < _resultTable.getRowCount(); i++) {
+				writer.newLine();
+				for(int j = 0; j < _resultTable.getColumnCount(); j++) {
+					writer.write((_resultTable.getValueAt(i, j).toString()));
+					writer.write("\t");;
+				}
+			}
+			
+			writer.close();
+			JOptionPane.showMessageDialog(null, "Download successful");
+		
+		} else {
+			JOptionPane.showMessageDialog(null, "Download canceled");
 		}
-		writer.close();
 	}
 
 	/**
