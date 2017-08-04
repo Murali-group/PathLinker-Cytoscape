@@ -163,7 +163,9 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
 		// scrollable panel
-		JScrollPane scrollPane = new JScrollPane(_resultTable);
+		JScrollPane scrollPane = new JScrollPane(_resultTable, 
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
 
 		GridBagConstraints constraint = new GridBagConstraints();

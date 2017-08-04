@@ -1,6 +1,7 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -74,7 +75,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JLabel _runningMessage;
 
 	private CyServiceRegistrar _serviceRegistrar;
-	private GridBagConstraints _framePanelConstraints;
+	private JPanel _innerPanel;
+	private GridBagConstraints _innerPanelConstraints;
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
@@ -362,21 +364,20 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_runningMessage.setVisible(true);
 		_runningMessage.setForeground(Color.BLUE);
 
-
-		_framePanelConstraints.weightx = 1;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 5;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_framePanelConstraints.fill = GridBagConstraints.NONE;
-		this.add(_runningMessage, _framePanelConstraints);
+		_innerPanelConstraints.weightx = 1;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 5;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanelConstraints.fill = GridBagConstraints.NONE;
+		_innerPanel.add(_runningMessage, _innerPanelConstraints);
 
 		repaint();
 		revalidate();
 	}
 
 	private void hideRunningMessage() {
-		remove(_runningMessage);
+		_innerPanel.remove(_runningMessage);
 		repaint();
 		revalidate();
 	}
@@ -784,7 +785,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_targetsTextField = new JTextField(30);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-		_targetsTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
+		_targetsTextField.setMinimumSize(_targetsTextField.getPreferredSize());
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -826,12 +827,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 1;
 		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
 
-		_framePanelConstraints.weightx = 1;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 0;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		this.add(sourceTargetPanel, _framePanelConstraints);
+		_innerPanelConstraints.weightx = 1;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 0;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanel.add(sourceTargetPanel, _innerPanelConstraints);
 	}
 
 	private void setUpAlgorithmPanel() {
@@ -875,12 +876,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 1;
 		algorithmPanel.add(_edgePenaltyTextField, constraint);
 
-		_framePanelConstraints.weightx = 1;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 1;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		this.add(algorithmPanel, _framePanelConstraints);
+		_innerPanelConstraints.weightx = 1;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 1;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanel.add(algorithmPanel, _innerPanelConstraints);
 	}
 
 	private void setUpGraphPanel() {
@@ -941,14 +942,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
-
-		_framePanelConstraints.weightx = 1;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 2;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		this.add(graphPanel, _framePanelConstraints);
+		
+		_innerPanelConstraints.weightx = 1;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 2;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		_innerPanel.add(graphPanel, _innerPanelConstraints);
 	}
 
 	private void setUpSubGraphPanel() {
@@ -973,27 +974,27 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridy = 1;
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_subgraphOption, constraint);
-
-		_framePanelConstraints.weightx = 1;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 3;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_framePanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		this.add(subGraphPanel, _framePanelConstraints);
+		
+		_innerPanelConstraints.weightx = 1;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 3;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		_innerPanel.add(subGraphPanel, _innerPanelConstraints);
 	}
 
 	private void setUpMisc() {
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
-		_framePanelConstraints.weightx = 0;
-		_framePanelConstraints.gridx = 0;
-		_framePanelConstraints.gridy = 4;
-		_framePanelConstraints.gridwidth = 1;
-		_framePanelConstraints.insets = new Insets(0, 10, 0, 0);
-		_framePanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_framePanelConstraints.fill = GridBagConstraints.NONE;
-		this.add(_submitButton, _framePanelConstraints);
+		_innerPanelConstraints.weightx = 0;
+		_innerPanelConstraints.gridx = 0;
+		_innerPanelConstraints.gridy = 4;
+		_innerPanelConstraints.gridwidth = 1;
+		_innerPanelConstraints.insets = new Insets(0, 10, 0, 0);
+		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
+		_innerPanelConstraints.fill = GridBagConstraints.NONE;
+		_innerPanel.add(_submitButton, _innerPanelConstraints);
 
 		_runningMessage = new JLabel("PathLinker is running...");
 		_runningMessage.setForeground(Color.BLUE);
@@ -1005,13 +1006,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void initializePanelItems() {
 		this.setLayout(new GridBagLayout());
-		_framePanelConstraints = new GridBagConstraints();
-
+		
+		_innerPanel = new JPanel();
+		_innerPanel.setLayout(new GridBagLayout());
+		_innerPanelConstraints = new GridBagConstraints();
+		
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpSubGraphPanel();
 		setUpMisc();
+		
+        this.add(_innerPanel);
 	}
 
 	/**
