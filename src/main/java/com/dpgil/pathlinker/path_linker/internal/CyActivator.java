@@ -6,7 +6,7 @@ import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerControlPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -39,7 +39,7 @@ public class CyActivator
             getService(context, CyApplicationManager.class);
         
         // initializes the panel with the necessary components
-        PathLinkerPanel panel = new PathLinkerPanel();
+        PathLinkerControlPanel panel = new PathLinkerControlPanel();
         CyServiceRegistrar serviceRegistrar = 
         		getService(context, CyServiceRegistrar.class);
         CyNetworkManager networkManager =

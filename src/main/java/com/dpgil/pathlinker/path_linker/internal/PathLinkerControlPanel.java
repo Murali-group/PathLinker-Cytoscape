@@ -47,7 +47,7 @@ import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
 /** Panel for the PathLinker plugin */
-public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
+public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
 	/** UI components of the panel */
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
@@ -164,7 +164,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 	/**
 	 * Default constructor for the panel
 	 */
-	public PathLinkerPanel() {
+	public PathLinkerControlPanel() {
 	}
 
 	/**

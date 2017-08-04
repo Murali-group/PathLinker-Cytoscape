@@ -15,17 +15,17 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 	public void handleEvent(RowsSetEvent e) {
 
 		if (e.containsColumn(CyNetwork.SELECTED) && e.getSource() == 
-				PathLinkerPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable()) {
+				PathLinkerControlPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable()) {
 			for (RowSetRecord rowSet : e.getColumnRecords(CyNetwork.SELECTED)) {
 				if (rowSet.getRow().get(CyNetwork.SELECTED, Boolean.class)) {
-					PathLinkerPanel._loadNodeToSourceButton.setEnabled(true);
-					PathLinkerPanel._loadNodeToTargetButton.setEnabled(true);
+					PathLinkerControlPanel._loadNodeToSourceButton.setEnabled(true);
+					PathLinkerControlPanel._loadNodeToTargetButton.setEnabled(true);
 					return;
 				}
 			}
 		}
 
-		PathLinkerPanel._loadNodeToSourceButton.setEnabled(false);
-		PathLinkerPanel._loadNodeToTargetButton.setEnabled(false);
+		PathLinkerControlPanel._loadNodeToSourceButton.setEnabled(false);
+		PathLinkerControlPanel._loadNodeToTargetButton.setEnabled(false);
 	}
 }
