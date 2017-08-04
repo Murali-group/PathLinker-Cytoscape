@@ -623,11 +623,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Writes the ksp results to a table given the results from the ksp
-	 * algorithm
-	 *
-	 * @param paths
-	 *            a list of paths generated from the ksp algorithm
+	 * Writes the ksp results to result panel given the results from the ksp algorithm
+	 * @param paths a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
 		// delete the copy of the network created for running pathlinker
@@ -640,9 +637,21 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			return;
 		}
 		
-		// create and register a new panel in result panel
-    	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(paths);
+		// create and register a new panel in result panel with specific title
+    	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
+    			String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
+    			paths);
     	_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
+    	
+    	// open and show the result panel if in hide state
+    	CytoPanel cytoPanel = _cySwingApp.getCytoPanel(resultsPanel.getCytoPanelName());
+    	 
+		if (cytoPanel.getState() == CytoPanelState.HIDE)
+			cytoPanel.setState(CytoPanelState.DOCK);
+		
+		// set visible and selected
+		resultsPanel.setVisible(true);
+		cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(resultsPanel.getComponent()));
 	}
 
 	/**

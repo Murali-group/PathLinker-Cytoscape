@@ -35,18 +35,20 @@ import org.cytoscape.application.swing.CytoPanelName;
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
 
 	ArrayList<Path> _results;
+	String _title;
 	JButton _deleteBtn;
 	JButton _downloadBtn;
 	JTable _resultTable;
 
 	/**
 	 * Constructor for the result frame class
+	 * @param title the title of the result panel
 	 * @param results the results from pathlinker
 	 */
-	public PathLinkerResultPanel(ArrayList<Path> results)
+	public PathLinkerResultPanel(String title, ArrayList<Path> results)
 	{
+		this._title = title;
 		this._results = results;
-
 		initializePanel();
 	}
 	
@@ -235,6 +237,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 	@Override
 	public String getTitle() {
-		return "PathLinker Result";
+		return "Result " + _title;
 	}
 }
