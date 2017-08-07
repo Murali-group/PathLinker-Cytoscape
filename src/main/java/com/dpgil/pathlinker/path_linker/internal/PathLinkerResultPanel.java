@@ -18,6 +18,7 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -161,6 +162,12 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		setUpDownloadBtn();
 		setUpDiscardBtn();
 		setupTable();
+		
+        // add a dummy object to ensure _innerPanel stick on top if the window vertically expand
+        GridBagConstraints dummyConstraint = new GridBagConstraints();
+        dummyConstraint.weighty = 1;
+        dummyConstraint.gridy = 2;
+        this.add(new JLabel(" "), dummyConstraint);
 	}
 
 	/**
@@ -169,6 +176,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	private void setUpDownloadBtn()
 	{
 		_downloadBtn = new JButton("Download");
+		_downloadBtn.setMinimumSize(_downloadBtn.getPreferredSize());
 		_downloadBtn.addActionListener(new DownloadButtonListener());
 
 		GridBagConstraints constraint = new GridBagConstraints();
@@ -188,6 +196,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	private void setUpDiscardBtn()
 	{
 		_discardBtn = new JButton("Discard");
+		_discardBtn.setMinimumSize(_discardBtn.getPreferredSize());
 		_discardBtn.addActionListener(new DiscardButtonListener());
 
 		GridBagConstraints constraint = new GridBagConstraints();
@@ -221,7 +230,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		class NonEditableModel
 		extends DefaultTableModel
 		{
-
 			NonEditableModel(Object[][] data, Object[] colNames)
 			{
 				super(data, colNames);
@@ -235,8 +243,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		}
 
 		// populates the table with the path data
-		_resultTable =
-				new JTable(new NonEditableModel(rowData, columnNames));
+		_resultTable = new JTable(new NonEditableModel(rowData, columnNames));
 
 		// fixes column widths
 		TableColumn index = _resultTable.getColumnModel().getColumn(0);
@@ -249,9 +256,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		TableColumn path = _resultTable.getColumnModel().getColumn(2);
 		path.setMinWidth(200);
 
-		// table automatically resizes to fit path column
-		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		//_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		// disable resize for horizontal scrollbar
+		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		_resultTable.getSelectionModel().addListSelectionListener(new ResultTableListener());
 
 		// scrollable panel
