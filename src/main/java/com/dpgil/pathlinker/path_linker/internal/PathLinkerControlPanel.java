@@ -1007,7 +1007,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_runningMessage = new JLabel("PathLinker is running...");
 		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);
+		_runningMessage.setVisible(false);		
 	}
 
 	/**
@@ -1026,7 +1026,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		setUpSubGraphPanel();
 		setUpMisc();
 		
-        this.add(_innerPanel);
+        this.add(_innerPanel); // add _innerPanel
+        
+        // add a dummy object to ensure _innerPanel stick on top if the window vertically expand
+        GridBagConstraints dummyConstraint = new GridBagConstraints();
+        dummyConstraint.weighty = 1;
+        dummyConstraint.gridy = 6;
+        this.add(new JLabel(" "), dummyConstraint);
+        
 	}
 
 	/**
