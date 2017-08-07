@@ -751,6 +751,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		}
 	}
 
+	/**
+	 * Sets up source target panel
+	 * contains input field for source and target
+	 * contains allow Sources Targets In Paths Option check box
+	 * contains targets Same As Sources Option check box
+	 */
 	private void setUpSourceTargetPanel() {
 		JPanel sourceTargetPanel = new JPanel();
 		sourceTargetPanel.setLayout(new GridBagLayout());
@@ -845,6 +851,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_innerPanel.add(sourceTargetPanel, _innerPanelConstraints);
 	}
 
+	/**
+	 * Sets up the algorithm panel
+	 * contains k input field and edge penalty input field
+	 */
 	private void setUpAlgorithmPanel() {
 		JPanel algorithmPanel = new JPanel();
 		algorithmPanel.setLayout(new GridBagLayout());
@@ -894,6 +904,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_innerPanel.add(algorithmPanel, _innerPanelConstraints);
 	}
 
+	/**
+	 * Sets up the edge weight panel
+	 * contains unweighted, weighted additive, and weighted probabilities buttons
+	 * contains edge weight column name combo box
+	 */
 	private void setUpGraphPanel() {
 		JPanel graphPanel = new JPanel();
 		graphPanel.setLayout(new GridBagLayout());
@@ -962,6 +977,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_innerPanel.add(graphPanel, _innerPanelConstraints);
 	}
 
+	/**
+	 * Sets up the ouput graph panel
+	 * Contains checkbox to include path score ties and generate subgraph options
+	 */
 	private void setUpSubGraphPanel() {
 		JPanel subGraphPanel = new JPanel();
 		subGraphPanel.setLayout(new GridBagLayout());
@@ -994,6 +1013,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_innerPanel.add(subGraphPanel, _innerPanelConstraints);
 	}
 
+	/**
+	 * Sets up submit button and running message
+	 */
 	private void setUpMisc() {
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());

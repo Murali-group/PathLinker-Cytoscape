@@ -45,7 +45,6 @@ import org.cytoscape.model.CyTableUtil;
  */
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
-
 	/** The kth shortest paths generated from the network **/
 	private final ArrayList<Path> _results;
 	/** The current network associated with the result panel **/
@@ -283,7 +282,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	 * @throws IOException
 	 */
 	private void downloadResultTable() throws IOException {
-
 		// override approveSelection method to warn if user overwrites a existing file when saving
 		JFileChooser fc = new JFileChooser() {
 			@Override
@@ -331,7 +329,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 			writer.close();
 			JOptionPane.showMessageDialog(null, "Download successful");
-
 		} else {
 			JOptionPane.showMessageDialog(null, "Download canceled");
 		}
