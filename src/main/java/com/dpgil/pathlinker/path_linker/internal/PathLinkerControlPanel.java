@@ -640,6 +640,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// create and register a new panel in result panel with specific title
     	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
     			String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
+    			_applicationManager.getCurrentNetwork(),
     			paths);
     	_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
     	

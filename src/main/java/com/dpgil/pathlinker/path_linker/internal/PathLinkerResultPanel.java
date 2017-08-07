@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -21,11 +22,18 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTableUtil;
 
 /**
  * // -------------------------------------------------------------------------
@@ -37,7 +45,11 @@ import org.cytoscape.application.swing.CytoPanelName;
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
 
-	private ArrayList<Path> _results;
+	/** The kth shortest paths generated from the network **/
+	private final ArrayList<Path> _results;
+	/** The current network associated with the result panel **/
+	private final CyNetwork _originalNetwork;
+	/** The tab title of the result panel **/
 	private String _title;
 	private JButton _discardBtn;
 	private JButton _downloadBtn;
@@ -46,11 +58,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/**
 	 * Constructor for the result frame class
 	 * @param title the title of the result panel
+	 * @param originalNetwork the current network associated with the result panel
 	 * @param results the results from pathlinker
 	 */
-	public PathLinkerResultPanel(String title, ArrayList<Path> results)
+	public PathLinkerResultPanel(String title, CyNetwork originalNetwork, ArrayList<Path> results)
 	{
 		this._title = title;
+		this._originalNetwork = originalNetwork;
 		this._results = results;
 		initializePanel();
 	}
@@ -81,6 +95,60 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			Container btnParent = _discardBtn.getParent();
 			Container panelParent = btnParent.getParent();
 			panelParent.remove(btnParent);
+		}
+	}
+
+	/**
+	 * Listener for the paths in result table
+	 * When user selects a path in the table, set the related nodes and edges to be selected in the network view
+	 * Multiple nodes can be select at once
+	 */
+	class ResultTableListener implements ListSelectionListener {
+		@Override
+		public void valueChanged(ListSelectionEvent e) {
+			ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+
+			List<CyNode> selectedNodes = CyTableUtil.getNodesInState(_originalNetwork, "selected", true);
+			List<CyEdge> selectedEdges = CyTableUtil.getEdgesInState(_originalNetwork, "selected", true);
+			
+			// clear the original selected nodes and edges from the view
+			for (CyNode node : selectedNodes) 
+				_originalNetwork.getRow(node).set(CyNetwork.SELECTED, false);
+			for (CyEdge edge : selectedEdges) 
+				_originalNetwork.getRow(edge).set(CyNetwork.SELECTED, false);
+
+			// return if nothing is selected
+			if (lsm.isSelectionEmpty()) return;
+
+			// find the index of first and last nodes
+			int minIndex = lsm.getMinSelectionIndex();
+			int maxIndex = lsm.getMaxSelectionIndex();
+
+			// check the nodes in between the indexes
+			for (int i = minIndex; i <= maxIndex; i++) {
+				if (lsm.isSelectedIndex(i)) {
+					Path currPath = _results.get(i);
+					// excluding supersource and supertarget
+					for (int j = 1; j < currPath.size() - 2; j++) {
+						CyNode node1 = currPath.get(j);
+						CyNode node2 = currPath.get(j + 1);
+
+						_originalNetwork.getRow(node1).set(CyNetwork.SELECTED, true);
+						_originalNetwork.getRow(node2).set(CyNetwork.SELECTED, true);
+
+						// add all of the directed edges from node1 to node2
+						List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+						for (CyEdge edge : edges) {
+							if (edge.getSource().equals(node1) && edge.getTarget().equals(node2)) { // verifies the edges direction
+								_originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
+							}
+						}
+						// also add all of the undirected edges from node1 to node2
+						edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
+						for (CyEdge edge : edges) _originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
+					}
+				}
+			}
 		}
 	}
 
@@ -159,7 +227,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 				super(data, colNames);
 			}
 
-
 			@Override
 			public boolean isCellEditable(int row, int column)
 			{
@@ -184,12 +251,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 		// table automatically resizes to fit path column
 		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+		//_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		_resultTable.getSelectionModel().addListSelectionListener(new ResultTableListener());
 
 		// scrollable panel
 		JScrollPane scrollPane = new JScrollPane(_resultTable, 
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
+
 
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.BOTH;
@@ -233,7 +302,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 				super.approveSelection();
 			}
 		};
-		
+
 		fc.setDialogTitle("Sepcify the file to save"); // title of the dialogue
 		int userSelection = fc.showSaveDialog(null);
 
@@ -253,10 +322,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 					writer.write("\t");;
 				}
 			}
-			
+
 			writer.close();
 			JOptionPane.showMessageDialog(null, "Download successful");
-		
+
 		} else {
 			JOptionPane.showMessageDialog(null, "Download canceled");
 		}
