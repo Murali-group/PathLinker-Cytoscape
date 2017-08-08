@@ -27,74 +27,72 @@ import org.osgi.framework.BundleContext;
  * @version Apr 23, 2015
  */
 public class CyActivator
-    extends AbstractCyActivator
+extends AbstractCyActivator
 {
-    @Override
-    public void start(BundleContext context)
-        throws Exception
-    {
-        // sets up pathlinker menu option
-        CyApplicationManager cyApplicationManager =
-            getService(context, CyApplicationManager.class);
+	@Override
+	public void start(BundleContext context) throws Exception {
+		// sets up pathlinker menu option
+		CyApplicationManager cyApplicationManager =
+				getService(context, CyApplicationManager.class);
 
-        // initializes the panel with the necessary components
-        PathLinkerPanel panel = new PathLinkerPanel();
-        CyNetworkManager networkManager =
-            getService(context, CyNetworkManager.class);
-        CyNetworkViewFactory networkViewFactory =
-            getService(context, CyNetworkViewFactory.class);
-        CyNetworkViewManager networkViewManager =
-            getService(context, CyNetworkViewManager.class);
-        CyAppAdapter adapter = getService(context, CyAppAdapter.class);
-        CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
-        registerService(
-            context,
-            panel,
-            CytoPanelComponent.class,
-            new Properties());
+		// initializes the panel with the necessary components
+		PathLinkerPanel panel = new PathLinkerPanel();
+		CyNetworkManager networkManager =
+				getService(context, CyNetworkManager.class);
+		CyNetworkViewFactory networkViewFactory =
+				getService(context, CyNetworkViewFactory.class);
+		CyNetworkViewManager networkViewManager =
+				getService(context, CyNetworkViewManager.class);
+		CyAppAdapter adapter = getService(context, CyAppAdapter.class);
+		CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
+		registerService(
+				context,
+				panel,
+				CytoPanelComponent.class,
+				new Properties());
 
-        // sets up the pathlinker open and close menu options
-        OpenPathLinkerMenuAction oplaction =
-            new OpenPathLinkerMenuAction(panel, cyApplicationManager);
-        ClosePathLinkerMenuAction cplaction =
-            new ClosePathLinkerMenuAction(panel, cyApplicationManager);
-        registerAllServices(context, oplaction, new Properties());
-        registerAllServices(context, cplaction, new Properties());
-        
-        // sets up the about dialog menu option
-        PathLinkerAboutMenuAction amaction =
-        		new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
-        registerAllServices(context, amaction, new Properties());
-        
-        // sets up the help menu option
-        PathLinkerHelpMenuAction hmaction =
-        		new PathLinkerHelpMenuAction(cyApplicationManager, networkViewManager);
-        registerAllServices(context, hmaction, new Properties());
-        
-        // intializes panel
-        panel.initialize(
-            cySwingApp,
-            cyApplicationManager,
-            networkManager,
-            networkViewFactory,
-            networkViewManager,
-            adapter);
+		// sets up the pathlinker open and close menu options
+		OpenPathLinkerMenuAction oplaction =
+				new OpenPathLinkerMenuAction(panel, cyApplicationManager);
+		ClosePathLinkerMenuAction cplaction =
+				new ClosePathLinkerMenuAction(panel, cyApplicationManager);
+		registerAllServices(context, oplaction, new Properties());
+		registerAllServices(context, cplaction, new Properties());
 
-        // starts off the panel in a closed state
-        panel.setPanelState(PanelState.CLOSED);
-        
-        // handle load node to source/target button enable/disable events
-        PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
-        registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
-        
-        // handle events triggered by editing table columns
-        PathLinkerColumnUpdateListener columnUpdateListener = new PathLinkerColumnUpdateListener();
-        registerService(context, columnUpdateListener, ColumnCreatedListener.class, new Properties());
-        registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
-        registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
-        
-        // handle events triggered by changing current network
-        PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
-        registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
-    }
+		// sets up the help menu option
+		PathLinkerHelpMenuAction hmaction =
+				new PathLinkerHelpMenuAction(cyApplicationManager, networkViewManager);
+		registerAllServices(context, hmaction, new Properties());
+
+		// sets up the about dialog menu option
+		PathLinkerAboutMenuAction amaction =
+				new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
+		registerAllServices(context, amaction, new Properties());
+
+		// intializes panel
+		panel.initialize(
+				cySwingApp,
+				cyApplicationManager,
+				networkManager,
+				networkViewFactory,
+				networkViewManager,
+				adapter);
+
+		// starts off the panel in a closed state
+		panel.setPanelState(PanelState.CLOSED);
+
+		// handle load node to source/target button enable/disable events
+		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
+		registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
+
+		// handle events triggered by editing table columns
+		PathLinkerColumnUpdateListener columnUpdateListener = new PathLinkerColumnUpdateListener();
+		registerService(context, columnUpdateListener, ColumnCreatedListener.class, new Properties());
+		registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
+		registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
+
+		// handle events triggered by changing current network
+		PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
+		registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
+	}
 }
