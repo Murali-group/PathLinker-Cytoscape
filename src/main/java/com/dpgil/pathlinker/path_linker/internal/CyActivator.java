@@ -60,7 +60,12 @@ public class CyActivator
             new ClosePathLinkerMenuAction(panel, cyApplicationManager);
         registerAllServices(context, oplaction, new Properties());
         registerAllServices(context, cplaction, new Properties());
-
+        
+        // sets up the about dialog menu option
+        PathLinkerAboutMenuAction amaction =
+        		new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
+        registerAllServices(context, amaction, new Properties());
+        
         // intializes panel
         panel.initialize(
             cySwingApp,
