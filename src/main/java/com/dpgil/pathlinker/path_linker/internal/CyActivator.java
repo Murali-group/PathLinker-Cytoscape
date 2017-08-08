@@ -66,6 +66,11 @@ public class CyActivator
         		new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
         registerAllServices(context, amaction, new Properties());
         
+        // sets up the help menu option
+        PathLinkerHelpMenuAction hmaction =
+        		new PathLinkerHelpMenuAction(cyApplicationManager, networkViewManager);
+        registerAllServices(context, hmaction, new Properties());
+        
         // intializes panel
         panel.initialize(
             cySwingApp,

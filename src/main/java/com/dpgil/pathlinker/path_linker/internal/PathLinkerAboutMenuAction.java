@@ -9,9 +9,9 @@ import org.cytoscape.application.swing.ActionEnableSupport;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.view.model.CyNetworkViewManager;
 
-/** Menu option to open the about dialogue in PathLinker*/
+/** Menu option to open the about dialogue in PathLinker */
 @SuppressWarnings("serial")
-public class PathLinkerAboutMenuAction extends AbstractCyAction{
+public class PathLinkerAboutMenuAction extends AbstractCyAction {
 
 	/** the swing application from the CyActivator */
 	final CySwingApplication _swingApplication;
