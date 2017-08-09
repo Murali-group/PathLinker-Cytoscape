@@ -5,6 +5,8 @@ import java.awt.Desktop;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -29,7 +31,7 @@ public class PathLinkerAboutMenuDialog extends JDialog {
 	private JEditorPane _mainPanel;
 	/** panel for the cancel button */
 	private JPanel _buttonPanel;
-	
+
 	/**
 	 * Constructor for the dialog box
 	 * @param swingApplication swing application from the activator
@@ -67,17 +69,28 @@ public class PathLinkerAboutMenuDialog extends JDialog {
 					}
 				}
 			});
-			
+
+			URL logoURL;
+			try {
+				logoURL = new URL("http://apps.cytoscape.org/media/pathlinker/logo.png.png");
+			} catch (MalformedURLException e) {
+				logoURL = null;
+			}
+			String logoCode = logoURL != null ? "<center><img src='" + logoURL + "'></center>" : "";
+
 			String text = "<html><body>" +
+					logoCode +
 					"<P align=center><b>PathLinker v" + _version + " (" + _buildDate + ")</b><BR>" +
-					  "A Cytoscape App<BR><BR>" +
-					  "Version " + _version + " by <a href='http://bioinformatics.cs.vt.edu/~murali/research.html'>Computational Systems Biology Research Group</a>, Virginia Tech<BR><BR>" +
-					  "If you use this app in your research, please cite:<BR>" +
-					  "<a href='https://www.nature.com/articles/npjsba20162'>Pathways on Demand: Automated Reconstruction of Human Signaling Networks</a><BR>" +
-					  "<a href='https://www.ncbi.nlm.nih.gov/pubmed/23641868'>Top-down network analysis to drive bottom-up modeling of physiological processes</a>" +
-					  "</P></body></html>";
-			
+					"A Cytoscape App<BR><BR>" +
+					"Version " + _version + " by <a href='http://bioinformatics.cs.vt.edu/~murali/research.html'>Computational Systems Biology Research Group</a>, Virginia Tech<BR><BR>" +
+					"If you use this app in your research, please cite:<BR>" +
+					"<a href='https://www.nature.com/articles/npjsba20162'>Pathways on Demand: Automated Reconstruction of Human Signaling Networks</a><BR>" +
+					"<a href='https://www.ncbi.nlm.nih.gov/pubmed/23641868'>Top-down network analysis to drive bottom-up modeling of physiological processes</a>" +
+					"<BR><BR><BR>" + // triple line break to make extra space for the logo image
+					"</P></body></html>";
+
 			_mainPanel.setText(text);
+			_mainPanel.setSize(_mainPanel.getWidth(), _mainPanel.getPreferredSize().height + 200);
 		}
 
 		getContentPane().add(_mainPanel, BorderLayout.CENTER);
