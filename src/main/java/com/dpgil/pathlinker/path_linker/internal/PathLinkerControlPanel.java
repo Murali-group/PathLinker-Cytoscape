@@ -1057,6 +1057,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         dummyConstraint.gridy = 6;
         this.add(new JLabel(" "), dummyConstraint);
         
+        // add a dummy object to ensure _innerPanel stick on top if the window horizontally expand
+        dummyConstraint = new GridBagConstraints();
+        dummyConstraint.weightx = 1;
+        dummyConstraint.gridx = 1;
+        this.add(new JLabel(" "), dummyConstraint);   
 	}
 
 	/**
