@@ -667,7 +667,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 
 	/**
 	 * Applies a layout algorithm to the nodes If k <= 200, we apply a
-	 * hierarchical layout Otherwise, we apply the default layout
+	 * hierarchical layout Otherwise, we apply the default layout of the existing network view
 	 * @param kspSubgraph
 	 * @param kspSubgraphView
 	 */
@@ -683,7 +683,7 @@ public class PathLinkerPanel extends JPanel implements CytoPanelComponent {
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
 				.getService(SynchronousTaskManager.class);
 		synTaskMan.execute(iter);
-		_adapter.getVisualMappingManager().getVisualStyle(kspSubgraphView).apply(kspSubgraphView);
+		_adapter.getVisualMappingManager().getVisualStyle(_applicationManager.getCurrentNetworkView()).apply(kspSubgraphView);
 		kspSubgraphView.updateView();
 
 		// if we applied the hierarchical layout, by default it is rendered
