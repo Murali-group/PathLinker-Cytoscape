@@ -784,6 +784,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanel.add(_sourcesTextField, constraint);
 
 		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+		_loadNodeToSourceButton.setToolTipText("Add selected node(s) from the network view into the sources field");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
 		constraint.weightx = 0;
@@ -810,6 +811,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanel.add(_targetsTextField, constraint);
 
 		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+		_loadNodeToTargetButton.setToolTipText("Add selected node(s) from the network view into the targets field");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 		constraint.weightx = 0;
@@ -951,6 +953,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_weightedOptionGroup.add(_weightedProbabilities);
 
 		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
+		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property");
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 3;
@@ -958,6 +961,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		graphPanel.add(_edgeWeightColumnBoxLabel, constraint);
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
+		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
 		_edgeWeightColumnBox.setMinimumSize(new Dimension(225, _edgeWeightColumnBox.getPreferredSize().height));
 		constraint.weightx = 1;
 		constraint.gridx = 1;
