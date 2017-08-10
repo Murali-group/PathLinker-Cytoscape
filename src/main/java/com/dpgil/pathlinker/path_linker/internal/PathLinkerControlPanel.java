@@ -251,7 +251,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			for (CyNode node : nodes)
 				sources.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
-			_sourcesTextField.setText(_sourcesTextField.getText() + sources.toString());
+			String sourceText = _sourcesTextField.getText();
+			
+			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
+				_sourcesTextField.setText(sourceText + " " + sources.toString());
+			else _sourcesTextField.setText(sourceText + sources.toString());
+
 		}
 	}
 
@@ -270,7 +275,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			for (CyNode node : nodes)
 				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
-			_targetsTextField.setText(_targetsTextField.getText() + targets.toString());
+			String targetText = _targetsTextField.getText();
+			
+			if (targetText.length() > 0 &&
+					targetText.charAt(targetText.length() - 1) != ' ')
+				_targetsTextField.setText(targetText + " " + targets.toString());
+			else _targetsTextField.setText(targetText + targets.toString());
 		}
 	}
 
