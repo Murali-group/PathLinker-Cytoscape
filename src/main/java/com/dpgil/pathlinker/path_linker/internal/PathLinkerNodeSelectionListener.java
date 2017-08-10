@@ -14,8 +14,10 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 	@Override
 	public void handleEvent(RowsSetEvent e) {
 
-		if (e.containsColumn(CyNetwork.SELECTED) && e.getSource() == 
-				PathLinkerControlPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable()) {
+		if (e.getSource() != PathLinkerControlPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable())
+			return;
+
+		if (e.containsColumn(CyNetwork.SELECTED)) {
 			for (RowSetRecord rowSet : e.getColumnRecords(CyNetwork.SELECTED)) {
 				if (rowSet.getRow().get(CyNetwork.SELECTED, Boolean.class)) {
 					PathLinkerControlPanel._loadNodeToSourceButton.setEnabled(true);
