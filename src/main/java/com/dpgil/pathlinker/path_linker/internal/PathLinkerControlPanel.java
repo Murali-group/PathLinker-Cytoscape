@@ -636,20 +636,20 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			JOptionPane.showMessageDialog(null, "No paths found.");
 			return;
 		}
-		
+
 		// create and register a new panel in result panel with specific title
-    	PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
-    			String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
-    			_applicationManager.getCurrentNetwork(),
-    			paths);
-    	_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
-    	
-    	// open and show the result panel if in hide state
-    	CytoPanel cytoPanel = _cySwingApp.getCytoPanel(resultsPanel.getCytoPanelName());
-    	 
+		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
+				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
+				_applicationManager.getCurrentNetwork(),
+				paths);
+		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
+
+		// open and show the result panel if in hide state
+		CytoPanel cytoPanel = _cySwingApp.getCytoPanel(resultsPanel.getCytoPanelName());
+
 		if (cytoPanel.getState() == CytoPanelState.HIDE)
 			cytoPanel.setState(CytoPanelState.DOCK);
-		
+
 		// set visible and selected
 		resultsPanel.setVisible(true);
 		cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(resultsPanel.getComponent()));
@@ -959,7 +959,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setMinimumSize(new Dimension(225, _edgeWeightColumnBox.getPreferredSize().height));
-		constraint.weightx = 0;
+		constraint.weightx = 1;
 		constraint.gridx = 1;
 		constraint.gridy = 3;
 		constraint.gridwidth = 1;
@@ -967,7 +967,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
-		
+
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;
 		_innerPanelConstraints.gridy = 2;
@@ -1003,7 +1003,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridy = 1;
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_subgraphOption, constraint);
-		
+
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;
 		_innerPanelConstraints.gridy = 3;
@@ -1038,30 +1038,30 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void initializePanelItems() {
 		this.setLayout(new GridBagLayout());
-		
+
 		_innerPanel = new JPanel();
 		_innerPanel.setLayout(new GridBagLayout());
 		_innerPanelConstraints = new GridBagConstraints();
-		
+
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpSubGraphPanel();
 		setUpMisc();
-		
-        this.add(_innerPanel); // add _innerPanel
-        
-        // add a dummy object to ensure _innerPanel stick on top if the window vertically expand
-        GridBagConstraints dummyConstraint = new GridBagConstraints();
-        dummyConstraint.weighty = 1;
-        dummyConstraint.gridy = 6;
-        this.add(new JLabel(" "), dummyConstraint);
-        
-        // add a dummy object to ensure _innerPanel stick on top if the window horizontally expand
-        dummyConstraint = new GridBagConstraints();
-        dummyConstraint.weightx = 1;
-        dummyConstraint.gridx = 1;
-        this.add(new JLabel(" "), dummyConstraint);   
+
+		this.add(_innerPanel); // add _innerPanel
+
+		// add a dummy object to ensure _innerPanel stick on top if the window vertically expand
+		GridBagConstraints dummyConstraint = new GridBagConstraints();
+		dummyConstraint.weighty = 1;
+		dummyConstraint.gridy = 6;
+		this.add(new JLabel(" "), dummyConstraint);
+
+		// add a dummy object to ensure _innerPanel stick on top if the window horizontally expand
+		dummyConstraint = new GridBagConstraints();
+		dummyConstraint.weightx = 1;
+		dummyConstraint.gridx = 1;
+		this.add(new JLabel(" "), dummyConstraint);   
 	}
 
 	/**
