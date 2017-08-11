@@ -110,7 +110,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 			List<CyNode> selectedNodes = CyTableUtil.getNodesInState(_originalNetwork, "selected", true);
 			List<CyEdge> selectedEdges = CyTableUtil.getEdgesInState(_originalNetwork, "selected", true);
-			
+
 			// clear the original selected nodes and edges from the view
 			for (CyNode node : selectedNodes) 
 				_originalNetwork.getRow(node).set(CyNetwork.SELECTED, false);
@@ -161,12 +161,12 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		setUpDownloadBtn();
 		setUpDiscardBtn();
 		setupTable();
-		
-        // add a dummy object to ensure _innerPanel stick on top if the window vertically expand
-        GridBagConstraints dummyConstraint = new GridBagConstraints();
-        dummyConstraint.weighty = 1;
-        dummyConstraint.gridy = 2;
-        this.add(new JLabel(" "), dummyConstraint);
+
+		// add a dummy object to ensure _innerPanel stick on top if the window vertically expand
+		GridBagConstraints dummyConstraint = new GridBagConstraints();
+		dummyConstraint.weighty = 1;
+		dummyConstraint.gridy = 2;
+		this.add(new JLabel(" "), dummyConstraint);
 	}
 
 	/**
@@ -316,14 +316,16 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 			for(int i = 0; i < _resultTable.getColumnCount(); i++) {
 				writer.write(_resultTable.getColumnName(i));
-				writer.write("\t");
+
+				if (i < _resultTable.getColumnCount() - 1) writer.write("\t");
 			}
 
 			for (int i = 0; i < _resultTable.getRowCount(); i++) {
 				writer.newLine();
 				for(int j = 0; j < _resultTable.getColumnCount(); j++) {
 					writer.write((_resultTable.getValueAt(i, j).toString()));
-					writer.write("\t");;
+
+					if (j < _resultTable.getColumnCount() - 1) writer.write("\t\t");
 				}
 			}
 
