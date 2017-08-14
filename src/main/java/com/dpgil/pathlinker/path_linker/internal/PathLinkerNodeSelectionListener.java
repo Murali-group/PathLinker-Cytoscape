@@ -14,9 +14,13 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 	@Override
 	public void handleEvent(RowsSetEvent e) {
 
+		// if event is triggered by unselect/select an edge or blank screen then do nothing
+		// since user may select node and then edge simultaneously
+		// if event is triggered by selecting blank screen, then unselect nodes will triggered another RowsSetEvent to disable buttons
 		if (e.getSource() != PathLinkerControlPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable())
 			return;
 
+		// if event is triggered unselect/select node then check if any node is selected, enable buttons if true
 		if (e.containsColumn(CyNetwork.SELECTED)) {
 			for (RowSetRecord rowSet : e.getColumnRecords(CyNetwork.SELECTED)) {
 				if (rowSet.getRow().get(CyNetwork.SELECTED, Boolean.class)) {
@@ -27,6 +31,7 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 			}
 		}
 
+		// disable buttons if no node is selected
 		PathLinkerControlPanel._loadNodeToSourceButton.setEnabled(false);
 		PathLinkerControlPanel._loadNodeToTargetButton.setEnabled(false);
 	}
