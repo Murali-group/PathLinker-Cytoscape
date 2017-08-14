@@ -252,7 +252,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				sources.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
 			String sourceText = _sourcesTextField.getText();
-			
+
 			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
 				_sourcesTextField.setText(sourceText + " " + sources.toString());
 			else _sourcesTextField.setText(sourceText + sources.toString());
@@ -276,7 +276,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
 			String targetText = _targetsTextField.getText();
-			
+
 			if (targetText.length() > 0 &&
 					targetText.charAt(targetText.length() - 1) != ' ')
 				_targetsTextField.setText(targetText + " " + targets.toString());
@@ -930,8 +930,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
-		_unweighted = new JRadioButton(
-				"<html><b>Unweighted</b> - PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.</html>");
+		_unweighted = new JRadioButton("Unweighted");
+		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
 		_unweighted.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -939,8 +939,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_unweighted, constraint);
 
-		_weightedAdditive = new JRadioButton(
-				"<html><b>Weighted, edge weights are additive</b> - PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.</html>");
+		_weightedAdditive = new JRadioButton("Weighted Additive");
+		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -948,8 +948,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_weightedAdditive, constraint);
 
-		_weightedProbabilities = new JRadioButton(
-				"<html><b>Weighted, edge weights are probabilities</b> - PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.</html>");
+		_weightedProbabilities = new JRadioButton("Weighted Probabilities");
+		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
 		constraint.gridx = 0;
@@ -964,7 +964,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
 		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property");
-		constraint.weightx = 1;
+		constraint.weightx = 0;
 		constraint.gridx = 0;
 		constraint.gridy = 3;
 		constraint.gridwidth = 1;
@@ -973,7 +973,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
 		_edgeWeightColumnBox.setMinimumSize(new Dimension(225, _edgeWeightColumnBox.getPreferredSize().height));
-		constraint.weightx = 1;
+		constraint.weightx = 0;
 		constraint.gridx = 1;
 		constraint.gridy = 3;
 		constraint.gridwidth = 1;
@@ -1004,14 +1004,16 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
-		_includePathScoreTiesOption = new JCheckBox("<html>Include more than k paths if the path length/score is equal to the kth path's length/score<html>");
+		_includePathScoreTiesOption = new JCheckBox("Include ties");
+		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_includePathScoreTiesOption, constraint);
 
-		_subgraphOption = new JCheckBox("<html>Generate a subnetwork of the nodes/edges involved in the k paths</html>", true);
+		_subgraphOption = new JCheckBox("Disable subnetwork generation");
+		_subgraphOption.setToolTipText("Disable generation of the subnetwork of the nodes/edges involved in the k paths");
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 1;
@@ -1051,19 +1053,25 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Sets up all the components in the panel
 	 */
 	private void initializePanelItems() {
-		this.setLayout(new GridBagLayout());
+		this.setLayout(new GridBagLayout()); //set the control panel to GridBagLayout
 
+		// creates the inner panel which consists all the sub-panels
 		_innerPanel = new JPanel();
 		_innerPanel.setLayout(new GridBagLayout());
 		_innerPanelConstraints = new GridBagConstraints();
 
+		// calls each method to create sub-panel with specific items and add the panel to inner panel
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpSubGraphPanel();
 		setUpMisc();
 
-		this.add(_innerPanel); // add _innerPanel
+		// creates scroll bar for inner panel and add it to control panel
+		JScrollPane scrollPane = new JScrollPane(_innerPanel,
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
+		this.add(scrollPane);
 
 		// add a dummy object to ensure _innerPanel stick on top if the window vertically expand
 		GridBagConstraints dummyConstraint = new GridBagConstraints();
