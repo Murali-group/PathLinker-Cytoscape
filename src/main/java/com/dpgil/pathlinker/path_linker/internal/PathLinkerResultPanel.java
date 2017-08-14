@@ -12,6 +12,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -230,10 +232,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		Object[] columnNames = new Object[] { "Path index", "Path score", "Path" };
 		Object[][] rowData = new Object[_results.size()][columnNames.length];
 
+		// A decimal formatter to round path score up to 6 decimal places
+		DecimalFormat df = new DecimalFormat("#.######");
+		df.setRoundingMode(RoundingMode.HALF_UP);
+
 		for (int i = 0; i < _results.size(); i++)
 		{
 			rowData[i][0] = i + 1;
-			rowData[i][1] = _results.get(i).weight;
+			rowData[i][1] = df.format(_results.get(i).weight);
 			rowData[i][2] = pathAsString(_results.get(i));
 		}
 
