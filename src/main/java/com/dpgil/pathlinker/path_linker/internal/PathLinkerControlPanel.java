@@ -319,8 +319,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgeWeightColumnBox.removeAllItems(); //remove all items for update
 
 		//keep box empty if no network found or user selected unweighted as edge weight setting
-		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null || _unweighted.isSelected()) 
+		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null || _unweighted.isSelected()) {
+			_edgeWeightColumnBox.setEnabled(false); //disables the drop-down box
 			return;
+		}
+
+		_edgeWeightColumnBox.setEnabled(true);
 
 		Collection<CyColumn> columns = _applicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();	
 		for (CyColumn column : columns) {
