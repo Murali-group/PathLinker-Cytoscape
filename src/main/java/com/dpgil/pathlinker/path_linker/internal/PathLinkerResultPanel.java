@@ -326,6 +326,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		};
 
 		fc.setDialogTitle("Export PathLinker results"); // title of the dialogue
+		fc.setSelectedFile(new File(getTitle() + ".tsv")); // set default file name and extension
 		int userSelection = fc.showSaveDialog(null);
 
 		if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -343,7 +344,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 				for(int j = 0; j < _resultTable.getColumnCount(); j++) {
 					writer.write((_resultTable.getValueAt(i, j).toString()));
 
-					if (j < _resultTable.getColumnCount() - 1) writer.write("\t\t");
+					if (j < _resultTable.getColumnCount() - 1) writer.write("\t");
 				}
 			}
 
