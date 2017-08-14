@@ -432,7 +432,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// generates a subgraph of the nodes and edges involved in the resulting
 		// paths and displays it to the user
-		if (_model.getGenerateSubgraph())
+		if (!_model.getDisableSubgraph())
 			createKSPSubgraphView();
 
 		// update the table path index attribute

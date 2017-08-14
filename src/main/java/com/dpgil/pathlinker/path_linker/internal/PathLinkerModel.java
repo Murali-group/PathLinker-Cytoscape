@@ -65,8 +65,8 @@ public class PathLinkerModel {
 	private int commonSourcesTargets;
 	/** Whether or not to include more than k paths if the path length/score is equal to the kth path's */
 	private boolean includePathScoreTies;
-	/** Whether or not to generate a subgraph */
-	private boolean generateSubgraph;
+	/** Whether or not to disable subgraph */
+	private boolean disableSubgraph;
 	/** ksp subgraph */
 	private CyNetwork kspSubgraph;
 	/** sources in the ksp subgraph */
@@ -79,7 +79,7 @@ public class PathLinkerModel {
 	 * @param originalNetwork 			 the original network given by the view
 	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
 	 * @param includePathScoreTies		 the option to include all paths of equal length
-	 * @param generateSubgraph 			 boolean deciding if need to generate subgraph
+	 * @param disableSubgraph 			 boolean deciding if need to disable subgraph
 	 * @param sourcesTextField 			 source node names in string
 	 * @param targetsTextField 			 target node names in string
 	 * @param k					 		 k value
@@ -87,13 +87,13 @@ public class PathLinkerModel {
 	 * @param edgePenalty				 edge penalty
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
-			boolean generateSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
+			boolean disableSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
 			int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
 
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.includePathScoreTies		= includePathScoreTies;
-		this.generateSubgraph 			= generateSubgraph;
+		this.disableSubgraph 			= disableSubgraph;
 		this.sourcesTextField 			= sourcesTextField;
 		this.targetsTextField 			= targetsTextField;
 		this.edgeWeightColumnName		= edgeWeightColumnName;
@@ -204,11 +204,11 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Getter method of generateSubgraph
-	 * @return generateSubgraph
+	 * Getter method of disableSubgraph
+	 * @return disableSubgraph
 	 */
-	public boolean getGenerateSubgraph() {
-		return this.generateSubgraph;
+	public boolean getDisableSubgraph() {
+		return this.disableSubgraph;
 	}
 
 	/**
@@ -375,7 +375,7 @@ public class PathLinkerModel {
 		undoLogTransformPathLength(result);
 
 		// generates a subgraph of the nodes and edges involved in the resulting
-		if(generateSubgraph)
+		if(!disableSubgraph)
 			createKSPSubgraph(result);
 
 		return result;
@@ -450,7 +450,7 @@ public class PathLinkerModel {
 
 			CyNode source = e.getSource();
 			CyNode target = e.getTarget();
-			
+
 			// a hack for unweighted edge to avoid calling getNetworkTableWeight
 			// should be edit in the future to avoid constant checks
 			Double w = edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED ? 1 : getNetworkTableWeight(e);
