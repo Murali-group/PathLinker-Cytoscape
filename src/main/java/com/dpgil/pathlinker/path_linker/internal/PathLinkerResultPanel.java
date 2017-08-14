@@ -45,14 +45,14 @@ import org.cytoscape.model.CyTableUtil;
  */
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
-	/** The kth shortest paths generated from the network **/
+	/** The k shortest paths generated from the network **/
 	private final ArrayList<Path> _results;
 	/** The current network associated with the result panel **/
 	private final CyNetwork _originalNetwork;
 	/** The tab title of the result panel **/
 	private String _title;
 	private JButton _discardBtn;
-	private JButton _downloadBtn;
+	private JButton _exportdBtn;
 	private JTable _resultTable;
 
 	/**
@@ -69,27 +69,35 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		initializePanel();
 	}
 
-	/** Listener for the Download button */
-	class DownloadButtonListener implements ActionListener {
-		// calls downloadResultTable method if no error
+	/** 
+	 * Listener for the export button
+	 * 
+	 * Listener is fired when user clicks on the export button is been clicked
+	 */
+	class ExportButtonListener implements ActionListener {
+		// calls exportResultTable method if no error
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				downloadResultTable();
+				exportResultTable();
 			} catch (IOException e1) {
-				JOptionPane.showMessageDialog(null, "Unable to download result due to unexpected error");
+				JOptionPane.showMessageDialog(null, "Unable to export result due to unexpected error");
 			}
 		}
 	}
 
-	/** Listener for the discard button */
+	/** 
+	 * Listener for the discard button 
+	 *
+	 * Listener is fired when user clicks on the discard button is been clicked
+	 */
 	class DiscardButtonListener implements ActionListener {
 
 		// Discard the entire currently selected result panel tab if user chooses yes
 		@Override
 		public void actionPerformed(ActionEvent e) {
 
-			int choice = JOptionPane.showConfirmDialog(null, "Discarded result will be remove permanently. Continue?");
+			int choice = JOptionPane.showConfirmDialog(null, "Discarded results will be permanently removed. Continue?");
 			if (choice != 0) return; // quit if they say no or cancel
 
 			Container btnParent = _discardBtn.getParent();
@@ -102,6 +110,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	 * Listener for the paths in result table
 	 * When user selects a path in the table, set the related nodes and edges to be selected in the network view
 	 * Multiple nodes can be select at once
+	 * 
+	 * Listener is fired when user selects a column inside the result table
 	 */
 	class ResultTableListener implements ListSelectionListener {
 		@Override
@@ -121,6 +131,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			if (lsm.isSelectionEmpty()) return;
 
 			// find the index of first and last nodes
+			// user can select multiple indexes at once by dragging cursor or ctrl + clicking
+			// therefore checking the nodes in between to make sure all user selected nodes are shown on the network view
 			int minIndex = lsm.getMinSelectionIndex();
 			int maxIndex = lsm.getMaxSelectionIndex();
 
@@ -158,7 +170,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	private void initializePanel() {
 		this.setLayout(new GridBagLayout());
 
-		setUpDownloadBtn();
+		setUpExportBtn();
 		setUpDiscardBtn();
 		setupTable();
 
@@ -170,13 +182,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	}
 
 	/**
-	 * Sets up the download button
+	 * Sets up the export button
 	 */
-	private void setUpDownloadBtn()
+	private void setUpExportBtn()
 	{
-		_downloadBtn = new JButton("Download");
-		_downloadBtn.setMinimumSize(_downloadBtn.getPreferredSize());
-		_downloadBtn.addActionListener(new DownloadButtonListener());
+		_exportdBtn = new JButton("Export");
+		_exportdBtn.setMinimumSize(_exportdBtn.getPreferredSize());
+		_exportdBtn.addActionListener(new ExportButtonListener());
 
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.NONE;
@@ -186,7 +198,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
 
-		this.add(_downloadBtn, constraint);
+		this.add(_exportdBtn, constraint);
 	}
 
 	/**
@@ -277,11 +289,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	}
 
 	/**
-	 * The method is triggered by DownloadButtonListener
+	 * The method is triggered by exportButtonListener
 	 * Creates a dialogue for user to save the result tables
 	 * @throws IOException
 	 */
-	private void downloadResultTable() throws IOException {
+	private void exportResultTable() throws IOException {
 		// override approveSelection method to warn if user overwrites a existing file when saving
 		JFileChooser fc = new JFileChooser() {
 			@Override
@@ -307,7 +319,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			}
 		};
 
-		fc.setDialogTitle("Sepcify the file to save"); // title of the dialogue
+		fc.setDialogTitle("Export PathLinker results"); // title of the dialogue
 		int userSelection = fc.showSaveDialog(null);
 
 		if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -330,9 +342,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 			}
 
 			writer.close();
-			JOptionPane.showMessageDialog(null, "Download successful");
-		} else {
-			JOptionPane.showMessageDialog(null, "Download canceled");
+			JOptionPane.showMessageDialog(null, "Export successful");
 		}
 	}
 
@@ -374,6 +384,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
 	@Override
 	public String getTitle() {
-		return "Result " + _title;
+		return "PathLinker Result " + _title;
 	}
 }
