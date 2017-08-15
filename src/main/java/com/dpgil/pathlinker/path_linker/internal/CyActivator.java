@@ -6,7 +6,7 @@ import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerPanel.PanelState;
+import com.dpgil.pathlinker.path_linker.internal.PathLinkerControlPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -14,6 +14,7 @@ import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
@@ -36,9 +37,11 @@ public class CyActivator
         // sets up pathlinker menu option
         CyApplicationManager cyApplicationManager =
             getService(context, CyApplicationManager.class);
-
+        
         // initializes the panel with the necessary components
-        PathLinkerPanel panel = new PathLinkerPanel();
+        PathLinkerControlPanel panel = new PathLinkerControlPanel();
+        CyServiceRegistrar serviceRegistrar = 
+        		getService(context, CyServiceRegistrar.class);
         CyNetworkManager networkManager =
             getService(context, CyNetworkManager.class);
         CyNetworkViewFactory networkViewFactory =
@@ -60,10 +63,11 @@ public class CyActivator
             new ClosePathLinkerMenuAction(panel, cyApplicationManager);
         registerAllServices(context, oplaction, new Properties());
         registerAllServices(context, cplaction, new Properties());
-
-        // intializes panel
+        
+        // initializes panel
         panel.initialize(
             cySwingApp,
+            serviceRegistrar,
             cyApplicationManager,
             networkManager,
             networkViewFactory,

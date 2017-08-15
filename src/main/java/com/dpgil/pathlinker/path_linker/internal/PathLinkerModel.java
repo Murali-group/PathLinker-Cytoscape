@@ -31,6 +31,7 @@ public class PathLinkerModel {
 	private String sourcesTextField;
 	/** original user input strings that contains targets */
 	private String targetsTextField;
+	/** column name that links to the edge weight values */
 	private String edgeWeightColumnName;
 	/** list of source names */
 	private HashSet<String> sourceNames;
@@ -64,8 +65,8 @@ public class PathLinkerModel {
 	private int commonSourcesTargets;
 	/** Whether or not to include more than k paths if the path length/score is equal to the kth path's */
 	private boolean includePathScoreTies;
-	/** Whether or not to generate a subgraph */
-	private boolean generateSubgraph;
+	/** Whether or not to disable subgraph */
+	private boolean disableSubgraph;
 	/** ksp subgraph */
 	private CyNetwork kspSubgraph;
 	/** sources in the ksp subgraph */
@@ -78,7 +79,7 @@ public class PathLinkerModel {
 	 * @param originalNetwork 			 the original network given by the view
 	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
 	 * @param includePathScoreTies		 the option to include all paths of equal length
-	 * @param generateSubgraph 			 boolean deciding if need to generate subgraph
+	 * @param disableSubgraph 			 boolean deciding if need to disable subgraph
 	 * @param sourcesTextField 			 source node names in string
 	 * @param targetsTextField 			 target node names in string
 	 * @param k					 		 k value
@@ -86,20 +87,20 @@ public class PathLinkerModel {
 	 * @param edgePenalty				 edge penalty
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
-			boolean generateSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
+			boolean disableSubgraph, String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
 			int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
-		
+
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 		this.includePathScoreTies		= includePathScoreTies;
-		this.generateSubgraph 			= generateSubgraph;
+		this.disableSubgraph 			= disableSubgraph;
 		this.sourcesTextField 			= sourcesTextField;
 		this.targetsTextField 			= targetsTextField;
 		this.edgeWeightColumnName		= edgeWeightColumnName;
 		this.k 							= k;
 		this.edgeWeightSetting 			= edgeWeightSetting;
 		this.edgePenalty 				= edgePenalty;
-		
+
 		// initialize for future use
 		this.idToCyNode 		  = new HashMap<String, CyNode>();
 		this.cyNodeToId			  = new HashMap<CyNode, String>();
@@ -137,7 +138,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getSourcesList() {
 		return this.sourcesList;
 	}
-	
+
 	/**
 	 * Getter method of sourceNames
 	 * @return sourceNames
@@ -145,7 +146,7 @@ public class PathLinkerModel {
 	public HashSet<String> getSourceNames() {
 		return this.sourceNames;
 	}
-	
+
 	/**
 	 * Getter method of sourcesNotInNet
 	 * @return sourcesNotInNet
@@ -153,7 +154,7 @@ public class PathLinkerModel {
 	public ArrayList<String> getSourcesNotInNet() {
 		return this.sourcesNotInNet;
 	}
-	
+
 	/**
 	 * Getter method of targetsList
 	 * @return targetsList
@@ -161,7 +162,7 @@ public class PathLinkerModel {
 	public ArrayList<CyNode> getTargetsList() {
 		return this.targetsList;
 	}
-	
+
 	/**
 	 * Getter method of targetNames
 	 * @return targetNames
@@ -169,7 +170,7 @@ public class PathLinkerModel {
 	public HashSet<String> getTargetNames() {
 		return this.targetNames;
 	}
-	
+
 	/**
 	 * Getter method of targetsNotInNet
 	 * @return targetsNotInNet;
@@ -203,11 +204,11 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Getter method of generateSubgraph
-	 * @return generateSubgraph
+	 * Getter method of disableSubgraph
+	 * @return disableSubgraph
 	 */
-	public boolean getGenerateSubgraph() {
-		return this.generateSubgraph;
+	public boolean getDisableSubgraph() {
+		return this.disableSubgraph;
 	}
 
 	/**
@@ -316,14 +317,14 @@ public class PathLinkerModel {
 		// used for converting user input to node objects. populates the map
 		// named _idToCyNode. is unsuccessful if there is no network
 		if (!populateIdCyNodePair()) return false;
-		
+
 		// sets source and target
 		setSources();
 		setTargets();
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Runs all the necessary algorithms to calculate kth shortest path
 	 * @return result, the list of paths
@@ -332,7 +333,7 @@ public class PathLinkerModel {
 		// sets the number of common sources and targets
 		// this is for a temporary hack
 		setCommonSourcesTargets();
-		
+
 		// creates a copy of the original network which is modified to run PathLinker
 		// 1. undirected edges are converted to bidirectional edges
 		// 2. the weight of multiple source-target edges are averaged because
@@ -367,14 +368,14 @@ public class PathLinkerModel {
 
 		// sort the result paths in alphabetical order if weight is same
 		Algorithms.sortResult(result);
-		
+
 		// "un log-transforms" the path scores in the weighted options
 		// as to undo the log transformations and leave the path scores
 		// in terms of the edge weights
 		undoLogTransformPathLength(result);
 
 		// generates a subgraph of the nodes and edges involved in the resulting
-		if(generateSubgraph)
+		if(!disableSubgraph)
 			createKSPSubgraph(result);
 
 		return result;
@@ -397,7 +398,7 @@ public class PathLinkerModel {
 
 		return true;
 	}
-	
+
 	/**
 	 * Setter method for commonSourcesTargets
 	 * sets the number of common sources and targets
@@ -449,7 +450,10 @@ public class PathLinkerModel {
 
 			CyNode source = e.getSource();
 			CyNode target = e.getTarget();
-			Double w = getNetworkTableWeight(e);
+
+			// a hack for unweighted edge to avoid calling getNetworkTableWeight
+			// should be edit in the future to avoid constant checks
+			Double w = edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED ? 1 : getNetworkTableWeight(e);
 
 			// check if this source-target was already added as an edge. If it was, keep track of the 
 			// multiple weights. If not, add it as a new edge
@@ -510,7 +514,6 @@ public class PathLinkerModel {
 	 * the weights as attributes because that dominates runtime.
 	 */
 	private void setEdgeWeights() {
-		//HashMap<CyEdge, Double> edgeWeights = new HashMap<CyEdge, Double>();
 
 		if (edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED){
 			for (CyEdge edge : network.getEdgeList()) {
