@@ -189,7 +189,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	private void setUpExportBtn()
 	{
 		_exportdBtn = new JButton("Export");
-		_exportdBtn.setMinimumSize(_exportdBtn.getPreferredSize());
 		_exportdBtn.addActionListener(new ExportButtonListener());
 
 		GridBagConstraints constraint = new GridBagConstraints();
@@ -199,6 +198,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		constraint.gridx = 0;
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
+		constraint.gridheight = 2;
 
 		this.add(_exportdBtn, constraint);
 	}
@@ -209,7 +209,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	private void setUpDiscardBtn()
 	{
 		_discardBtn = new JButton("Discard");
-		_discardBtn.setMinimumSize(_discardBtn.getPreferredSize());
 		_discardBtn.addActionListener(new DiscardButtonListener());
 
 		GridBagConstraints constraint = new GridBagConstraints();
@@ -219,6 +218,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		constraint.gridx = 1;
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
+		constraint.gridheight = 2;
 
 		this.add(_discardBtn, constraint);
 	}
@@ -267,11 +267,12 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		index.setMaxWidth(100);
 
 		TableColumn score = _resultTable.getColumnModel().getColumn(1);
-		score.setMinWidth(150);
-		score.setMaxWidth(200);
+		score.setMinWidth(85);
+		score.setMaxWidth(100);
 
 		TableColumn path = _resultTable.getColumnModel().getColumn(2);
 		path.setMinWidth(200);
+		path.setPreferredWidth(275);
 
 		// disable resize for horizontal scrollbar
 		_resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -282,13 +283,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
 
-
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.fill = GridBagConstraints.BOTH;
 		constraint.anchor = GridBagConstraints.LINE_START;
 		constraint.weightx = 1;
+		constraint.weighty = 1;
 		constraint.gridx = 0;
-		constraint.gridy = 1;
+		constraint.gridy = 2;
 		constraint.gridwidth = 2;
 
 		this.add(scrollPane, constraint);
