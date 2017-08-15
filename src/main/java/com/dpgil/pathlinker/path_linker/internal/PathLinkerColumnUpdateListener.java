@@ -15,16 +15,16 @@ public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, Co
 
 	@Override
 	public void handleEvent(ColumnNameChangedEvent e) {
-		PathLinkerPanel.updateEdgeWeightColumn();
+		PathLinkerControlPanel.updateEdgeWeightColumn();
 	}
 
 	@Override
 	public void handleEvent(ColumnDeletedEvent e) {
-		PathLinkerPanel.updateEdgeWeightColumn();
+		PathLinkerControlPanel.updateEdgeWeightColumn();
 	}
 
 	@Override
 	public void handleEvent(ColumnCreatedEvent e) {
-		PathLinkerPanel.updateEdgeWeightColumn();
+		PathLinkerControlPanel.updateEdgeWeightColumn();
 	}
 }
