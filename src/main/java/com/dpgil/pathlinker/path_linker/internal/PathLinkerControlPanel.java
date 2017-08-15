@@ -417,7 +417,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// initialize the model from the user inputs
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
 				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
-				_sourcesTextField.getText(), _targetsTextField.getText(), 
+				_sourcesTextField.getText().trim(), _targetsTextField.getText().trim(), 
 				_edgeWeightColumnName, _kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
