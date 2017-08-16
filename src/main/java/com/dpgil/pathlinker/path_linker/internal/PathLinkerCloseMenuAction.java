@@ -7,30 +7,30 @@ import org.cytoscape.application.swing.AbstractCyAction;
 
 /**
  * // -------------------------------------------------------------------------
- * /** Menu option to open the PathLinker plugin
+ * /** Menu option to close the PathLinker plugin
  *
  * @author Daniel Gil
  * @version Nov 4, 2015
  */
-public class OpenPathLinkerMenuAction
+public class PathLinkerCloseMenuAction
     extends AbstractCyAction
 {
-    private PathLinkerControlPanel _panel;
+    private static PathLinkerControlPanel _panel;
 
 
     /**
      * Constructor for the menu option
      *
      * @param panel
-     *            the panel to be opened
+     *            the panel to close
      * @param applicationManager
      *            the application manager to add this option into the menu
      */
-    public OpenPathLinkerMenuAction(
+    public PathLinkerCloseMenuAction(
         PathLinkerControlPanel panel,
         CyApplicationManager applicationManager)
     {
-        super("Open", applicationManager, null, null);
+        super("Close", applicationManager, null, null);
         setPreferredMenu("Apps.PathLinker");
 
         _panel = panel;
@@ -40,7 +40,7 @@ public class OpenPathLinkerMenuAction
     @Override
     public void actionPerformed(ActionEvent arg0)
     {
-        // opens the panel
-        _panel.setPanelState(PanelState.OPEN);
+        // closes the panel
+        _panel.setPanelState(PanelState.CLOSED);
     }
 }

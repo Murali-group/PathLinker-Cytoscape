@@ -55,10 +55,10 @@ extends AbstractCyActivator
 				new Properties());
 
 		// sets up the pathlinker open and close menu options
-		OpenPathLinkerMenuAction oplaction =
-				new OpenPathLinkerMenuAction(panel, cyApplicationManager);
-		ClosePathLinkerMenuAction cplaction =
-				new ClosePathLinkerMenuAction(panel, cyApplicationManager);
+		PathLinkerOpenMenuAction oplaction =
+				new PathLinkerOpenMenuAction(panel, cyApplicationManager);
+		PathLinkerCloseMenuAction cplaction =
+				new PathLinkerCloseMenuAction(panel, cyApplicationManager);
 		registerAllServices(context, oplaction, new Properties());
 		registerAllServices(context, cplaction, new Properties());
 
