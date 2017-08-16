@@ -84,8 +84,8 @@ public class PathLinkerAboutMenuDialog extends JDialog {
 					"A Cytoscape App<BR><BR>" +
 					"Version " + _version + " by <a href='http://bioinformatics.cs.vt.edu/~murali/research.html'>Computational Systems Biology Research Group</a>, Virginia Tech<BR><BR>" +
 					"If you use this app in your research, please cite:<BR>" +
-					"<a href='https://www.nature.com/articles/npjsba20162'>Pathways on Demand: Automated Reconstruction of Human Signaling Networks</a><BR>" +
-					"<a href='https://www.ncbi.nlm.nih.gov/pubmed/23641868'>Top-down network analysis to drive bottom-up modeling of physiological processes</a>" +
+					"<a href='https://www.ncbi.nlm.nih.gov/pubmed/28413614'>The PathLinker app: Connect the dots in protein interaction networks</a><BR>" +
+					"<a href='https://www.nature.com/articles/npjsba20162'>PPathways on demand: automated reconstruction of human signaling networks</a><BR>" +
 					"<BR><BR><BR>" + // triple line break to make extra space for the logo image
 					"</P></body></html>";
 
