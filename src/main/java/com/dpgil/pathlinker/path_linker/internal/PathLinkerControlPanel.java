@@ -84,8 +84,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
 	private CyNetworkManager _networkManager;
-	private CyNetworkViewFactory _networkViewFactory;
-	private CyNetworkViewManager _networkViewManager;
 	private CyAppAdapter _adapter;
 
 	/** The model that runs ksp algorithm from the user input */
@@ -96,11 +94,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private Container _parent;
 	/** State of the panel. Initially null b/c it isn't open or closed yet */
 	private PanelState _state = null;
-	/** Index of the tab in the parent panel */
-	private int _tabIndex;
-	private boolean _allEdgesContainWeights = true;
 	/** The original network selected by the user */
 	private CyNetwork _originalNetwork;
+	/** The sub-network created by the algorithm */
+	private CyNetwork _kspSubgraph = null;
+	private CyNetworkView _kspSubgraphView = null;
 	/** column name that links to the edge weight values */
 	private String _edgeWeightColumnName;
 	/** The k value to be used in the algorithm */
@@ -194,8 +192,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_serviceRegistrar  = serviceRegistrar;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
-		_networkViewFactory = networkViewFactory;
-		_networkViewManager = networkViewManager;
 		_adapter = adapter;
 		_parent = this.getParent();
 
@@ -438,12 +434,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// generates a subgraph of the nodes and edges involved in the resulting
 		// paths and displays it to the user
-		if (!_model.getDisableSubgraph())
+
+		if (!_model.getDisableSubgraph()) {
 			createKSPSubgraphView();
+		}
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
-
+			
 		// writes the result of the algorithm to a table
 		writeResult(result);
 
@@ -656,7 +654,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// create and register a new panel in result panel with specific title
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
 				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
-				_applicationManager.getCurrentNetwork(),
+				_kspSubgraph == null ? _applicationManager.getCurrentNetwork() : _kspSubgraph,
 				paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 
@@ -672,72 +670,67 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Creates a new network and view for the subgraph
-	 * If k <= 200, then apply hierarchical layout by calling applyHierarchicalLayout method
+	 * Creates a new network and network view for the subgraph
 	 */
 	private void createKSPSubgraphView() {
 
+		// creates task iterator and execute it to generate a sub-network from the original network
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
 		_adapter.getTaskManager().execute(subNetworkTask);
 
-		//int currentSize = _networkManager.getNetworkSet().size();
-		//while (currentSize == _networkManager.getNetworkSet().size()) {
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		//}
-
-		Set<CyNetwork> allnetworks = _networkManager.getNetworkSet();
-		long maxSUID = Integer.MIN_VALUE;
-		for(CyNetwork net : allnetworks) {
-			if(net.getSUID() > maxSUID) maxSUID = net.getSUID();
+		// This is a hack
+		// pausing execution with sleep to wait for the sub network to be created
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
-		CyNetwork kspSubgraph = _networkManager.getNetwork(maxSUID);
+		// this is a hack as we can't access the new sub-network generated from the task
+		// Access all networks and find one with the highest SUID, which is the sub-network we created
+		Set<CyNetwork> allNetworks = _networkManager.getNetworkSet();
+		long maxSUID = Integer.MIN_VALUE;
+		for(CyNetwork network : allNetworks) {
+			if (network.getSUID() > maxSUID) maxSUID = network.getSUID();
+		}
+
+		// Apply the new name to the subnetwork
+		_kspSubgraph = _networkManager.getNetwork(maxSUID);
 		String subgraphName = "PathLinker-subnetwork-" + _model.getK() + "-paths";
-		kspSubgraph.getRow(kspSubgraph).set(CyNetwork.NAME, subgraphName);
-
-		_applicationManager.setCurrentNetwork(kspSubgraph);
-		_applicationManager.setSelectedNetworks(Arrays.<CyNetwork>asList(_applicationManager.getCurrentNetwork()));
-		CyNetworkView kspSubgraphView = _applicationManager.getCurrentNetworkView();
-		_applicationManager.setSelectedNetworkViews(Arrays.<CyNetworkView>asList(kspSubgraphView));
+		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 		
-/*		CyNetworkView kspSubgraphView = _networkViewFactory.createNetworkView(kspSubgraph);
-		_applicationManager.setCurrentNetworkView(kspSubgraphView);
-		_applicationManager.setSelectedNetworkViews(Arrays.<CyNetworkView>asList(kspSubgraphView));*/
-
+		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
+		
 		Color targetColor = new Color(255, 223, 0);
 
 		// use a visual bypass to color the sources and targets
 		for (CyNode source : _model.getSubgraphSources()) {
-			View<CyNode> currView = kspSubgraphView.getNodeView(source);
+			View<CyNode> currView = _kspSubgraphView.getNodeView(source);
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
 			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
 		}
 		for (CyNode target : _model.getSubgraphTargets()) {
-			View<CyNode> currView = kspSubgraphView.getNodeView(target);
+			View<CyNode> currView = _kspSubgraphView.getNodeView(target);
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
 			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, targetColor);
 		}
-
+		
+		_kspSubgraphView.updateView();
+		
 		if (_model.getK() <= 200)
-			applyHierarchicalLayout(kspSubgraph, kspSubgraphView);
+			applyHierarchicalLayout();
 	}
 
 	/**
 	 * Applies hierarchical layout algorithm to the nodes If k <= 200
-	 * @param kspSubgraph the network model for the network view
-	 * @param kspSubgraphView network view
 	 */
-	private void applyHierarchicalLayout(CyNetwork kspSubgraph, CyNetworkView kspSubgraphView) {
+	private void applyHierarchicalLayout() {
 
 		// set node layout by applying the hierarchical layout algorithm
 		CyLayoutAlgorithm algo = _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical");
-		TaskIterator iter = algo.createTaskIterator(kspSubgraphView, algo.createLayoutContext(),
+		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
 				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		_adapter.getTaskManager().execute(iter);
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
@@ -761,8 +754,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		double minY = Integer.MAX_VALUE;
 
 		// finds the midpoint x coordinate
-		for (CyNode node : kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
+		for (CyNode node : _kspSubgraph.getNodeList()) {
+			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
 			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
 			if (yCoord > maxY)
@@ -775,15 +768,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		double midY = (maxY + minY) / 2;
 
 		// reflects each node about the midpoint x axis
-		for (CyNode node : kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = kspSubgraphView.getNodeView(node);
+		for (CyNode node : _kspSubgraph.getNodeList()) {
+			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
 			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
 			double newY = -1 * yCoord + 2 * midY;
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
 		}
 
-		kspSubgraphView.updateView();
+		_kspSubgraphView.updateView();
 	}
 
 	/**
