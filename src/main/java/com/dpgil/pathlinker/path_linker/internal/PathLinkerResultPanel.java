@@ -50,7 +50,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/** The k shortest paths generated from the network **/
 	private final ArrayList<Path> _results;
 	/** The current network associated with the result panel **/
-	private final CyNetwork _originalNetwork;
+	private final CyNetwork _currentNetwork;
 	/** The tab title of the result panel **/
 	private String _title;
 	private JButton _discardBtn;
@@ -60,13 +60,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/**
 	 * Constructor for the result frame class
 	 * @param title the title of the result panel
-	 * @param originalNetwork the current network associated with the result panel
+	 * @param currentNetwork the current network associated with the result panel
 	 * @param results the results from pathlinker
 	 */
-	public PathLinkerResultPanel(String title, CyNetwork originalNetwork, ArrayList<Path> results)
+	public PathLinkerResultPanel(String title, CyNetwork currentNetwork, ArrayList<Path> results)
 	{
 		this._title = title;
-		this._originalNetwork = originalNetwork;
+		this._currentNetwork = currentNetwork;
 		this._results = results;
 		initializePanel();
 	}
@@ -120,14 +120,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		public void valueChanged(ListSelectionEvent e) {
 			ListSelectionModel lsm = (ListSelectionModel)e.getSource();
 
-			List<CyNode> selectedNodes = CyTableUtil.getNodesInState(_originalNetwork, "selected", true);
-			List<CyEdge> selectedEdges = CyTableUtil.getEdgesInState(_originalNetwork, "selected", true);
+			List<CyNode> selectedNodes = CyTableUtil.getNodesInState(_currentNetwork, "selected", true);
+			List<CyEdge> selectedEdges = CyTableUtil.getEdgesInState(_currentNetwork, "selected", true);
 
 			// clear the original selected nodes and edges from the view
 			for (CyNode node : selectedNodes) 
-				_originalNetwork.getRow(node).set(CyNetwork.SELECTED, false);
+				_currentNetwork.getRow(node).set(CyNetwork.SELECTED, false);
 			for (CyEdge edge : selectedEdges) 
-				_originalNetwork.getRow(edge).set(CyNetwork.SELECTED, false);
+				_currentNetwork.getRow(edge).set(CyNetwork.SELECTED, false);
 
 			// return if nothing is selected
 			if (lsm.isSelectionEmpty()) return;
@@ -147,19 +147,19 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 						CyNode node1 = currPath.get(j);
 						CyNode node2 = currPath.get(j + 1);
 
-						_originalNetwork.getRow(node1).set(CyNetwork.SELECTED, true);
-						_originalNetwork.getRow(node2).set(CyNetwork.SELECTED, true);
+						_currentNetwork.getRow(node1).set(CyNetwork.SELECTED, true);
+						_currentNetwork.getRow(node2).set(CyNetwork.SELECTED, true);
 
 						// add all of the directed edges from node1 to node2
-						List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
+						List<CyEdge> edges = _currentNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
 						for (CyEdge edge : edges) {
 							if (edge.getSource().equals(node1) && edge.getTarget().equals(node2)) { // verifies the edges direction
-								_originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
+								_currentNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
 							}
 						}
 						// also add all of the undirected edges from node1 to node2
-						edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
-						for (CyEdge edge : edges) _originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
+						edges = _currentNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
+						for (CyEdge edge : edges) _currentNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
 					}
 				}
 			}
