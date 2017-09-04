@@ -674,6 +674,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void createKSPSubgraphAndView() {
 		// creates task iterator and execute it to generate a sub-network from the original network
+	    // the bypass values and other styles from the original network will be pass down to the sub-network
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
 		_adapter.getTaskManager().execute(subNetworkTask);
