@@ -70,7 +70,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private static JRadioButton _unweighted;
 	private JRadioButton _weightedAdditive;
 	private JRadioButton _weightedProbabilities;
-	private JCheckBox _subgraphOption;
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
@@ -415,9 +414,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// initialize the model from the user inputs
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
-				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
-				_sourcesTextField.getText().trim(), _targetsTextField.getText().trim(), 
-				_edgeWeightColumnName, _kValue, _edgeWeightSetting, _edgePenalty);
+				_includePathScoreTiesOption.isSelected(), _sourcesTextField.getText().trim(), 
+				_targetsTextField.getText().trim(), _edgeWeightColumnName, 
+				_kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
@@ -434,9 +433,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ArrayList<Path> result = _model.runKSP();
 
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
-		if (!_model.getDisableSubgraph()) {
-			createKSPSubgraphAndView();
-		}
+		createKSPSubgraphAndView();
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
@@ -1032,14 +1029,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_includePathScoreTiesOption, constraint);
-
-		_subgraphOption = new JCheckBox("Disable subnetwork generation");
-		_subgraphOption.setToolTipText("Disable generation of the subnetwork of the nodes/edges involved in the k paths");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		subGraphPanel.add(_subgraphOption, constraint);
 
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;
