@@ -903,6 +903,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		algorithmPanel.add(_kLabel, constraint);
 
 		_kTextField = new JTextField(5);
+		_kTextField.setText("200");
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 		constraint.weightx = 1;
