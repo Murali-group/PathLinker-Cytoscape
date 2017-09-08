@@ -957,7 +957,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_unweighted, constraint);
 
-		_weightedAdditive = new JRadioButton("Weighted Additive");
+		_weightedAdditive = new JRadioButton("Weights are additive");
 		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -966,7 +966,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_weightedAdditive, constraint);
 
-		_weightedProbabilities = new JRadioButton("Weighted Probabilities");
+		_weightedProbabilities = new JRadioButton("Weights are probabilities");
 		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -1022,7 +1022,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
-		_includePathScoreTiesOption = new JCheckBox("Include ties");
+		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
 		constraint.weightx = 1;
 		constraint.gridx = 0;
