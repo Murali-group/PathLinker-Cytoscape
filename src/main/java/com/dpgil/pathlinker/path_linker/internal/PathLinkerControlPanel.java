@@ -55,6 +55,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** UI components of the panel */
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
+	private JPanel _graphPanel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
@@ -830,7 +831,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_sourceTargetPanel = new JPanel();
 		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
 		_sourceTargetPanel.setBorder(sourceTargetBorder);
-		_sourceTargetPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, _sourceTargetPanel.getPreferredSize().height));
 
 		final GroupLayout sourceTargetPanelLayout = new GroupLayout(_sourceTargetPanel);
 		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
@@ -914,12 +914,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains k input field and edge penalty input field
 	 */
 	private void setUpAlgorithmPanel() {
-		
+
 		if (_algorithmPanel != null)
 			return;
-		
+
 		_algorithmPanel = new JPanel();
-		_algorithmPanel.setLayout(new GridBagLayout());
 		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
 		_algorithmPanel.setBorder(algorithmBorder);
 
@@ -967,45 +966,34 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains edge weight column name combo box
 	 */
 	private void setUpGraphPanel() {
-		JPanel graphPanel = new JPanel();
-		graphPanel.setLayout(new GridBagLayout());
-		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
-		graphPanel.setBorder(graphBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.anchor = GridBagConstraints.LINE_START;
 
+		if (_graphPanel != null)
+			return;
+
+		_graphPanel = new JPanel();
+		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
+		_graphPanel.setBorder(graphBorder);
 		_savedEdgeWeightSelection = ""; // initialize the string
+
+		final GroupLayout graphPanelLayout = new GroupLayout(_graphPanel);
+		_graphPanel.setLayout(graphPanelLayout);
+		graphPanelLayout.setAutoCreateContainerGaps(true);
+		graphPanelLayout.setAutoCreateGaps(true);
 
 		_unweighted = new JRadioButton("Unweighted");
 		_unweighted.setActionCommand("unweighted");
 		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
 		_unweighted.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 2;
-		graphPanel.add(_unweighted, constraint);
 
 		_weightedAdditive = new JRadioButton("Weights are additive");
 		_weightedAdditive.setActionCommand("weightedAdditive");
 		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 2;
-		graphPanel.add(_weightedAdditive, constraint);
 
 		_weightedProbabilities = new JRadioButton("Weights are probabilities");
 		_weightedProbabilities.setActionCommand("weightedProbabilities");
 		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 2;
-		constraint.gridwidth = 2;
-		graphPanel.add(_weightedProbabilities, constraint);
 
 		_weightedOptionGroup = new ButtonGroup();
 		_weightedOptionGroup.add(_unweighted);
@@ -1014,32 +1002,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
 		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property");
-		constraint.weightx = 0;
-		constraint.gridx = 0;
-		constraint.gridy = 3;
-		constraint.gridwidth = 1;
-		graphPanel.add(_edgeWeightColumnBoxLabel, constraint);
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
-		_edgeWeightColumnBox.setMinimumSize(new Dimension(225, _edgeWeightColumnBox.getPreferredSize().height));
-		constraint.weightx = 0;
-		constraint.gridx = 1;
-		constraint.gridy = 3;
-		constraint.gridwidth = 1;
-		graphPanel.add(_edgeWeightColumnBox, constraint);
 
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
 		updateEdgePenaltyTextField();
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 2;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		_innerPanel.add(graphPanel, _innerPanelConstraints);
+		graphPanelLayout.setHorizontalGroup(graphPanelLayout.createParallelGroup()
+				.addGroup(graphPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_unweighted)
+						.addComponent(_weightedAdditive)
+						.addComponent(_weightedProbabilities))
+				.addGroup(graphPanelLayout.createSequentialGroup()
+						.addComponent(_edgeWeightColumnBoxLabel)
+						.addComponent(_edgeWeightColumnBox))
+				);
+		graphPanelLayout.setVerticalGroup(graphPanelLayout.createSequentialGroup()
+				.addGroup(graphPanelLayout.createSequentialGroup()
+						.addComponent(_unweighted)
+						.addComponent(_weightedAdditive)
+						.addComponent(_weightedProbabilities))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(graphPanelLayout.createParallelGroup(Alignment.LEADING, false)
+						.addComponent(_edgeWeightColumnBoxLabel)
+						.addComponent(_edgeWeightColumnBox))
+				);
 	}
 
 	/**
@@ -1108,15 +1097,19 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
+		setUpGraphPanel();
 
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
+				.addComponent(_graphPanel)
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_sourceTargetPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_algorithmPanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_graphPanel)
 				);
 	}
 
