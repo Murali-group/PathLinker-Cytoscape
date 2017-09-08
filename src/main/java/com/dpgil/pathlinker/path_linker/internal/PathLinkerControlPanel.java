@@ -692,6 +692,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// More about the issue:
 		//    https://github.com/Murali-group/PathLinker-Cytoscape/issues/33
 		//    https://groups.google.com/forum/#!topic/cytoscape-app-dev/cSUOwhk30fA
+		// Source of the hack:
+		// https://github.com/smd-faizan/CySpanningTree
+		//    -> PrimsTreadThread.java line 219
 		try {
 		    while (currentNetworkSize == _networkManager.getNetworkSet().size())
 		        Thread.sleep(200);
