@@ -54,6 +54,7 @@ import org.cytoscape.work.TaskIterator;
 public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
 	/** UI components of the panel */
 	private JPanel _sourceTargetPanel;
+	private JPanel _algorithmPanel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
@@ -822,14 +823,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains allow Sources Targets In Paths Option check box
 	 * contains targets Same As Sources Option check box
 	 */
-	private JPanel setUpSourceTargetPanel() {
+	private void setUpSourceTargetPanel() {
 		if (_sourceTargetPanel != null)
-			return _sourceTargetPanel;
+			return;
 
 		_sourceTargetPanel = new JPanel();
 		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
 		_sourceTargetPanel.setBorder(sourceTargetBorder);
-
 		_sourceTargetPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, _sourceTargetPanel.getPreferredSize().height));
 
 		final GroupLayout sourceTargetPanelLayout = new GroupLayout(_sourceTargetPanel);
@@ -907,8 +907,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 								.addComponent(_clearSourceTargetPanelButton))
 						)
 				);
-
-		return _sourceTargetPanel;
 	}
 
 	/**
@@ -916,53 +914,51 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains k input field and edge penalty input field
 	 */
 	private void setUpAlgorithmPanel() {
-		JPanel algorithmPanel = new JPanel();
-		algorithmPanel.setLayout(new GridBagLayout());
+		
+		if (_algorithmPanel != null)
+			return;
+		
+		_algorithmPanel = new JPanel();
+		_algorithmPanel.setLayout(new GridBagLayout());
 		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
-		algorithmPanel.setBorder(algorithmBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.NONE;
-		constraint.anchor = GridBagConstraints.LINE_START;
+		_algorithmPanel.setBorder(algorithmBorder);
+
+		final GroupLayout algorithmPanelLayout = new GroupLayout(_algorithmPanel);
+		_algorithmPanel.setLayout(algorithmPanelLayout);
+		algorithmPanelLayout.setAutoCreateContainerGaps(true);
+		algorithmPanelLayout.setAutoCreateGaps(true);
 
 		_kLabel = new JLabel("k (# of paths): ");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_kLabel, constraint);
 
 		_kTextField = new JTextField(5);
 		_kTextField.setText("200");
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-		constraint.weightx = 1;
-		constraint.gridx = 1;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_kTextField, constraint);
 
 		_edgePenaltyLabel = new JLabel("Edge penalty: ");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_edgePenaltyLabel, constraint);
 
 		_edgePenaltyTextField = new JTextField(5);
 		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
-		constraint.weightx = 1;
-		constraint.gridx = 1;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_edgePenaltyTextField, constraint);
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 1;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanel.add(algorithmPanel, _innerPanelConstraints);
+		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(algorithmPanelLayout.createSequentialGroup()
+						.addComponent(_kLabel)
+						.addComponent(_kTextField))
+				.addGroup(algorithmPanelLayout.createSequentialGroup()
+						.addComponent(_edgePenaltyLabel)
+						.addComponent(_edgePenaltyTextField))
+				);
+
+		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_kLabel)
+						.addComponent(_kTextField))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_edgePenaltyLabel)
+						.addComponent(_edgePenaltyTextField))
+				);
 	}
 
 	/**
@@ -1110,11 +1106,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		mainLayout.setAutoCreateContainerGaps(false);
 		mainLayout.setAutoCreateGaps(true);
 
-		mainLayout.setHorizontalGroup(mainLayout.createSequentialGroup()
-				.addComponent(setUpSourceTargetPanel())
+		setUpSourceTargetPanel();
+		setUpAlgorithmPanel();
+
+		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+				.addComponent(_sourceTargetPanel)
+				.addComponent(_algorithmPanel)
 				);
-		mainLayout.setVerticalGroup(mainLayout.createParallelGroup(Alignment.LEADING, false)
-				.addComponent(setUpSourceTargetPanel())
+		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
+				.addComponent(_sourceTargetPanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_algorithmPanel)
 				);
 	}
 
