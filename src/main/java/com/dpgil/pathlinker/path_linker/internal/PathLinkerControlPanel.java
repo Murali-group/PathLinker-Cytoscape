@@ -59,7 +59,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JTextField _sourcesTextField;
 	private JTextField _targetsTextField;
 	private JTextField _kTextField;
-	private JTextField _edgePenaltyTextField;
+	private static JTextField _edgePenaltyTextField;
 	protected static JButton _loadNodeToSourceButton;
 	protected static JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
@@ -68,8 +68,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
-	private JRadioButton _weightedAdditive;
-	private JRadioButton _weightedProbabilities;
+	private static JRadioButton _weightedAdditive;
+	private static JRadioButton _weightedProbabilities;
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
@@ -212,6 +212,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			updateEdgeWeightColumn();
+			updateEdgePenaltyTextField();
 		}
 	}
 
@@ -331,6 +332,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					|| column.getType() == Long.class))
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
+	}
+	
+	/**
+     * update the edge penalty text field for selecting edge weight
+     * Called by PathLinkerColumnUpdateListener class if event triggered
+     */
+	private static void updateEdgePenaltyTextField() {
+	    if (_unweighted.isSelected()) {
+	        _edgePenaltyTextField.setText("");
+	        _edgePenaltyTextField.setEditable(false);
+	    }
+	    else _edgePenaltyTextField.setEditable(true);
 	}
 
 	/** enables/disable the _clearSourceTargetPanelButton 
@@ -1001,6 +1014,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
+		updateEdgePenaltyTextField();
 
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;
