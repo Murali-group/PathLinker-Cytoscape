@@ -866,6 +866,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
 		_clearSourceTargetPanelButton.setEnabled(false);
+		_clearSourceTargetPanelButton.setToolTipText("Clear all inputs from Sources/Targets panel");
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
 		constraint.weightx = 0;
 		constraint.gridx = 2;
