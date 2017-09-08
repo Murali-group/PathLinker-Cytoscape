@@ -56,6 +56,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
+	private JPanel _outputPanel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
@@ -1032,33 +1033,34 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up the ouput graph panel
-	 * Contains checkbox to include path score ties and generate subgraph options
+	 * Sets up the output panel
+	 * Contains checkbox to include path score ties
 	 */
-	private void setUpSubGraphPanel() {
-		JPanel subGraphPanel = new JPanel();
-		subGraphPanel.setLayout(new GridBagLayout());
+	private void setUpOutputPanel() {
+
+		if (_outputPanel != null)
+			return;
+
+		_outputPanel = new JPanel();
 		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
-		subGraphPanel.setBorder(subGraphBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.anchor = GridBagConstraints.LINE_START;
+		_outputPanel.setBorder(subGraphBorder);
+
+		final GroupLayout outputPanelLayout = new GroupLayout(_outputPanel);
+		_outputPanel.setLayout(outputPanelLayout);
+		outputPanelLayout.setAutoCreateContainerGaps(true);
+		outputPanelLayout.setAutoCreateGaps(true);
 
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		subGraphPanel.add(_includePathScoreTiesOption, constraint);
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 3;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		_innerPanel.add(subGraphPanel, _innerPanelConstraints);
+		outputPanelLayout.setHorizontalGroup(outputPanelLayout.createParallelGroup()
+				.addGroup(outputPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_includePathScoreTiesOption))
+				);
+		outputPanelLayout.setVerticalGroup(outputPanelLayout.createSequentialGroup()
+				.addGroup(outputPanelLayout.createSequentialGroup()
+						.addComponent(_includePathScoreTiesOption))
+				);
 	}
 
 	/**
@@ -1098,11 +1100,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
+		setUpOutputPanel();
 
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
+				.addComponent(_outputPanel)
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_sourceTargetPanel)
@@ -1110,6 +1114,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_algorithmPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_graphPanel)
+				.addComponent(_outputPanel)
 				);
 	}
 
