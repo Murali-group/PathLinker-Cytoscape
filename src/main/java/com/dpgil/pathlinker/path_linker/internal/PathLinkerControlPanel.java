@@ -846,7 +846,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_sourcesTextField, constraint);
 
-		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+		_loadNodeToSourceButton = new JButton("Add selected source(s)");
 		_loadNodeToSourceButton.setToolTipText("Add selected node(s) from the network view into the sources field");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
@@ -873,7 +873,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_targetsTextField, constraint);
 
-		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+		_loadNodeToTargetButton = new JButton("Add selected target(s)");
 		_loadNodeToTargetButton.setToolTipText("Add selected node(s) from the network view into the targets field");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
