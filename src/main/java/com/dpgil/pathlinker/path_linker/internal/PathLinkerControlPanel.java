@@ -66,7 +66,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JLabel _edgeWeightColumnBoxLabel;
 	protected static JComboBox<String> _edgeWeightColumnBox;
-	private ButtonGroup _weightedOptionGroup;
+	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
 	private static JRadioButton _weightedAdditive;
 	private static JRadioButton _weightedProbabilities;
@@ -107,6 +107,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private EdgeWeightSetting _edgeWeightSetting;
 	/** The value by which to penalize each edge weight */
 	private double _edgePenalty;
+	/** The string representation of the edge weight button selection user selected */
+	private static String _savedEdgeWeightSelection;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
 
@@ -335,15 +337,35 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 	
 	/**
-     * update the edge penalty text field for selecting edge weight
-     * Called by PathLinkerColumnUpdateListener class if event triggered
+     * update the edge penalty text field depending on user's selection edge weight radio button
+     * Called by RadioButtonListener class if user selects a radio button
      */
 	private static void updateEdgePenaltyTextField() {
+	    
+	    // if user clicks on the same button that is previously selected then do nothing
+	    if (_savedEdgeWeightSelection.equals(_weightedOptionGroup.getSelection().getActionCommand()))
+	        return;
+	    
+	    // saves user's new selection to the string
+	    _savedEdgeWeightSelection = _weightedOptionGroup.getSelection().getActionCommand();
+	    
+	    // clear and disable the edge penalty text field if user selects unweighted option, otherwise enable the text field
+	    // if select weighted additive -> default is set to 0
+	    // if select weighted probabilities -> default is set to 1
 	    if (_unweighted.isSelected()) {
 	        _edgePenaltyTextField.setText("");
 	        _edgePenaltyTextField.setEditable(false);
+	        
+	        _savedEdgeWeightSelection = "unweighted";
 	    }
-	    else _edgePenaltyTextField.setEditable(true);
+	    else {
+	        _edgePenaltyTextField.setEditable(true);
+	        
+	        if (_weightedAdditive.isSelected())
+	            _edgePenaltyTextField.setText("0");
+	        else
+	            _edgePenaltyTextField.setText("1");
+	    }
 	}
 
 	/** enables/disable the _clearSourceTargetPanelButton 
@@ -963,7 +985,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
+		_savedEdgeWeightSelection = ""; // initialize the string
+		
 		_unweighted = new JRadioButton("Unweighted");
+		_unweighted.setActionCommand("unweighted");
 		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
 		_unweighted.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -973,6 +998,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		graphPanel.add(_unweighted, constraint);
 
 		_weightedAdditive = new JRadioButton("Weights are additive");
+		_weightedAdditive.setActionCommand("weightedAdditive");
 		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -982,6 +1008,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		graphPanel.add(_weightedAdditive, constraint);
 
 		_weightedProbabilities = new JRadioButton("Weights are probabilities");
+		_weightedProbabilities.setActionCommand("weightedProbabilities");
 		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
