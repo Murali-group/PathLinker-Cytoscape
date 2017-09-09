@@ -197,7 +197,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_adapter = adapter;
 		_parent = this.getParent();
 
-		initializePanelItems(); // construct the GUI
+		initializeControlPanel(); // construct the GUI
 	}
 
 	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
@@ -1070,7 +1070,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Sets up the control panel layout
 	 * Sets up all the sub panel and its components and add to control panel
 	 */
-	private void initializePanelItems() {
+	private void initializeControlPanel() {
 	    
 	    // sets up the size of the control panel
 		setMinimumSize(new Dimension(340, 400));
