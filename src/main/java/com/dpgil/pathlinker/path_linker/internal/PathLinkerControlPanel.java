@@ -533,12 +533,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_originalNetwork = _model.getOriginalNetwork();
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-			Double value =  Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
-			if (value == null) {
-				JOptionPane.showMessageDialog(null,
-						"Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
-				return false;
-			}
+		    try {
+		        Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
+		    } catch (NullPointerException  e) {
+		        JOptionPane.showMessageDialog(null,
+		                "Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
+	                return false;
+		    }
 		}
 
 		// successful parsing
