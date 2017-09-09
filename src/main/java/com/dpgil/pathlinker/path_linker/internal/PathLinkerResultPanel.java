@@ -167,21 +167,28 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	}
 
 	/**
-	 * Sets up all the components in the panel 
+	 * Sets up the GroupLayout for the result panel
+	 * Sets up all the components and add to the result panel
 	 */
 	private void initializePanel() {
 	    
-	    // set control panel layout to group layout
+	    // set result panel layout to group layout
         final GroupLayout mainLayout = new GroupLayout(this);
         setLayout(mainLayout);
-
         mainLayout.setAutoCreateContainerGaps(false);
         mainLayout.setAutoCreateGaps(true);
-
-		setUpExportBtn();
-		setUpDiscardBtn();
-		setupTable();
 		
+        // initialize export button
+        _exportBtn = new JButton("Export");
+        _exportBtn.addActionListener(new ExportButtonListener());
+        
+        // initialize discard button
+        _discardBtn = new JButton("Discard");
+        _discardBtn.addActionListener(new DiscardButtonListener());
+        
+        setupTable(); // initialize result table and scrollable pane
+
+        // add all components into the horizontal and vertical group of the GroupLayout
         mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_exportBtn)
@@ -196,24 +203,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_resultScrollPane))
                 );	
-	}
-
-	/**
-	 * Sets up the export button
-	 */
-	private void setUpExportBtn()
-	{
-		_exportBtn = new JButton("Export");
-		_exportBtn.addActionListener(new ExportButtonListener());
-	}
-
-	/**
-	 * Sets up the delete button
-	 */
-	private void setUpDiscardBtn()
-	{
-		_discardBtn = new JButton("Discard");
-		_discardBtn.addActionListener(new DiscardButtonListener());
 	}
 
 	/**
