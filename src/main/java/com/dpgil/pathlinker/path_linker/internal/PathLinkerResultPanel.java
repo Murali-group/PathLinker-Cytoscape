@@ -53,7 +53,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/** The tab title of the result panel **/
 	private String _title;
 	private JButton _discardBtn;
-	private JButton _exportdBtn;
+	private JButton _exportBtn;
 	private JTable _resultTable;
 	private JScrollPane _resultScrollPane;
 
@@ -184,14 +184,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		
         mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                 .addGroup(mainLayout.createSequentialGroup()
-                        .addComponent(_exportdBtn)
+                        .addComponent(_exportBtn)
                         .addComponent(_discardBtn))
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_resultScrollPane))
                 );
         mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
-                        .addComponent(_exportdBtn)
+                        .addComponent(_exportBtn)
                         .addComponent(_discardBtn))
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_resultScrollPane))
@@ -203,8 +203,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	 */
 	private void setUpExportBtn()
 	{
-		_exportdBtn = new JButton("Export");
-		_exportdBtn.addActionListener(new ExportButtonListener());
+		_exportBtn = new JButton("Export");
+		_exportBtn.addActionListener(new ExportButtonListener());
 	}
 
 	/**
