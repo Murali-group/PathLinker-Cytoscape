@@ -821,9 +821,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains targets Same As Sources Option check box
 	 */
 	private void setUpSourceTargetPanel() {
-		if (_sourceTargetPanel != null)
+		if (_sourceTargetPanel != null) // stops if panel already created
 			return;
 
+		// initialize the JPanel, panel border, and group layout
 		_sourceTargetPanel = new JPanel();
 		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
 		_sourceTargetPanel.setBorder(sourceTargetBorder);
@@ -833,6 +834,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 
+		// sets up all the components
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
 		_sourcesTextField = new JTextField(30);
@@ -868,6 +870,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_clearSourceTargetPanelButton.setToolTipText("Clear all inputs from Sources/Targets panel");
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
 
+		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
@@ -884,7 +887,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 								.addComponent(_clearSourceTargetPanelButton))
 						)
 				);
-
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
@@ -910,10 +912,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains k input field and edge penalty input field
 	 */
 	private void setUpAlgorithmPanel() {
-
-		if (_algorithmPanel != null)
+		if (_algorithmPanel != null) // stops if panel already created
 			return;
 
+		// initialize the JPanel, panel border, and group layout
 		_algorithmPanel = new JPanel();
 		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
 		_algorithmPanel.setBorder(algorithmBorder);
@@ -923,6 +925,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		algorithmPanelLayout.setAutoCreateContainerGaps(true);
 		algorithmPanelLayout.setAutoCreateGaps(true);
 
+		// sets up all the components
 		_kLabel = new JLabel("k (# of paths): ");
 
 		_kTextField = new JTextField(5);
@@ -936,6 +939,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 
+		// add all components into the horizontal and vertical group of the GroupLayout
 		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_kLabel)
@@ -944,7 +948,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
 				);
-
 		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
 				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_kLabel)
@@ -962,10 +965,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains edge weight column name combo box
 	 */
 	private void setUpGraphPanel() {
-
-		if (_graphPanel != null)
+		if (_graphPanel != null) // stops if panel already created
 			return;
 
+		// initialize the JPanel, panel border, and group layout
 		_graphPanel = new JPanel();
 		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
 		_graphPanel.setBorder(graphBorder);
@@ -976,6 +979,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		graphPanelLayout.setAutoCreateContainerGaps(true);
 		graphPanelLayout.setAutoCreateGaps(true);
 
+		// sets up all the components
 		_unweighted = new JRadioButton("Unweighted");
 		_unweighted.setActionCommand("unweighted");
 		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
@@ -1002,10 +1006,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
 
+		// sets up the correct behavior and default value for edge weight column and edge penalty text field
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
 		updateEdgePenaltyTextField();
 
+		// add all components into the horizontal and vertical group of the GroupLayout
 		graphPanelLayout.setHorizontalGroup(graphPanelLayout.createParallelGroup()
 				.addGroup(graphPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_unweighted)
@@ -1029,13 +1035,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	/**
 	 * Sets up the output panel
-	 * Contains checkbox to include path score ties
+	 * Contains check box to include path score ties
 	 */
 	private void setUpOutputPanel() {
-
-		if (_outputPanel != null)
+		if (_outputPanel != null) // stops if panel already created
 			return;
 
+		// initialize the JPanel, panel border, and group layout
 		_outputPanel = new JPanel();
 		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
 		_outputPanel.setBorder(subGraphBorder);
@@ -1045,9 +1051,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		outputPanelLayout.setAutoCreateContainerGaps(true);
 		outputPanelLayout.setAutoCreateGaps(true);
 
+	    // sets up all the components
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
 
+		// add all components into the horizontal and vertical group of the GroupLayout
 		outputPanelLayout.setHorizontalGroup(outputPanelLayout.createParallelGroup()
 				.addGroup(outputPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_includePathScoreTiesOption))
@@ -1059,26 +1067,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up all the components in the panel
+	 * Sets up the control panel layout
+	 * Sets up all the sub panel and its components and add to control panel
 	 */
 	private void initializePanelItems() {
+	    
+	    // sets up the size of the control panel
 		setMinimumSize(new Dimension(340, 400));
 		setPreferredSize(new Dimension(340, 400));
 		
+		// set control panel layout to group layout
 		final GroupLayout mainLayout = new GroupLayout(this);
 		setLayout(mainLayout);
 
 		mainLayout.setAutoCreateContainerGaps(false);
 		mainLayout.setAutoCreateGaps(true);
 
+		// sets up all the sub panels and its components
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpOutputPanel();
 		
+		// creates the submit button
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
 
+        // add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
