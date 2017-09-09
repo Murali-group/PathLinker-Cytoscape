@@ -59,18 +59,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JTextField _sourcesTextField;
 	private JTextField _targetsTextField;
 	private JTextField _kTextField;
-	private JTextField _edgePenaltyTextField;
+	private static JTextField _edgePenaltyTextField;
 	protected static JButton _loadNodeToSourceButton;
 	protected static JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
 	private JLabel _edgeWeightColumnBoxLabel;
 	protected static JComboBox<String> _edgeWeightColumnBox;
-	private ButtonGroup _weightedOptionGroup;
+	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
-	private JRadioButton _weightedAdditive;
-	private JRadioButton _weightedProbabilities;
-	private JCheckBox _subgraphOption;
+	private static JRadioButton _weightedAdditive;
+	private static JRadioButton _weightedProbabilities;
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
@@ -108,6 +107,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private EdgeWeightSetting _edgeWeightSetting;
 	/** The value by which to penalize each edge weight */
 	private double _edgePenalty;
+	/** The string representation of the edge weight button selection user selected */
+	private static String _savedEdgeWeightSelection;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
 
@@ -213,6 +214,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			updateEdgeWeightColumn();
+			updateEdgePenaltyTextField();
 		}
 	}
 
@@ -333,6 +335,38 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
+	
+	/**
+     * update the edge penalty text field depending on user's selection edge weight radio button
+     * Called by RadioButtonListener class if user selects a radio button
+     */
+	private static void updateEdgePenaltyTextField() {
+	    
+	    // if user clicks on the same button that is previously selected then do nothing
+	    if (_savedEdgeWeightSelection.equals(_weightedOptionGroup.getSelection().getActionCommand()))
+	        return;
+	    
+	    // saves user's new selection to the string
+	    _savedEdgeWeightSelection = _weightedOptionGroup.getSelection().getActionCommand();
+	    
+	    // clear and disable the edge penalty text field if user selects unweighted option, otherwise enable the text field
+	    // if select weighted additive -> default is set to 0
+	    // if select weighted probabilities -> default is set to 1
+	    if (_unweighted.isSelected()) {
+	        _edgePenaltyTextField.setText("");
+	        _edgePenaltyTextField.setEditable(false);
+	        
+	        _savedEdgeWeightSelection = "unweighted";
+	    }
+	    else {
+	        _edgePenaltyTextField.setEditable(true);
+	        
+	        if (_weightedAdditive.isSelected())
+	            _edgePenaltyTextField.setText("0");
+	        else
+	            _edgePenaltyTextField.setText("1");
+	    }
+	}
 
 	/** enables/disable the _clearSourceTargetPanelButton 
 	 * based on the source/target text fields and the check boxes
@@ -415,9 +449,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// initialize the model from the user inputs
 		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
-				_includePathScoreTiesOption.isSelected(), _subgraphOption.isSelected(),
-				_sourcesTextField.getText().trim(), _targetsTextField.getText().trim(), 
-				_edgeWeightColumnName, _kValue, _edgeWeightSetting, _edgePenalty);
+				_includePathScoreTiesOption.isSelected(), _sourcesTextField.getText().trim(), 
+				_targetsTextField.getText().trim(), _edgeWeightColumnName, 
+				_kValue, _edgeWeightSetting, _edgePenalty);
 
 		// sets up the source and targets, and check to see if network is construct correctly
 		success = _model.prepareIdSourceTarget();
@@ -434,9 +468,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ArrayList<Path> result = _model.runKSP();
 
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
-		if (!_model.getDisableSubgraph()) {
-			createKSPSubgraphAndView();
-		}
+		createKSPSubgraphAndView();
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
@@ -831,7 +863,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_sourcesTextField, constraint);
 
-		_loadNodeToSourceButton = new JButton("Add selected node(s)");
+		_loadNodeToSourceButton = new JButton("Add selected source(s)");
 		_loadNodeToSourceButton.setToolTipText("Add selected node(s) from the network view into the sources field");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
@@ -858,7 +890,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 3;
 		sourceTargetPanel.add(_targetsTextField, constraint);
 
-		_loadNodeToTargetButton = new JButton("Add selected node(s)");
+		_loadNodeToTargetButton = new JButton("Add selected target(s)");
 		_loadNodeToTargetButton.setToolTipText("Add selected node(s) from the network view into the targets field");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
@@ -886,6 +918,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
 		_clearSourceTargetPanelButton.setEnabled(false);
+		_clearSourceTargetPanelButton.setToolTipText("Clear all inputs from Sources/Targets panel");
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
 		constraint.weightx = 0;
 		constraint.gridx = 2;
@@ -922,6 +955,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		algorithmPanel.add(_kLabel, constraint);
 
 		_kTextField = new JTextField(5);
+		_kTextField.setText("200");
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 		constraint.weightx = 1;
@@ -968,7 +1002,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
+		_savedEdgeWeightSelection = ""; // initialize the string
+		
 		_unweighted = new JRadioButton("Unweighted");
+		_unweighted.setActionCommand("unweighted");
 		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
 		_unweighted.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -977,7 +1014,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_unweighted, constraint);
 
-		_weightedAdditive = new JRadioButton("Weighted Additive");
+		_weightedAdditive = new JRadioButton("Weights are additive");
+		_weightedAdditive.setActionCommand("weightedAdditive");
 		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -986,7 +1024,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.gridwidth = 2;
 		graphPanel.add(_weightedAdditive, constraint);
 
-		_weightedProbabilities = new JRadioButton("Weighted Probabilities");
+		_weightedProbabilities = new JRadioButton("Weights are probabilities");
+		_weightedProbabilities.setActionCommand("weightedProbabilities");
 		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
 		constraint.weightx = 1;
@@ -1019,6 +1058,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
+		updateEdgePenaltyTextField();
 
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;
@@ -1042,21 +1082,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		constraint.fill = GridBagConstraints.HORIZONTAL;
 		constraint.anchor = GridBagConstraints.LINE_START;
 
-		_includePathScoreTiesOption = new JCheckBox("Include ties");
+		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
 		constraint.weightx = 1;
 		constraint.gridx = 0;
 		constraint.gridy = 0;
 		constraint.gridwidth = 1;
 		subGraphPanel.add(_includePathScoreTiesOption, constraint);
-
-		_subgraphOption = new JCheckBox("Disable subnetwork generation");
-		_subgraphOption.setToolTipText("Disable generation of the subnetwork of the nodes/edges involved in the k paths");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		subGraphPanel.add(_subgraphOption, constraint);
 
 		_innerPanelConstraints.weightx = 1;
 		_innerPanelConstraints.gridx = 0;

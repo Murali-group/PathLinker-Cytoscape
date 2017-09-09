@@ -43,8 +43,6 @@ public class PathLinkerModelTest {
 	private PathLinkerModel testModel;
 	/** Whether or not to treat all paths with same weight as one "k" path */
 	private boolean includePathScoreTies;
-	/** Whether or not to disable a subgraph */
-	private boolean disableSubgraph;
 	/** original test input strings that contains sources */
 	private String source;
 	/** original test input strings that contains targets */
@@ -78,7 +76,6 @@ public class PathLinkerModelTest {
 
 		//setting up the required variables for generating the result (same throughout the test cases)
 		includePathScoreTies = false;
-		disableSubgraph = true;
 		source = "P35968 P00533 Q02763";
 		target = "Q15797 Q14872 Q16236 P14859 P36956";
 		edgeWeightColumnName = "edge_weight";
@@ -405,8 +402,8 @@ public class PathLinkerModelTest {
 		target = "P14859 P51610";
 		
 		//create the model for algorithm with k = 26 to ensure relatively small output
-		testModel = new PathLinkerModel(originalNetworkDir, true, false, disableSubgraph, 
-				source, target, edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
+		testModel = new PathLinkerModel(originalNetworkDir, true, false, source, target, 
+		        edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
@@ -444,7 +441,7 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		boolean allowSourceTargetInPaths = true;
-		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, disableSubgraph, 
+		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, 
 				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
 		testModel.prepareIdSourceTarget();
 
@@ -573,7 +570,7 @@ public class PathLinkerModelTest {
 	 * Sets up the test model before testing
 	 */
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
-		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, disableSubgraph, 
+		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, 
 				source, target, edgeWeightColumnName, k, edgeWeightSetting, edgePenalty); //construct model
 		testModel.prepareIdSourceTarget();
 	}
