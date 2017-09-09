@@ -75,7 +75,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
-	private JLabel _runningMessage;
+	// private JLabel _runningMessage;
 
 	private CyServiceRegistrar _serviceRegistrar;
 
@@ -378,8 +378,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
+	/**
+	 * RunningMessage and related methods are now temporarily removed from the PathLinker 
+	 * as new layout doesn't support dynamically adding components
+	 * 
+	 * Will be removed after alternative is found
+	 */
 	private void prepareAndRunKSP() {
-		showRunningMessage();
+		// showRunningMessage();
 
 		// checks for identical sources/targets option selection to
 		// update the panel values
@@ -387,8 +393,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			_targetsTextField.setText(_sourcesTextField.getText());
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
+		
+		callRunKSP();
 
-		// this looks extremely stupid, but is very important.
+/*		// this looks extremely stupid, but is very important.
 		// due to the multi-threaded nature of the swing gui, if
 		// this were simply runKSP() and then hideRunningMessage(), java
 		// would assign a thread to the hideRunningMessage and we would
@@ -403,11 +411,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					hideRunningMessage();
 				}
 			}
-		});
+		});*/
 
 	}
 
-	private void showRunningMessage() {
+/*	private void showRunningMessage() {
 		_runningMessage.setVisible(true);
 		_runningMessage.setForeground(Color.BLUE);
 
@@ -419,7 +427,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_runningMessage.setVisible(false);
 		repaint();
 		revalidate();
-	}
+	}*/
 
 	/**
 	 * access user inputs to create the model for running ksp algorithm
@@ -922,7 +930,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
-		_edgePenaltyLabel = new JLabel("Edge penalty: ");
+		_edgePenaltyLabel = new JLabel("Edge penalty:  ");
 
 		_edgePenaltyTextField = new JTextField(5);
 		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
@@ -1051,25 +1059,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up submit button and running message
-	 */
-	private void setUpMisc() {
-		_submitButton = new JButton("Submit");
-		_submitButton.addActionListener(new SubmitButtonListener());
-		
-		_runningMessage = new JLabel("PathLinker is running...");
-		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);		
-	}
-
-	/**
 	 * Sets up all the components in the panel
 	 */
 	private void initializePanelItems() {
-
 		setMinimumSize(new Dimension(340, 400));
-		setPreferredSize(new Dimension(380, 400));
-
+		setPreferredSize(new Dimension(340, 400));
+		
 		final GroupLayout mainLayout = new GroupLayout(this);
 		setLayout(mainLayout);
 
@@ -1080,7 +1075,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
 		setUpOutputPanel();
-		setUpMisc();
+		
+		_submitButton = new JButton("Submit");
+		_submitButton.addActionListener(new SubmitButtonListener());
 
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_sourceTargetPanel)
