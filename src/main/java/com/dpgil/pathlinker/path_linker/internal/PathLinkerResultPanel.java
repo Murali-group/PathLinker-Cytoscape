@@ -4,8 +4,6 @@ import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -17,15 +15,16 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.GroupLayout;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
@@ -54,8 +53,9 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	/** The tab title of the result panel **/
 	private String _title;
 	private JButton _discardBtn;
-	private JButton _exportdBtn;
+	private JButton _exportBtn;
 	private JTable _resultTable;
+	private JScrollPane _resultScrollPane;
 
 	/**
 	 * Constructor for the result frame class
@@ -167,60 +167,42 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 	}
 
 	/**
-	 * Sets up all the components in the panel 
+	 * Sets up the GroupLayout for the result panel
+	 * Sets up all the components and add to the result panel
 	 */
 	private void initializePanel() {
-		this.setLayout(new GridBagLayout());
+	    
+	    // set result panel layout to group layout
+        final GroupLayout mainLayout = new GroupLayout(this);
+        setLayout(mainLayout);
+        mainLayout.setAutoCreateContainerGaps(false);
+        mainLayout.setAutoCreateGaps(true);
+		
+        // initialize export button
+        _exportBtn = new JButton("Export");
+        _exportBtn.addActionListener(new ExportButtonListener());
+        
+        // initialize discard button
+        _discardBtn = new JButton("Discard");
+        _discardBtn.addActionListener(new DiscardButtonListener());
+        
+        setupTable(); // initialize result table and scrollable pane
 
-		setUpExportBtn();
-		setUpDiscardBtn();
-		setupTable();
-
-		// add a dummy object to ensure _innerPanel stick on top if the window vertically expand
-		GridBagConstraints dummyConstraint = new GridBagConstraints();
-		dummyConstraint.weighty = 1;
-		dummyConstraint.gridy = 2;
-		this.add(new JLabel(" "), dummyConstraint);
-	}
-
-	/**
-	 * Sets up the export button
-	 */
-	private void setUpExportBtn()
-	{
-		_exportdBtn = new JButton("Export");
-		_exportdBtn.addActionListener(new ExportButtonListener());
-
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.NONE;
-		constraint.anchor = GridBagConstraints.LINE_START;
-		constraint.weightx = 0;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		constraint.gridheight = 2;
-
-		this.add(_exportdBtn, constraint);
-	}
-
-	/**
-	 * Sets up the delete button
-	 */
-	private void setUpDiscardBtn()
-	{
-		_discardBtn = new JButton("Discard");
-		_discardBtn.addActionListener(new DiscardButtonListener());
-
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.NONE;
-		constraint.anchor = GridBagConstraints.LINE_START;
-		constraint.weightx = 0;
-		constraint.gridx = 1;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		constraint.gridheight = 2;
-
-		this.add(_discardBtn, constraint);
+        // add all components into the horizontal and vertical group of the GroupLayout
+        mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+                .addGroup(mainLayout.createSequentialGroup()
+                        .addComponent(_exportBtn)
+                        .addComponent(_discardBtn))
+                .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_resultScrollPane))
+                );
+        mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
+                .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_exportBtn)
+                        .addComponent(_discardBtn))
+                .addGroup(mainLayout.createSequentialGroup()
+                        .addComponent(_resultScrollPane))
+                );	
 	}
 
 	/**
@@ -279,20 +261,9 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		_resultTable.getSelectionModel().addListSelectionListener(new ResultTableListener());
 
 		// scrollable panel
-		JScrollPane scrollPane = new JScrollPane(_resultTable, 
+		_resultScrollPane = new JScrollPane(_resultTable, 
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
-
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.BOTH;
-		constraint.anchor = GridBagConstraints.LINE_START;
-		constraint.weightx = 1;
-		constraint.weighty = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 2;
-		constraint.gridwidth = 2;
-
-		this.add(scrollPane, constraint);
+		_resultScrollPane.setMinimumSize(_resultScrollPane.getPreferredSize());
 	}
 
 	/**

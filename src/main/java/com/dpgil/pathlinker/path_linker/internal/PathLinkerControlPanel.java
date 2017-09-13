@@ -6,21 +6,19 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.*;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -52,6 +50,10 @@ import org.cytoscape.work.TaskIterator;
 /** Panel for the PathLinker plugin */
 public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
 	/** UI components of the panel */
+	private JPanel _sourceTargetPanel;
+	private JPanel _algorithmPanel;
+	private JPanel _graphPanel;
+	private JPanel _outputPanel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
@@ -73,11 +75,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
-	private JLabel _runningMessage;
+	// private JLabel _runningMessage;
 
 	private CyServiceRegistrar _serviceRegistrar;
-	private JPanel _innerPanel;
-	private GridBagConstraints _innerPanelConstraints;
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
@@ -197,7 +197,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_adapter = adapter;
 		_parent = this.getParent();
 
-		initializePanelItems(); // construct the GUI
+		initializeControlPanel(); // construct the GUI
 	}
 
 	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
@@ -335,37 +335,37 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
-	
+
 	/**
-     * update the edge penalty text field depending on user's selection edge weight radio button
-     * Called by RadioButtonListener class if user selects a radio button
-     */
+	 * update the edge penalty text field depending on user's selection edge weight radio button
+	 * Called by RadioButtonListener class if user selects a radio button
+	 */
 	private static void updateEdgePenaltyTextField() {
-	    
-	    // if user clicks on the same button that is previously selected then do nothing
-	    if (_savedEdgeWeightSelection.equals(_weightedOptionGroup.getSelection().getActionCommand()))
-	        return;
-	    
-	    // saves user's new selection to the string
-	    _savedEdgeWeightSelection = _weightedOptionGroup.getSelection().getActionCommand();
-	    
-	    // clear and disable the edge penalty text field if user selects unweighted option, otherwise enable the text field
-	    // if select weighted additive -> default is set to 0
-	    // if select weighted probabilities -> default is set to 1
-	    if (_unweighted.isSelected()) {
-	        _edgePenaltyTextField.setText("");
-	        _edgePenaltyTextField.setEditable(false);
-	        
-	        _savedEdgeWeightSelection = "unweighted";
-	    }
-	    else {
-	        _edgePenaltyTextField.setEditable(true);
-	        
-	        if (_weightedAdditive.isSelected())
-	            _edgePenaltyTextField.setText("0");
-	        else
-	            _edgePenaltyTextField.setText("1");
-	    }
+
+		// if user clicks on the same button that is previously selected then do nothing
+		if (_savedEdgeWeightSelection.equals(_weightedOptionGroup.getSelection().getActionCommand()))
+			return;
+
+		// saves user's new selection to the string
+		_savedEdgeWeightSelection = _weightedOptionGroup.getSelection().getActionCommand();
+
+		// clear and disable the edge penalty text field if user selects unweighted option, otherwise enable the text field
+		// if select weighted additive -> default is set to 0
+		// if select weighted probabilities -> default is set to 1
+		if (_unweighted.isSelected()) {
+			_edgePenaltyTextField.setText("");
+			_edgePenaltyTextField.setEditable(false);
+
+			_savedEdgeWeightSelection = "unweighted";
+		}
+		else {
+			_edgePenaltyTextField.setEditable(true);
+
+			if (_weightedAdditive.isSelected())
+				_edgePenaltyTextField.setText("0");
+			else
+				_edgePenaltyTextField.setText("1");
+		}
 	}
 
 	/** enables/disable the _clearSourceTargetPanelButton 
@@ -378,8 +378,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
+	/**
+	 * RunningMessage and related methods are now temporarily removed from the PathLinker 
+	 * as new layout doesn't support dynamically adding components
+	 * 
+	 * Will be removed after alternative is found
+	 */
 	private void prepareAndRunKSP() {
-		showRunningMessage();
+		// showRunningMessage();
 
 		// checks for identical sources/targets option selection to
 		// update the panel values
@@ -387,8 +393,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			_targetsTextField.setText(_sourcesTextField.getText());
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
+		
+		callRunKSP();
 
-		// this looks extremely stupid, but is very important.
+/*		// this looks extremely stupid, but is very important.
 		// due to the multi-threaded nature of the swing gui, if
 		// this were simply runKSP() and then hideRunningMessage(), java
 		// would assign a thread to the hideRunningMessage and we would
@@ -403,31 +411,23 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					hideRunningMessage();
 				}
 			}
-		});
+		});*/
 
 	}
 
-	private void showRunningMessage() {
+/*	private void showRunningMessage() {
 		_runningMessage.setVisible(true);
 		_runningMessage.setForeground(Color.BLUE);
-
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 5;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.NONE;
-		_innerPanel.add(_runningMessage, _innerPanelConstraints);
 
 		repaint();
 		revalidate();
 	}
 
 	private void hideRunningMessage() {
-		_innerPanel.remove(_runningMessage);
+		_runningMessage.setVisible(false);
 		repaint();
 		revalidate();
-	}
+	}*/
 
 	/**
 	 * access user inputs to create the model for running ksp algorithm
@@ -472,7 +472,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
-			
+
 		// writes the result of the algorithm to a table
 		writeResult(result);
 
@@ -533,12 +533,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_originalNetwork = _model.getOriginalNetwork();
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-			Double value =  Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
-			if (value == null) {
-				JOptionPane.showMessageDialog(null,
-						"Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
-				return false;
-			}
+		    try {
+		        Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
+		    } catch (NullPointerException  e) {
+		        JOptionPane.showMessageDialog(null,
+		                "Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
+	                return false;
+		    }
 		}
 
 		// successful parsing
@@ -687,7 +688,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
 				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
 				_kspSubgraph == null ? _applicationManager.getCurrentNetwork() : _kspSubgraph,
-				paths);
+						paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 
 		// open and show the result panel if in hide state
@@ -707,7 +708,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void createKSPSubgraphAndView() {
 		// creates task iterator and execute it to generate a sub-network from the original network
-	    // the bypass values and other styles from the original network will be pass down to the sub-network
+		// the bypass values and other styles from the original network will be pass down to the sub-network
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
 		
@@ -749,14 +750,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kspSubgraph = _networkManager.getNetwork(maxSUID);
 		String subgraphName = "PathLinker-subnetwork-" + _model.getK() + "-paths";
 		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
-		
+
 		// The current network view is set to the new sub-network view already
 		// while current network is still the originalNetwork
 		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
-		
+
 		// use a visual bypass to color the sources and targets for the sub-network view
 		Color targetColor = new Color(255, 223, 0);
-		
+
 		for (CyNode source : _model.getSubgraphSources()) {
 			View<CyNode> currView = _kspSubgraphView.getNodeView(source);
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
@@ -767,9 +768,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
 			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, targetColor);
 		}
-		
+
 		_kspSubgraphView.updateView();
-		
+
 		// applies hierarchical layout if the k <= 200
 		if (_model.getK() <= 200)
 			applyHierarchicalLayout();
@@ -838,100 +839,90 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains targets Same As Sources Option check box
 	 */
 	private void setUpSourceTargetPanel() {
-		JPanel sourceTargetPanel = new JPanel();
-		sourceTargetPanel.setLayout(new GridBagLayout());
-		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
-		sourceTargetPanel.setBorder(sourceTargetBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.anchor = GridBagConstraints.LINE_START;
+		if (_sourceTargetPanel != null) // stops if panel already created
+			return;
 
+		// initialize the JPanel, panel border, and group layout
+		_sourceTargetPanel = new JPanel();
+		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
+		_sourceTargetPanel.setBorder(sourceTargetBorder);
+
+		final GroupLayout sourceTargetPanelLayout = new GroupLayout(_sourceTargetPanel);
+		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
+		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
+		sourceTargetPanelLayout.setAutoCreateGaps(true);
+
+		// sets up all the components
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 3;
-		sourceTargetPanel.add(_sourcesLabel, constraint);
 
 		_sourcesTextField = new JTextField(30);
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 3;
-		sourceTargetPanel.add(_sourcesTextField, constraint);
 
 		_loadNodeToSourceButton = new JButton("Add selected source(s)");
 		_loadNodeToSourceButton.setToolTipText("Add selected node(s) from the network view into the sources field");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
-		constraint.weightx = 0;
-		constraint.gridx = 0;
-		constraint.gridy = 2;
-		constraint.gridwidth = 1;
-		sourceTargetPanel.add(_loadNodeToSourceButton, constraint);
 
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 3;
-		constraint.gridwidth = 3;
-		sourceTargetPanel.add(_targetsLabel, constraint);
 
 		_targetsTextField = new JTextField(30);
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
 		_targetsTextField.setMinimumSize(_targetsTextField.getPreferredSize());
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 4;
-		constraint.gridwidth = 3;
-		sourceTargetPanel.add(_targetsTextField, constraint);
 
 		_loadNodeToTargetButton = new JButton("Add selected target(s)");
 		_loadNodeToTargetButton.setToolTipText("Add selected node(s) from the network view into the targets field");
 		_loadNodeToTargetButton.setEnabled(false);
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
-		constraint.weightx = 0;
-		constraint.gridx = 0;
-		constraint.gridy = 5;
-		constraint.gridwidth = 1;
-		sourceTargetPanel.add(_loadNodeToTargetButton, constraint);
 
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 6;
-		constraint.gridwidth = 2;
-		sourceTargetPanel.add(_allowSourcesTargetsInPathsOption, constraint);
 
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
 		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 7;
-		constraint.gridwidth = 2;
-		sourceTargetPanel.add(_targetsSameAsSourcesOption, constraint);
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
 		_clearSourceTargetPanelButton.setEnabled(false);
 		_clearSourceTargetPanelButton.setToolTipText("Clear all inputs from Sources/Targets panel");
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
-		constraint.weightx = 0;
-		constraint.gridx = 2;
-		constraint.gridy = 7;
-		constraint.gridwidth = 1;
-		sourceTargetPanel.add(_clearSourceTargetPanelButton, constraint);
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 0;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanel.add(sourceTargetPanel, _innerPanelConstraints);
+		// add all components into the horizontal and vertical group of the GroupLayout
+		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
+				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_sourcesLabel)
+						.addComponent(_sourcesTextField)
+						.addComponent(_loadNodeToSourceButton))
+				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_targetsLabel)
+						.addComponent(_targetsTextField)
+						.addComponent(_loadNodeToTargetButton))
+				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_allowSourcesTargetsInPathsOption)
+						.addGroup(sourceTargetPanelLayout.createSequentialGroup()
+								.addComponent(_targetsSameAsSourcesOption)
+								.addComponent(_clearSourceTargetPanelButton))
+						)
+				);
+		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
+				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
+						.addComponent(_sourcesLabel)
+						.addComponent(_sourcesTextField)
+						.addComponent(_loadNodeToSourceButton))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
+						.addComponent(_targetsLabel)
+						.addComponent(_targetsTextField)
+						.addComponent(_loadNodeToTargetButton))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
+						.addComponent(_allowSourcesTargetsInPathsOption)
+						.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+								.addComponent(_targetsSameAsSourcesOption)
+								.addComponent(_clearSourceTargetPanelButton))
+						)
+				);
 	}
 
 	/**
@@ -939,53 +930,51 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains k input field and edge penalty input field
 	 */
 	private void setUpAlgorithmPanel() {
-		JPanel algorithmPanel = new JPanel();
-		algorithmPanel.setLayout(new GridBagLayout());
-		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
-		algorithmPanel.setBorder(algorithmBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.NONE;
-		constraint.anchor = GridBagConstraints.LINE_START;
+		if (_algorithmPanel != null) // stops if panel already created
+			return;
 
+		// initialize the JPanel, panel border, and group layout
+		_algorithmPanel = new JPanel();
+		TitledBorder algorithmBorder = BorderFactory.createTitledBorder("Algorithm");
+		_algorithmPanel.setBorder(algorithmBorder);
+
+		final GroupLayout algorithmPanelLayout = new GroupLayout(_algorithmPanel);
+		_algorithmPanel.setLayout(algorithmPanelLayout);
+		algorithmPanelLayout.setAutoCreateContainerGaps(true);
+		algorithmPanelLayout.setAutoCreateGaps(true);
+
+		// sets up all the components
 		_kLabel = new JLabel("k (# of paths): ");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_kLabel, constraint);
 
 		_kTextField = new JTextField(5);
 		_kTextField.setText("200");
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
-		constraint.weightx = 1;
-		constraint.gridx = 1;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_kTextField, constraint);
 
-		_edgePenaltyLabel = new JLabel("Edge penalty: ");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_edgePenaltyLabel, constraint);
+		_edgePenaltyLabel = new JLabel("Edge penalty:  ");
 
 		_edgePenaltyTextField = new JTextField(5);
 		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
-		constraint.weightx = 1;
-		constraint.gridx = 1;
-		constraint.gridy = 1;
-		constraint.gridwidth = 1;
-		algorithmPanel.add(_edgePenaltyTextField, constraint);
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 1;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanel.add(algorithmPanel, _innerPanelConstraints);
+		// add all components into the horizontal and vertical group of the GroupLayout
+		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(algorithmPanelLayout.createSequentialGroup()
+						.addComponent(_kLabel)
+						.addComponent(_kTextField))
+				.addGroup(algorithmPanelLayout.createSequentialGroup()
+						.addComponent(_edgePenaltyLabel)
+						.addComponent(_edgePenaltyTextField))
+				);
+		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_kLabel)
+						.addComponent(_kTextField))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_edgePenaltyLabel)
+						.addComponent(_edgePenaltyTextField))
+				);
 	}
 
 	/**
@@ -994,45 +983,35 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * contains edge weight column name combo box
 	 */
 	private void setUpGraphPanel() {
-		JPanel graphPanel = new JPanel();
-		graphPanel.setLayout(new GridBagLayout());
-		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
-		graphPanel.setBorder(graphBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.anchor = GridBagConstraints.LINE_START;
+		if (_graphPanel != null) // stops if panel already created
+			return;
 
+		// initialize the JPanel, panel border, and group layout
+		_graphPanel = new JPanel();
+		TitledBorder graphBorder = BorderFactory.createTitledBorder("Edge Weights");
+		_graphPanel.setBorder(graphBorder);
 		_savedEdgeWeightSelection = ""; // initialize the string
-		
+
+		final GroupLayout graphPanelLayout = new GroupLayout(_graphPanel);
+		_graphPanel.setLayout(graphPanelLayout);
+		graphPanelLayout.setAutoCreateContainerGaps(true);
+		graphPanelLayout.setAutoCreateGaps(true);
+
+		// sets up all the components
 		_unweighted = new JRadioButton("Unweighted");
 		_unweighted.setActionCommand("unweighted");
 		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
 		_unweighted.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 2;
-		graphPanel.add(_unweighted, constraint);
 
 		_weightedAdditive = new JRadioButton("Weights are additive");
 		_weightedAdditive.setActionCommand("weightedAdditive");
 		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 1;
-		constraint.gridwidth = 2;
-		graphPanel.add(_weightedAdditive, constraint);
 
 		_weightedProbabilities = new JRadioButton("Weights are probabilities");
 		_weightedProbabilities.setActionCommand("weightedProbabilities");
 		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 2;
-		constraint.gridwidth = 2;
-		graphPanel.add(_weightedProbabilities, constraint);
 
 		_weightedOptionGroup = new ButtonGroup();
 		_weightedOptionGroup.add(_unweighted);
@@ -1041,119 +1020,114 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
 		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property");
-		constraint.weightx = 0;
-		constraint.gridx = 0;
-		constraint.gridy = 3;
-		constraint.gridwidth = 1;
-		graphPanel.add(_edgeWeightColumnBoxLabel, constraint);
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
-		_edgeWeightColumnBox.setMinimumSize(new Dimension(225, _edgeWeightColumnBox.getPreferredSize().height));
-		constraint.weightx = 0;
-		constraint.gridx = 1;
-		constraint.gridy = 3;
-		constraint.gridwidth = 1;
-		graphPanel.add(_edgeWeightColumnBox, constraint);
 
+		// sets up the correct behavior and default value for edge weight column and edge penalty text field
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
 		updateEdgePenaltyTextField();
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 2;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		_innerPanel.add(graphPanel, _innerPanelConstraints);
+		// add all components into the horizontal and vertical group of the GroupLayout
+		graphPanelLayout.setHorizontalGroup(graphPanelLayout.createParallelGroup()
+				.addGroup(graphPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_unweighted)
+						.addComponent(_weightedAdditive)
+						.addComponent(_weightedProbabilities))
+				.addGroup(graphPanelLayout.createSequentialGroup()
+						.addComponent(_edgeWeightColumnBoxLabel)
+						.addComponent(_edgeWeightColumnBox))
+				);
+		graphPanelLayout.setVerticalGroup(graphPanelLayout.createSequentialGroup()
+				.addGroup(graphPanelLayout.createSequentialGroup()
+						.addComponent(_unweighted)
+						.addComponent(_weightedAdditive)
+						.addComponent(_weightedProbabilities))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(graphPanelLayout.createParallelGroup(Alignment.LEADING, false)
+						.addComponent(_edgeWeightColumnBoxLabel)
+						.addComponent(_edgeWeightColumnBox))
+				);
 	}
 
 	/**
-	 * Sets up the ouput graph panel
-	 * Contains checkbox to include path score ties and generate subgraph options
+	 * Sets up the output panel
+	 * Contains check box to include path score ties
 	 */
-	private void setUpSubGraphPanel() {
-		JPanel subGraphPanel = new JPanel();
-		subGraphPanel.setLayout(new GridBagLayout());
-		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
-		subGraphPanel.setBorder(subGraphBorder);
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.anchor = GridBagConstraints.LINE_START;
+	private void setUpOutputPanel() {
+		if (_outputPanel != null) // stops if panel already created
+			return;
 
+		// initialize the JPanel, panel border, and group layout
+		_outputPanel = new JPanel();
+		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
+		_outputPanel.setBorder(subGraphBorder);
+
+		final GroupLayout outputPanelLayout = new GroupLayout(_outputPanel);
+		_outputPanel.setLayout(outputPanelLayout);
+		outputPanelLayout.setAutoCreateContainerGaps(true);
+		outputPanelLayout.setAutoCreateGaps(true);
+
+	    // sets up all the components
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
-		constraint.weightx = 1;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.gridwidth = 1;
-		subGraphPanel.add(_includePathScoreTiesOption, constraint);
 
-		_innerPanelConstraints.weightx = 1;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 3;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		_innerPanel.add(subGraphPanel, _innerPanelConstraints);
+		// add all components into the horizontal and vertical group of the GroupLayout
+		outputPanelLayout.setHorizontalGroup(outputPanelLayout.createParallelGroup()
+				.addGroup(outputPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_includePathScoreTiesOption))
+				);
+		outputPanelLayout.setVerticalGroup(outputPanelLayout.createSequentialGroup()
+				.addGroup(outputPanelLayout.createSequentialGroup()
+						.addComponent(_includePathScoreTiesOption))
+				);
 	}
 
 	/**
-	 * Sets up submit button and running message
+	 * Sets up the control panel layout
+	 * Sets up all the sub panel and its components and add to control panel
 	 */
-	private void setUpMisc() {
-		_submitButton = new JButton("Submit");
-		_submitButton.addActionListener(new SubmitButtonListener());
-		_innerPanelConstraints.weightx = 0;
-		_innerPanelConstraints.gridx = 0;
-		_innerPanelConstraints.gridy = 4;
-		_innerPanelConstraints.gridwidth = 1;
-		_innerPanelConstraints.insets = new Insets(0, 10, 0, 0);
-		_innerPanelConstraints.anchor = GridBagConstraints.LINE_START;
-		_innerPanelConstraints.fill = GridBagConstraints.NONE;
-		_innerPanel.add(_submitButton, _innerPanelConstraints);
+	private void initializeControlPanel() {
+	    
+	    // sets up the size of the control panel
+		setMinimumSize(new Dimension(340, 400));
+		setPreferredSize(new Dimension(340, 400));
+		
+		// set control panel layout to group layout
+		final GroupLayout mainLayout = new GroupLayout(this);
+		setLayout(mainLayout);
 
-		_runningMessage = new JLabel("PathLinker is running...");
-		_runningMessage.setForeground(Color.BLUE);
-		_runningMessage.setVisible(false);		
-	}
+		mainLayout.setAutoCreateContainerGaps(false);
+		mainLayout.setAutoCreateGaps(true);
 
-	/**
-	 * Sets up all the components in the panel
-	 */
-	private void initializePanelItems() {
-		this.setLayout(new GridBagLayout()); //set the control panel to GridBagLayout
-
-		// creates the inner panel which consists all the sub-panels
-		_innerPanel = new JPanel();
-		_innerPanel.setLayout(new GridBagLayout());
-		_innerPanelConstraints = new GridBagConstraints();
-
-		// calls each method to create sub-panel with specific items and add the panel to inner panel
+		// sets up all the sub panels and its components
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
-		setUpSubGraphPanel();
-		setUpMisc();
+		setUpOutputPanel();
+		
+		// creates the submit button
+		_submitButton = new JButton("Submit");
+		_submitButton.addActionListener(new SubmitButtonListener());
 
-		// creates scroll bar for inner panel and add it to control panel
-		JScrollPane scrollPane = new JScrollPane(_innerPanel,
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setMinimumSize(scrollPane.getPreferredSize());
-		this.add(scrollPane);
-
-		// add a dummy object to ensure _innerPanel stick on top if the window vertically expand
-		GridBagConstraints dummyConstraint = new GridBagConstraints();
-		dummyConstraint.weighty = 1;
-		dummyConstraint.gridy = 6;
-		this.add(new JLabel(" "), dummyConstraint);
-
-		// add a dummy object to ensure _innerPanel stick on top if the window horizontally expand
-		dummyConstraint = new GridBagConstraints();
-		dummyConstraint.weightx = 1;
-		dummyConstraint.gridx = 1;
-		this.add(new JLabel(" "), dummyConstraint);   
+        // add all components into the horizontal and vertical group of the GroupLayout
+		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+				.addComponent(_sourceTargetPanel)
+				.addComponent(_algorithmPanel)
+				.addComponent(_graphPanel)
+				.addComponent(_outputPanel)
+				.addComponent(_submitButton)
+				);
+		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
+				.addComponent(_sourceTargetPanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_algorithmPanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_graphPanel)
+				.addComponent(_outputPanel)
+				.addComponent(_submitButton)
+				);
 	}
 
 	/**
