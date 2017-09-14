@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -54,6 +55,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
 	private JPanel _outputPanel;
+	private JTextArea _directionLabel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
@@ -853,6 +855,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 
 		// sets up all the components
+		_directionLabel = new JTextArea("Direction: \n\n"
+		        + "Select node(s) from the network "
+		        + "and use the buttons below to add as source and/or target. "
+		        + "Text can also be entered directly.");
+		_directionLabel.setLineWrap(true);
+		_directionLabel.setWrapStyleWord(true);
+		_directionLabel.setEditable(false); // restrict user from editing
+		_directionLabel.setOpaque(false); // remove background color
+		_directionLabel.setFont(new Font("", Font.PLAIN, 12)); // sets the font
+		_directionLabel.setMaximumSize(new Dimension(350, _directionLabel.getPreferredSize().height)); // same width as the control panel
+		
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
 		_sourcesTextField = new JTextField(30);
@@ -890,6 +903,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
+		        .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_directionLabel))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -906,6 +921,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
+	              .addGroup(sourceTargetPanelLayout.createSequentialGroup()
+	                        .addComponent(_directionLabel))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
