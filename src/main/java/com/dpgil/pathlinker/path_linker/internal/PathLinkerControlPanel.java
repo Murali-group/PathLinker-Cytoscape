@@ -54,7 +54,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
-	private JPanel _outputPanel;
 	private JTextArea _directionLabel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
@@ -968,6 +967,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
+        _includePathScoreTiesOption = new JCheckBox("Include tied paths");
+        _includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
+                + "is equal to the kth path's length/score");
+
 		_edgePenaltyLabel = new JLabel("Edge penalty:  ");
 
 		_edgePenaltyTextField = new JTextField(5);
@@ -975,20 +978,25 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
-		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
+                .addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
+                        .addComponent(_includePathScoreTiesOption))
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
 				);
 		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
-				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
 				.addPreferredGap(ComponentPlacement.RELATED)
-				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                .addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
+                        .addComponent(_includePathScoreTiesOption))
+                .addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
 				);
@@ -1069,39 +1077,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up the output panel
-	 * Contains check box to include path score ties
-	 */
-	private void setUpOutputPanel() {
-		if (_outputPanel != null) // stops if panel already created
-			return;
-
-		// initialize the JPanel, panel border, and group layout
-		_outputPanel = new JPanel();
-		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
-		_outputPanel.setBorder(subGraphBorder);
-
-		final GroupLayout outputPanelLayout = new GroupLayout(_outputPanel);
-		_outputPanel.setLayout(outputPanelLayout);
-		outputPanelLayout.setAutoCreateContainerGaps(true);
-		outputPanelLayout.setAutoCreateGaps(true);
-
-	    // sets up all the components
-		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
-		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
-
-		// add all components into the horizontal and vertical group of the GroupLayout
-		outputPanelLayout.setHorizontalGroup(outputPanelLayout.createParallelGroup()
-				.addGroup(outputPanelLayout.createParallelGroup(Alignment.LEADING, true)
-						.addComponent(_includePathScoreTiesOption))
-				);
-		outputPanelLayout.setVerticalGroup(outputPanelLayout.createSequentialGroup()
-				.addGroup(outputPanelLayout.createSequentialGroup()
-						.addComponent(_includePathScoreTiesOption))
-				);
-	}
-
-	/**
 	 * Sets up the control panel layout
 	 * Sets up all the sub panel and its components and add to control panel
 	 */
@@ -1122,7 +1097,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
-		setUpOutputPanel();
+		// setUpOutputPanel();
 		
 		// creates the submit button
 		_submitButton = new JButton("Submit");
@@ -1133,7 +1108,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
-				.addComponent(_outputPanel)
 				.addComponent(_submitButton)
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
@@ -1142,7 +1116,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_algorithmPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_graphPanel)
-				.addComponent(_outputPanel)
 				.addComponent(_submitButton)
 				);
 	}
