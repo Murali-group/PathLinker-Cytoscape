@@ -971,34 +971,34 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
                 + "is equal to the kth path's length/score");
 
-		_edgePenaltyLabel = new JLabel("Edge penalty:  ");
+		_edgePenaltyLabel = new JLabel("Edge penalty: ");
 
 		_edgePenaltyTextField = new JTextField(5);
 		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
-		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
+		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.TRAILING, true)
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
-                .addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
-                        .addComponent(_includePathScoreTiesOption))
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
+                .addGroup(algorithmPanelLayout.createSequentialGroup()
+                        .addComponent(_includePathScoreTiesOption))
 				);
 		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
 				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
-				.addPreferredGap(ComponentPlacement.RELATED)
-                .addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
-                        .addComponent(_includePathScoreTiesOption))
                 .addPreferredGap(ComponentPlacement.RELATED)
 				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
+                .addPreferredGap(ComponentPlacement.RELATED)
+                .addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
+                        .addComponent(_includePathScoreTiesOption))
 				);
 	}
 
