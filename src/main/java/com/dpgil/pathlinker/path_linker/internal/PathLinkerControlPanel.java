@@ -1023,7 +1023,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
-
+		
 		// sets up the correct behavior and default value for edge weight column and edge penalty text field
 		_unweighted.setSelected(true);
 		updateEdgeWeightColumn();
@@ -1091,8 +1091,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private void initializeControlPanel() {
 	    
 	    // sets up the size of the control panel
-		setMinimumSize(new Dimension(340, 400));
-		setPreferredSize(new Dimension(340, 400));
+		setMinimumSize(new Dimension(380, 400));
+		setPreferredSize(new Dimension(380, 400));
 		
 		// set control panel layout to group layout
 		final GroupLayout mainLayout = new GroupLayout(this);
