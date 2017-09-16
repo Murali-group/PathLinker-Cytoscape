@@ -79,6 +79,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	protected static JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
+	private JButton _closeButton;
 
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
@@ -161,7 +162,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		}
 
 		if (newState == PanelState.CLOSED) {
-			_state = PanelState.CLOSED;
+		    int choice = JOptionPane.showConfirmDialog(null, "Do you want to exit the PathLinker?");
+            if (choice != 0) return; // quit if they say no or cancel
+			
+            _state = PanelState.CLOSED;
 			_parent.remove(this);
 		}
 		// only occurs if panel is previously closed
@@ -1165,7 +1169,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Sets up all the sub panel and its components and add to control panel
 	 */
 	private void initializeControlPanel() {
-
 		// sets up the size of the control panel
 		setMinimumSize(new Dimension(380, 400));
 		setPreferredSize(new Dimension(380, 400));
@@ -1186,6 +1189,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// creates the submit button
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
+		
+		_closeButton = new JButton("Close");
+		_closeButton.addActionListener(new ActionListener() {
+		    // close the control panel upon clicking
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                setPanelState(PanelState.CLOSED);
+            }
+		});
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
@@ -1193,7 +1205,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
-				.addComponent(_submitButton)
+				.addGroup(mainLayout.createSequentialGroup()
+				        .addComponent(_submitButton)
+				        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 300)
+				        .addComponent(_closeButton))
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_titlePanel)
@@ -1203,7 +1218,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_algorithmPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_graphPanel)
-				.addComponent(_submitButton)
+                .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_submitButton)
+                        .addComponent(_closeButton))
 				);
 	}
 
