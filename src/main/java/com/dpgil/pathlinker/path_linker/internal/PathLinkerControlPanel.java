@@ -140,9 +140,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	/**
 	 * Sets the state of the panel (open or closed).
-	 *
-	 * @param newState
-	 *            the new state
+	 * @param newState the new state
 	 */
 	public void setPanelState(PanelState newState) {
 		if (newState == _state) {

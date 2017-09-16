@@ -51,13 +51,10 @@ extends AbstractCyActivator
 				CytoPanelComponent.class,
 				new Properties());
 
-		// sets up the pathlinker open and close menu options
-		PathLinkerOpenMenuAction oplaction =
-				new PathLinkerOpenMenuAction(panel, cyApplicationManager);
-		PathLinkerCloseMenuAction cplaction =
-				new PathLinkerCloseMenuAction(panel, cyApplicationManager);
-		registerAllServices(context, oplaction, new Properties());
-		registerAllServices(context, cplaction, new Properties());
+		// sets up the pathlinker menu option
+		PathLinkerMenuAction panelMenuAction =
+				new PathLinkerMenuAction(panel, cyApplicationManager);
+		registerAllServices(context, panelMenuAction, new Properties());
 
 		// initializes panel
 		panel.initialize(
