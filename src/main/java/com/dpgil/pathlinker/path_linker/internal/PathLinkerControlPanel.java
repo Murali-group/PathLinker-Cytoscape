@@ -5,6 +5,7 @@ import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
@@ -12,6 +13,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -864,6 +868,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_helpBtn = new JButton("Help");
 		_helpBtn.setToolTipText("Click to learn more on how to use PathLinker");
+		_helpBtn.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        // opens the instruction website upon clicking
+		        try {
+		            Desktop.getDesktop().browse(new URI("http://apps.cytoscape.org/apps/pathlinker"));
+		        }
+		        catch (IOException | URISyntaxException e1) {
+		            e1.printStackTrace();
+		        }
+		    }
+		    });
 
 		_aboutBtn = new JButton("About");
 		_aboutBtn.setToolTipText("Click to learn more about PathLinker");
