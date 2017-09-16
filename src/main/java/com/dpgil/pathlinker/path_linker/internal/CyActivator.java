@@ -15,7 +15,6 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -41,8 +40,6 @@ extends AbstractCyActivator
 				getService(context, CyServiceRegistrar.class);
 		CyNetworkManager networkManager =
 				getService(context, CyNetworkManager.class);
-		CyNetworkViewManager networkViewManager =
-				getService(context, CyNetworkViewManager.class);
 		CyAppAdapter adapter = getService(context, CyAppAdapter.class);
 		CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
 		registerService(
@@ -62,7 +59,6 @@ extends AbstractCyActivator
 				serviceRegistrar,
 				cyApplicationManager,
 				networkManager,
-				networkViewManager,
 				adapter,
 				"1.3", 
 				"08.08.2017");

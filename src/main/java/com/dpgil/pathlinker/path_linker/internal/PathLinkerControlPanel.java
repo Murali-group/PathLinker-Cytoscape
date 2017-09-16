@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
@@ -44,7 +46,6 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
@@ -96,7 +97,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
-    private CyNetworkViewManager _networkViewManager;
 	private CyNetworkManager _networkManager;
 	private CyAppAdapter _adapter;
 
@@ -205,14 +205,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 *            the cy application adapter
 	 */
 	public void initialize(CySwingApplication cySwingApp, CyServiceRegistrar serviceRegistrar,
-			CyApplicationManager applicationManager, CyNetworkManager networkManager,
-			CyNetworkViewManager networkViewManager, CyAppAdapter adapter,
+			CyApplicationManager applicationManager, CyNetworkManager networkManager, CyAppAdapter adapter,
 			String version, String buildDate) {
 		_cySwingApp = cySwingApp;
 		_serviceRegistrar  = serviceRegistrar;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
-		_networkViewManager = networkViewManager;
 		_adapter = adapter;
 		_version = version;
 		_buildDate = buildDate;
@@ -959,7 +957,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
-		_sourcesTextField = new JTextField(30);
+		_sourcesTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
@@ -971,7 +969,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 
-		_targetsTextField = new JTextField(30);
+		_targetsTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
 		_targetsTextField.setMinimumSize(_targetsTextField.getPreferredSize());
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
@@ -1242,5 +1240,47 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	@Override
 	public String getTitle() {
 		return "PathLinker";
+	}
+	
+	/**
+	 * A JTextField class that comes with "ghost test"
+	 * Giving the text field ability to shows hint message that disappears when focus upon
+	 * Source: https://stackoverflow.com/questions/1738966/java-jtextfield-with-input-hint
+	 */
+	class HintTextField extends JTextField implements FocusListener {
+	    
+	    private final String hint;
+	    private boolean showingHint;
+	    
+	    public HintTextField(final String hint) {
+	        super(hint);
+	        this.hint = hint;
+	        this.showingHint = true;
+	        super.setForeground(Color.GRAY);
+	        super.addFocusListener(this);    
+	    }
+
+	    @Override
+	    public void focusGained(FocusEvent e) {
+	        if(this.getText().isEmpty()) {
+	            super.setText("");
+	            super.setForeground(Color.BLACK);
+	            showingHint = false;
+	        }
+	    }
+	    
+	    @Override
+	    public void focusLost(FocusEvent e) {
+	        if(this.getText().isEmpty()) {
+	            super.setText(hint);
+	            super.setForeground(Color.GRAY);
+	            showingHint = true;    
+	        }
+	    }
+	    
+	    @Override
+	    public String getText() {
+	        return showingHint ? "" : super.getText();    
+	    }    
 	}
 }
