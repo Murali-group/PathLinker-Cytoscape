@@ -78,7 +78,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
 
-
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -839,6 +838,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kspSubgraphView.updateView();
 	}
 
+	/**
+     * Sets up title panel
+     * contains the logo and the title of the pathlinker app
+     * contains help and about button
+	 */
 	private void setUpTitlePanel() {
 		if (_titlePanel != null) // stops if panel already created
 			return;
@@ -851,11 +855,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		titlePanelLayout.setAutoCreateGaps(true);
 
 		// set up all components
-		ImageIcon icon = new ImageIcon(getClass().getResource(("/logo.png")));
-		Image iconImage = icon.getImage();
-		
-		_logoLabel = new JLabel(new ImageIcon(iconImage.getScaledInstance(120, 120, java.awt.Image.SCALE_SMOOTH)));
-		_logoLabel.setMaximumSize(new Dimension(50, 100));
+		ImageIcon logo = new ImageIcon(getClass().getResource(("/logo.png")));
+		_logoLabel = new JLabel(new ImageIcon(logo.getImage().getScaledInstance(60, 80, java.awt.Image.SCALE_SMOOTH)));
 		
 		_titleLabel = new JLabel("PATHLINKER");
 		_titleLabel.setFont(_titleLabel.getFont().deriveFont(32f)); 
@@ -871,17 +872,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		titlePanelLayout.setHorizontalGroup(titlePanelLayout.createSequentialGroup()
 				.addGroup(titlePanelLayout.createParallelGroup()
 						.addComponent(_logoLabel))
-				.addPreferredGap(ComponentPlacement.RELATED)
-				.addGroup(titlePanelLayout.createParallelGroup()
-						.addGroup(titlePanelLayout.createParallelGroup(Alignment.CENTER, true)
+				.addContainerGap(75, 80)
+				.addGroup(titlePanelLayout.createParallelGroup(Alignment.TRAILING, true)
+						.addGroup(titlePanelLayout.createParallelGroup()
 								.addComponent(_titleLabel))
-						.addGroup(titlePanelLayout.createParallelGroup(Alignment.CENTER, true)
+						.addGroup(titlePanelLayout.createParallelGroup()
 								.addGroup(titlePanelLayout.createSequentialGroup()
 										.addComponent(_helpBtn)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(_aboutBtn))))
 				);
-		titlePanelLayout.setVerticalGroup(titlePanelLayout.createParallelGroup(Alignment.CENTER, true)
+		titlePanelLayout.setVerticalGroup(titlePanelLayout.createParallelGroup()
 				.addGroup(titlePanelLayout.createSequentialGroup()
 						.addComponent(_logoLabel))
 				.addGroup(titlePanelLayout.createSequentialGroup()
@@ -889,7 +890,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 								.addComponent(_titleLabel))
 						.addPreferredGap(ComponentPlacement.RELATED)
 						.addGroup(titlePanelLayout.createSequentialGroup()
-								.addGroup(titlePanelLayout.createParallelGroup(Alignment.CENTER, true)
+								.addGroup(titlePanelLayout.createParallelGroup()
 										.addComponent(_helpBtn)
 										.addComponent(_aboutBtn))))
 				);
@@ -915,18 +916,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 
-		// sets up all the components
-		/*	_directionLabel = new JTextArea("Direction: \n\n"
-		        + "Select node(s) from the network "
-		        + "and use the buttons below to add as source and/or target. "
-		        + "Text can also be entered directly.");
-		_directionLabel.setLineWrap(true);
-		_directionLabel.setWrapStyleWord(true);
-		_directionLabel.setEditable(false); // restrict user from editing
-		_directionLabel.setOpaque(false); // remove background color
-		_directionLabel.setFont(new Font("", Font.PLAIN, 12)); // sets the font
-		_directionLabel.setMaximumSize(new Dimension(350, _directionLabel.getPreferredSize().height)); // same width as the control panel
-		 */
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
 		_sourcesTextField = new JTextField(30);
@@ -964,8 +953,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
-				//				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
-				//						.addComponent(_directionLabel))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -982,8 +969,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
-				//.addGroup(sourceTargetPanelLayout.createSequentialGroup()
-				//		.addComponent(_directionLabel))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
