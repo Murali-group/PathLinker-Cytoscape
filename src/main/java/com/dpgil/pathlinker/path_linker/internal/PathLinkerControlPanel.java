@@ -8,7 +8,6 @@ import java.awt.Container;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -45,7 +44,6 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -97,11 +95,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
+    private CyNetworkViewManager _networkViewManager;
 	private CyNetworkManager _networkManager;
 	private CyAppAdapter _adapter;
 
 	/** The model that runs ksp algorithm from the user input */
 	private PathLinkerModel _model;
+    /** The about dialog box object */
+    private PathLinkerAboutMenuDialog _aboutMenuDialog;
+    /** the version of the current PathLinker app */
+    private String _version;
+    /** the build date of the current PathLinker app */
+    private String _buildDate;
 	/** Parent container of the panel to re add to when we call open */
 	private Container _parent;
 	/** State of the panel. Initially null b/c it isn't open or closed yet */
@@ -192,22 +197,23 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 *            application manager
 	 * @param networkManager
 	 *            network manager
-	 * @param networkViewFactory
-	 *            network view factory
 	 * @param networkViewManager
 	 *            network view manager
 	 * @param adapter
 	 *            the cy application adapter
 	 */
 	public void initialize(CySwingApplication cySwingApp, CyServiceRegistrar serviceRegistrar,
-			CyApplicationManager applicationManager,
-			CyNetworkManager networkManager, CyNetworkViewFactory networkViewFactory,
-			CyNetworkViewManager networkViewManager, CyAppAdapter adapter) {
+			CyApplicationManager applicationManager, CyNetworkManager networkManager,
+			CyNetworkViewManager networkViewManager, CyAppAdapter adapter,
+			String version, String buildDate) {
 		_cySwingApp = cySwingApp;
 		_serviceRegistrar  = serviceRegistrar;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
+		_networkViewManager = networkViewManager;
 		_adapter = adapter;
+		_version = version;
+		_buildDate = buildDate;
 		_parent = this.getParent();
 
 		initializeControlPanel(); // construct the GUI
@@ -871,7 +877,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_helpBtn.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		        // opens the instruction website upon clicking
+		        // opens the instruction site upon clicking
 		        try {
 		            Desktop.getDesktop().browse(new URI("http://apps.cytoscape.org/apps/pathlinker"));
 		        }
@@ -879,10 +885,27 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		            e1.printStackTrace();
 		        }
 		    }
-		    });
+		});
 
 		_aboutBtn = new JButton("About");
 		_aboutBtn.setToolTipText("Click to learn more about PathLinker");
+		_aboutBtn.addActionListener(new ActionListener() {
+		    // sets up the about dialog option
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //display about box
+                synchronized (this) {
+                    if (_aboutMenuDialog == null)
+                        _aboutMenuDialog = new PathLinkerAboutMenuDialog(_cySwingApp, _version, _buildDate);
+
+                    if (!_aboutMenuDialog.isVisible()) {
+                        _aboutMenuDialog.setLocationRelativeTo(null);
+                        _aboutMenuDialog.setVisible(true);
+                    }
+                }
+                _aboutMenuDialog.toFront();     
+            }
+		}); 
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		titlePanelLayout.setHorizontalGroup(titlePanelLayout.createSequentialGroup()

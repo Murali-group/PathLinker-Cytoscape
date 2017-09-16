@@ -15,7 +15,6 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
@@ -42,8 +41,6 @@ extends AbstractCyActivator
 				getService(context, CyServiceRegistrar.class);
 		CyNetworkManager networkManager =
 				getService(context, CyNetworkManager.class);
-		CyNetworkViewFactory networkViewFactory =
-				getService(context, CyNetworkViewFactory.class);
 		CyNetworkViewManager networkViewManager =
 				getService(context, CyNetworkViewManager.class);
 		CyAppAdapter adapter = getService(context, CyAppAdapter.class);
@@ -62,25 +59,16 @@ extends AbstractCyActivator
 		registerAllServices(context, oplaction, new Properties());
 		registerAllServices(context, cplaction, new Properties());
 
-		// sets up the help menu option
-		PathLinkerHelpMenuAction hmaction =
-				new PathLinkerHelpMenuAction(cyApplicationManager, networkViewManager);
-		registerAllServices(context, hmaction, new Properties());
-
-		// sets up the about dialog menu option
-		PathLinkerAboutMenuAction amaction =
-				new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
-		registerAllServices(context, amaction, new Properties());
-
 		// initializes panel
 		panel.initialize(
 				cySwingApp,
 				serviceRegistrar,
 				cyApplicationManager,
 				networkManager,
-				networkViewFactory,
 				networkViewManager,
-				adapter);
+				adapter,
+				"1.3", 
+				"08.08.2017");
 
 		// starts off the panel in a closed state
 		panel.setPanelState(PanelState.CLOSED);
