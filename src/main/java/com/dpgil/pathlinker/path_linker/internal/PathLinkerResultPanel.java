@@ -99,8 +99,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 
-			int choice = JOptionPane.showConfirmDialog(null, "Discarded results will be permanently removed. Continue?");
-			if (choice != 0) return; // quit if they say no or cancel
+            String[] options = {"Yes", "Cancel"};
+            int choice = JOptionPane.showOptionDialog(null, "Result will be permanently removed. Continue?", 
+                    "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+            ;
+			if (choice != 0) return; // quit if select cancel
 
 			Container btnParent = _discardBtn.getParent();
 			Container panelParent = btnParent.getParent();
@@ -279,7 +282,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 				File f = getSelectedFile();
 				if (f.exists() && getDialogType() == SAVE_DIALOG) {
 					int result = JOptionPane.showConfirmDialog(this,
-							"The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+							"The file exists, overwrite?", "Existing file", JOptionPane.YES_NO_CANCEL_OPTION);
 					switch(result) {
 					case JOptionPane.YES_OPTION:
 						super.approveSelection();

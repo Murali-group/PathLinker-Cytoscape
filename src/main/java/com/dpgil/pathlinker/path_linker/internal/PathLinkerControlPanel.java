@@ -162,8 +162,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		}
 
 		if (newState == PanelState.CLOSED) {
-		    int choice = JOptionPane.showConfirmDialog(null, "Do you want to exit the PathLinker?");
-            if (choice != 0) return; // quit if they say no or cancel
+		    String[] options = {"Yes", "Cancel"};
+		    int choice = JOptionPane.showOptionDialog(null, "Do you want to exit the PathLinker?", 
+		            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+            if (choice != 0) return; // quit if they say cancel
 			
             _state = PanelState.CLOSED;
 			_parent.remove(this);
@@ -459,7 +461,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// Check to see if network exists before starting reading the values from the panel
 		_originalNetwork = _applicationManager.getCurrentNetwork();
 		if (_originalNetwork == null) {
-			JOptionPane.showMessageDialog(null, "Network not found. Please load a valid network");
+            JOptionPane.showMessageDialog(null, 
+                    "Network not found. Please load a valid network", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -512,11 +516,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// makes sure that we actually have at least one valid source and target
 		if (sources.size() == 0) {
-			JOptionPane.showMessageDialog(null, "There are no valid sources to be used. Quitting...");
+	          JOptionPane.showMessageDialog(null, 
+	                  "There are no valid sources to be used. Quitting...", 
+	                  "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		if (targets.size() == 0) {
-			JOptionPane.showMessageDialog(null, "There are no valid targets to be used. Quitting...");
+            JOptionPane.showMessageDialog(null, 
+                    "There are no valid targets to be used. Quitting...", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -531,19 +539,25 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// edge case where only one source and one target are inputted,
 		// so no paths will be found. warn the user
 		if (sources.size() == 1 && sources.equals(targets)) {
-			JOptionPane.showMessageDialog(null,
-					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
+            JOptionPane.showMessageDialog(null, 
+                    "The only source node is the same as the only target node.\n"
+                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.", 
+                    "Warning", JOptionPane.WARNING_MESSAGE);
 		}
 
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
-			errorMessage.append("Continue anyway?");
-			int choice = JOptionPane.showConfirmDialog(null, errorMessage.toString());
-			if (choice != 0) {
-				// quit if they say no or cancel
-				return false;
-			}
+		    errorMessage.append("Continue anyway?");
+		    
+		    String[] options = {"Yes", "Cancel"};
+		    
+		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
+                    "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+		    
+		    if (choice != 0) // quit if they say cancel
+		        return false;
 		}
+		
 
 		// checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
 		// if a weighted option was selected, but not all edges have weights
@@ -555,8 +569,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			try {
 				Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
 			} catch (NullPointerException  e) {
-				JOptionPane.showMessageDialog(null,
-						"Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
+		           JOptionPane.showMessageDialog(null, 
+		                   "Weighted option was selected, but there exists at least one edge without a weight. Quitting...", 
+		                   "Error Message", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 		}
@@ -695,7 +710,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// If no paths were found, then exit with this error
 		// TODO This should be done before the empty kspSubgraph is created 
 		if (paths.size() == 0) {
-			JOptionPane.showMessageDialog(null, "No paths found.");
+            JOptionPane.showMessageDialog(null, 
+                    "No paths found", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
