@@ -64,7 +64,7 @@ extends AbstractCyActivator
 				"08.08.2017");
 
 		// starts off the panel in a closed state
-		panel.setPanelState(PanelState.CLOSED);
+		panel.getParent().remove(panel);
 
 		// handle load node to source/target button enable/disable events
 		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
