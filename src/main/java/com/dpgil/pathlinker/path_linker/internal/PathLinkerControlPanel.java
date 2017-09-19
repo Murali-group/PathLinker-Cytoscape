@@ -69,8 +69,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JLabel _edgeWeightColumnBoxLabel;
 	// private JLabel _runningMessage;
 
-	private JTextField _sourcesTextField;
-	private JTextField _targetsTextField;
+	private HintTextField _sourcesTextField;
+	private HintTextField _targetsTextField;
 	private JTextField _kTextField;
 	private static JTextField _edgePenaltyTextField;
 
@@ -275,6 +275,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 			String sourceText = _sourcesTextField.getText();
 
+			if (_sourcesTextField.showingHint)
+			    _sourcesTextField.gainFocus();
+
 			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
 				_sourcesTextField.setText(sourceText + " " + sources.toString());
 			else _sourcesTextField.setText(sourceText + sources.toString());
@@ -298,6 +301,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				targets.append(network.getRow(node).get(CyNetwork.NAME, String.class) + "\n");
 
 			String targetText = _targetsTextField.getText();
+
+	         if (_targetsTextField.showingHint)
+	             _targetsTextField.gainFocus();
 
 			if (targetText.length() > 0 &&
 					targetText.charAt(targetText.length() - 1) != ' ')
@@ -1271,6 +1277,16 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	        this.showingHint = true;
 	        super.setForeground(Color.GRAY);
 	        super.addFocusListener(this);    
+	    }
+
+	    /**
+	     * Method use to remove hint and gray color of the text field
+	     * Use by select node listeners
+	     */
+	    public void gainFocus() {
+            super.setText("");
+            super.setForeground(Color.BLACK);
+            showingHint = false;
 	    }
 
 	    @Override
