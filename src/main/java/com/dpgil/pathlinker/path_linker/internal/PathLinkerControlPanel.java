@@ -959,7 +959,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_sourcesTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
 		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
-		_sourcesTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToSourceButton = new JButton("Add selected source(s)");
@@ -971,7 +970,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_targetsTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
 		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-		_targetsTextField.setMinimumSize(_targetsTextField.getPreferredSize());
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToTargetButton = new JButton("Add selected target(s)");
@@ -1050,7 +1048,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_kTextField = new JTextField(5);
 		_kTextField.setText("200");
-		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
@@ -1060,7 +1057,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgePenaltyLabel = new JLabel("Edge penalty: ");
 
 		_edgePenaltyTextField = new JTextField(5);
-		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
@@ -1168,8 +1164,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void initializeControlPanel() {
 		// sets up the size of the control panel
-		setMinimumSize(new Dimension(380, 400));
-		setPreferredSize(new Dimension(380, 400));
+		setMinimumSize(new Dimension(400, 400));
+		setPreferredSize(getMinimumSize());
 
 		// set control panel layout to group layout
 		final GroupLayout mainLayout = new GroupLayout(this);
