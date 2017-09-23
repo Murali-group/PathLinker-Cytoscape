@@ -422,6 +422,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// checks for identical sources/targets option selection to
 		// update the panel values
 		if (_targetsSameAsSourcesOption.isSelected()) {
+		    
+		    // ensure text field is not in shadow text mode
+	          if (_targetsTextField.showingHint)
+	              _targetsTextField.gainFocus();
+		    
 			_targetsTextField.setText(_sourcesTextField.getText());
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
@@ -1006,9 +1011,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+		_allowSourcesTargetsInPathsOption.setToolTipText("Allow source/target nodes appear as intermediate nodes in "
+		        + "path computed.");
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
+		_targetsSameAsSourcesOption.setToolTipText("Copy the sources to the targets field.");
 		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
