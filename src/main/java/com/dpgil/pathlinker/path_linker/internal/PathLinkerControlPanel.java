@@ -506,6 +506,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// runs the setup and KSP algorithm
 		ArrayList<Path> result = _model.runKSP();
 
+	    // If no paths were found, then exit with this error
+        if (result.size() == 0) {
+            JOptionPane.showMessageDialog(null, 
+                    "No paths found", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+		
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
 		createKSPSubgraphAndView();
 
@@ -558,12 +566,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             JOptionPane.showMessageDialog(null, 
                     "The only source node is the same as the only target node.\n"
                     + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.", 
-                    "Warning", JOptionPane.WARNING_MESSAGE);
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            
+            return false;
 		}
 
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
-		    errorMessage.append("Continue anyway?");
+		    errorMessage.append("Continue?");
 		    
 		    String[] options = {"Yes", "Cancel"};
 		    
@@ -611,8 +621,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		String kInput = _kTextField.getText().trim();
 		try {
 			_kValue = Integer.parseInt(kInput);
+
+			// throw exception if _kValue is a integer but less than 1
+			if (_kValue < 1)
+			    throw new NumberFormatException();
+
 		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid number " + kInput + " entered for k. Using default k=200.\n");
+			errorMessage.append("Invalid number entered for k. Using default k=200.\n");
 			_kValue = 200;
 		}
 
@@ -723,15 +738,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
-		// If no paths were found, then exit with this error
-		// TODO This should be done before the empty kspSubgraph is created 
-		if (paths.size() == 0) {
-            JOptionPane.showMessageDialog(null, 
-                    "No paths found", 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
 		// create and register a new panel in result panel with specific title
 		// if user did not generate sub-network then we pass down the original network to the result panel
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
