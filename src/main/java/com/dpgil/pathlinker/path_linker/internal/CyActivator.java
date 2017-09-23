@@ -61,7 +61,7 @@ extends AbstractCyActivator
 				networkManager,
 				adapter,
 				"1.3", 
-				"08.08.2017");
+				"Sept. 22, 2017");
 
 		// starts off the panel in a closed state
 		panel.getParent().remove(panel);

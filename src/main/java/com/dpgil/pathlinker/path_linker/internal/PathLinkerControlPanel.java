@@ -60,6 +60,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
 
+	private JLabel _networkColumnBoxLabel;
 	private JLabel _logoLabel;
 	private JLabel _titleLabel;
 	private JLabel _sourcesLabel;
@@ -82,6 +83,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JButton _closeButton;
 
+	private static JComboBox<String> _networkColumnBox;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -907,7 +909,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ImageIcon logo = new ImageIcon(getClass().getResource(("/logo.png")));
 		_logoLabel = new JLabel(new ImageIcon(logo.getImage().getScaledInstance(60, 80, java.awt.Image.SCALE_SMOOTH)));
 		
-		_titleLabel = new JLabel("PATHLINKER");
+		_titleLabel = new JLabel("PathLinker");
 		_titleLabel.setFont(_titleLabel.getFont().deriveFont(32f)); 
 		_titleLabel.setFont(_titleLabel.getFont().deriveFont(Font.BOLD));
 
@@ -950,7 +952,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		titlePanelLayout.setHorizontalGroup(titlePanelLayout.createSequentialGroup()
 				.addGroup(titlePanelLayout.createParallelGroup()
 						.addComponent(_logoLabel))
-				.addContainerGap(75, 80)
+				.addContainerGap(120, 120)
 				.addGroup(titlePanelLayout.createParallelGroup(Alignment.TRAILING, true)
 						.addGroup(titlePanelLayout.createParallelGroup()
 								.addComponent(_titleLabel))
@@ -993,11 +995,20 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
+		
+		_networkColumnBoxLabel = new JLabel("Select network: ");
+        _networkColumnBoxLabel.setToolTipText("The network to run PathLinker on.");
+
+        _networkColumnBox = new JComboBox<String>(new String[]{""});
+        _networkColumnBox.setToolTipText("Select the network to run PathLinke on");
+        _networkColumnBox.setMaximumSize(new Dimension(_networkColumnBox.getMaximumSize().width, 
+                _networkColumnBox.getPreferredSize().height));
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
 		_sourcesTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
-		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
+		_sourcesTextField.setMaximumSize(new Dimension(_sourcesTextField.getMaximumSize().width, 
+		        _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToSourceButton = new JButton("Add selected source(s)");
@@ -1008,7 +1019,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 
 		_targetsTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
-		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
+		_targetsTextField.setMaximumSize(new Dimension(_targetsTextField.getMaximumSize().width, 
+		        _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToTargetButton = new JButton("Add selected target(s)");
@@ -1032,6 +1044,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
+                .addGroup(sourceTargetPanelLayout.createSequentialGroup()
+                        .addComponent(_networkColumnBoxLabel)
+                        .addComponent(_networkColumnBox))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1048,6 +1063,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
+                .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_networkColumnBoxLabel)
+                        .addComponent(_networkColumnBox))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
