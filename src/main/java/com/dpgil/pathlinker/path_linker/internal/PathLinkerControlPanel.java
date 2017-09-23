@@ -60,7 +60,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
 
-	private JLabel _networkColumnBoxLabel;
+	private JLabel _networkCmbLabel;
 	private JLabel _logoLabel;
 	private JLabel _titleLabel;
 	private JLabel _sourcesLabel;
@@ -83,7 +83,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JButton _closeButton;
 
-	private static JComboBox<String> _networkColumnBox;
+	private static JComboBox<String> _networkCmb;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -99,7 +99,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
-	private CyNetworkManager _networkManager;
+	private static CyNetworkManager _networkManager;
 	private CyAppAdapter _adapter;
 
 	/** The model that runs ksp algorithm from the user input */
@@ -368,6 +368,21 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					|| column.getType() == Long.class))
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
+	}
+	
+	/**
+	 * construct/update the combo box items for the network combo box
+	 */
+	protected static void updateNetworkColumn() {
+	    
+	    _networkCmb.removeAllItems(); //remove all items for update
+	    
+	    for (CyNetwork network : _networkManager.getNetworkSet()) {
+	        _networkCmb.addItem(network.getRow(network).get(CyNetwork.NAME, String.class));
+	        
+	        if (network.getSUID() == _applicationManager.getCurrentNetwork().getSUID())
+	            _networkCmb.setSelectedItem(network.getRow(network).get(CyNetwork.NAME, String.class));
+	    }
 	}
 
 	/**
@@ -996,13 +1011,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 		
-		_networkColumnBoxLabel = new JLabel("Select network: ");
-        _networkColumnBoxLabel.setToolTipText("The network to run PathLinker on.");
+		_networkCmbLabel = new JLabel("Select network: ");
+        _networkCmbLabel.setToolTipText("The network to run PathLinker on.");
 
-        _networkColumnBox = new JComboBox<String>(new String[]{""});
-        _networkColumnBox.setToolTipText("Select the network to run PathLinke on");
-        _networkColumnBox.setMaximumSize(new Dimension(_networkColumnBox.getMaximumSize().width, 
-                _networkColumnBox.getPreferredSize().height));
+        _networkCmb = new JComboBox<String>(new String[]{""});
+        _networkCmb.setToolTipText("Select the network to run PathLinke on");
+        _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
+                _networkCmb.getPreferredSize().height));
+        
+        updateNetworkColumn();
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
@@ -1045,8 +1062,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
                 .addGroup(sourceTargetPanelLayout.createSequentialGroup()
-                        .addComponent(_networkColumnBoxLabel)
-                        .addComponent(_networkColumnBox))
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1064,8 +1081,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
                 .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
-                        .addComponent(_networkColumnBoxLabel)
-                        .addComponent(_networkColumnBox))
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)

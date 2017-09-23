@@ -10,7 +10,8 @@ public class PathLinkerNetworkEventListener implements SetCurrentNetworkListener
 
 	@Override
 	public void handleEvent(SetCurrentNetworkEvent e) {
-		PathLinkerControlPanel.updateEdgeWeightColumn();	
+		PathLinkerControlPanel.updateEdgeWeightColumn();
+		PathLinkerControlPanel.updateNetworkColumn();
 	}
 
 }
