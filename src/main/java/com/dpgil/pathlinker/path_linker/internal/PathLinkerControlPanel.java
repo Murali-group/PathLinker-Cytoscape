@@ -322,6 +322,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		public void actionPerformed(ActionEvent e) {
 			_sourcesTextField.setText("");
 			_targetsTextField.setText("");
+			
+			// gain focus to trigger shadow hint behavior
+			_sourcesTextField.loseFocus();
+			_targetsTextField.loseFocus();
+			
 			_allowSourcesTargetsInPathsOption.setSelected(false);
 			_targetsSameAsSourcesOption.setSelected(false);
 		}
@@ -1287,6 +1292,16 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             super.setText("");
             super.setForeground(Color.BLACK);
             showingHint = false;
+	    }
+	    
+	    /**
+	     * Method use to show hint and gray color of the text field
+	     * Use by clear button listeners
+	     */
+	    public void loseFocus() {
+            super.setText(hint);
+            super.setForeground(Color.GRAY);
+            showingHint = true;      
 	    }
 
 	    @Override
