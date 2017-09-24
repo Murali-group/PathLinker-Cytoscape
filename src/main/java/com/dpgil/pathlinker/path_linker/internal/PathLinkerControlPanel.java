@@ -130,6 +130,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private static String _savedEdgeWeightSelection;
+	/** The long value that represents the unique network SUID, use for identifying user selected network */
+    private static long _selectedNetworkSUID;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
 
@@ -373,15 +375,30 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/**
 	 * construct/update the combo box items for the network combo box
 	 */
-	protected static void updateNetworkColumn() {
+	protected static void updateNetworkCmb() {
 	    
 	    _networkCmb.removeAllItems(); //remove all items for update
 	    
-	    for (CyNetwork network : _networkManager.getNetworkSet()) {
+	    // No network exists in CytoScape
+	    if (_networkManager.getNetworkSet().size() == 0)
+	        return;
+	    
+	    _networkCmb.addItem(""); // add an placeholder empty string
+	    
+	    for (CyNetwork network : _networkManager.getNetworkSet())
 	        _networkCmb.addItem(network.getRow(network).get(CyNetwork.NAME, String.class));
-	        
-	        if (network.getSUID() == _applicationManager.getCurrentNetwork().getSUID())
-	            _networkCmb.setSelectedItem(network.getRow(network).get(CyNetwork.NAME, String.class));
+	    
+	    // if User didn't select any network, set combo box to point empty item
+	    // set selectedNetworkSUID to MIN_VALUE
+	    if (_applicationManager.getCurrentNetwork() == null) {
+            _selectedNetworkSUID = Long.MIN_VALUE;
+	        _networkCmb.setSelectedItem("");
+	    }
+	    else {
+	        _selectedNetworkSUID = _applicationManager.getCurrentNetwork().getSUID();
+	        _networkCmb.setSelectedItem(
+	                _applicationManager.getCurrentNetwork().getRow(
+	                        _applicationManager.getCurrentNetwork()).get(CyNetwork.NAME, String.class));
 	    }
 	}
 
@@ -1019,7 +1036,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
                 _networkCmb.getPreferredSize().height));
         
-        updateNetworkColumn();
+        updateNetworkCmb();
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 

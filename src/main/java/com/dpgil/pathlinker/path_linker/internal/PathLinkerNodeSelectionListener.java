@@ -14,7 +14,13 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 	@Override
 	public void handleEvent(RowsSetEvent e) {
 
-		// if event is triggered by unselect/select an edge or blank screen then do nothing
+	    // update the networkCmb if user changes rename certain network
+	    if (e.containsColumn(CyNetwork.NAME)) {
+	        PathLinkerControlPanel.updateNetworkCmb();
+	        return;
+	    }
+		
+	    // if event is triggered by unselect/select an edge or blank screen then do nothing
 		// since user may select node and then edge simultaneously
 		// if event is triggered by selecting blank screen, then unselect nodes will triggered another RowsSetEvent to disable buttons
 		if (e.getSource() != PathLinkerControlPanel._applicationManager.getCurrentNetworkView().getModel().getDefaultNodeTable())
