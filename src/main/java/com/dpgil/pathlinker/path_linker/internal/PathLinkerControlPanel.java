@@ -19,7 +19,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -83,7 +85,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JButton _closeButton;
 
-	private static JComboBox<String> _networkCmb;
+	protected static JComboBox<String> _networkCmb;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -130,8 +132,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private static String _savedEdgeWeightSelection;
-	/** The long value that represents the unique network SUID, use for identifying user selected network */
-    private static long _selectedNetworkSUID;
+	/** The map stores the index-SUID pair of each network inside the networkCmb */
+    protected static Map<Integer, Long> _indexToSUIDMap;
+    /** The map stores the SUID-index pair of each network inside the networkCmb */
+    protected static Map<Long, Integer> _suidToIndexMap;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
 
@@ -374,32 +378,31 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	
 	/**
 	 * construct/update the combo box items for the network combo box
+	 * Use when the PathLinker starts
+	 *     when network name is changed
 	 */
-	protected static void updateNetworkCmb() {
+	protected static void initializeNetworkCmb() {
 	    
-	    _networkCmb.removeAllItems(); //remove all items for update
+	    _networkCmb.removeAllItems(); //make sure combo box is empty when initializing
 	    
 	    // No network exists in CytoScape
-	    if (_networkManager.getNetworkSet().size() == 0)
+	    if (_networkManager == null || _networkManager.getNetworkSet().size() == 0)
 	        return;
 	    
-	    _networkCmb.addItem(""); // add an placeholder empty string
+	    _networkCmb.addItem(""); // add placeholder empty string
 	    
-	    for (CyNetwork network : _networkManager.getNetworkSet())
+	    for (CyNetwork network : _networkManager.getNetworkSet()) {
+	        _indexToSUIDMap.put(_networkCmb.getItemCount(), network.getSUID());
+	        _suidToIndexMap.put(network.getSUID(), _networkCmb.getItemCount());
 	        _networkCmb.addItem(network.getRow(network).get(CyNetwork.NAME, String.class));
-	    
-	    // if User didn't select any network, set combo box to point empty item
-	    // set selectedNetworkSUID to MIN_VALUE
-	    if (_applicationManager.getCurrentNetwork() == null) {
-            _selectedNetworkSUID = Long.MIN_VALUE;
-	        _networkCmb.setSelectedItem("");
 	    }
-	    else {
-	        _selectedNetworkSUID = _applicationManager.getCurrentNetwork().getSUID();
-	        _networkCmb.setSelectedItem(
-	                _applicationManager.getCurrentNetwork().getRow(
-	                        _applicationManager.getCurrentNetwork()).get(CyNetwork.NAME, String.class));
-	    }
+
+	    // ends if no network is selected, otherwise sets the default value for networkCmb
+	    if (_applicationManager.getCurrentNetwork() == null)
+	        return;
+
+	    _networkCmb.setSelectedItem(
+	            _suidToIndexMap.get(_applicationManager.getCurrentNetwork().getSUID()));
 	}
 
 	/**
@@ -1036,7 +1039,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
                 _networkCmb.getPreferredSize().height));
         
-        updateNetworkCmb();
+        _indexToSUIDMap = new HashMap<Integer, Long>(); // creates a empty index-SUID pair map
+        _suidToIndexMap = new HashMap<Long, Integer>(); // creates a empty SUID-index pair map
+        initializeNetworkCmb();
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 

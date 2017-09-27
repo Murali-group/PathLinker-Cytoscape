@@ -16,7 +16,7 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 
 	    // update the networkCmb if user changes rename certain network
 	    if (e.containsColumn(CyNetwork.NAME)) {
-	        PathLinkerControlPanel.updateNetworkCmb();
+	        PathLinkerControlPanel.initializeNetworkCmb();
 	        return;
 	    }
 		
