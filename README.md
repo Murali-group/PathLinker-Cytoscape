@@ -52,9 +52,8 @@ PathLinker generates three outputs:
 
 1. A **`PathLinker-results-X-k-paths`** sub-network consisting of the nodes and edges involved in the _k_ paths.
 2. A **`PathLinker Results X`** results panel that displays a table of the rank, score, and nodes of the _k_ paths.
-  * Selecting one or more paths in results table will select or highlight those paths in the sub-network.
+  * Selecting one or more paths in results table will select or highlight the nodes and edges of those paths in the sub-network.
   * The results can be exported to a TSV (tab separated file).
-  * All three of these outputs can be deleted using the `Discard` button. 
 3. A **`Path Rank X`** column in the `Edge Table` whose value is the rank of the first path in which a given edge appears.
 
 ## How to Cite PathLinker
