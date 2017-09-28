@@ -2,6 +2,7 @@ package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -57,6 +58,7 @@ import org.cytoscape.work.TaskIterator;
 /** Panel for the PathLinker plugin */
 public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
 	/** UI components of the panel */
+    private JPanel _innerPanel;
 	private JPanel _titlePanel;
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
@@ -987,7 +989,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		titlePanelLayout.setHorizontalGroup(titlePanelLayout.createSequentialGroup()
 				.addGroup(titlePanelLayout.createParallelGroup()
 						.addComponent(_logoLabel))
-				.addContainerGap(120, 120)
+				.addPreferredGap(ComponentPlacement.RELATED, 
+				        GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 				.addGroup(titlePanelLayout.createParallelGroup(Alignment.TRAILING, true)
 						.addGroup(titlePanelLayout.createParallelGroup()
 								.addComponent(_titleLabel))
@@ -1262,13 +1265,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Sets up all the sub panel and its components and add to control panel
 	 */
 	private void initializeControlPanel() {
-		// sets up the size of the control panel
-		setMinimumSize(new Dimension(400, 400));
-		setPreferredSize(getMinimumSize());
 
-		// set control panel layout to group layout
-		final GroupLayout mainLayout = new GroupLayout(this);
-		setLayout(mainLayout);
+	    // sets control panel to use border layout for maximizing scroll bar
+	    // creates inner panel for holding all components inside the scroll panel
+	    this.setLayout(new BorderLayout());
+	    _innerPanel = new JPanel(null);
+
+		// set inner panel layout to group layout
+		final GroupLayout mainLayout = new GroupLayout(_innerPanel);
+		_innerPanel.setLayout(mainLayout);
 
 		mainLayout.setAutoCreateContainerGaps(false);
 		mainLayout.setAutoCreateGaps(true);
@@ -1282,7 +1287,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// creates the submit button
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
-		
+
 		_closeButton = new JButton("Close");
 		_closeButton.addActionListener(new ActionListener() {
 		    // close the control panel upon clicking
@@ -1315,6 +1320,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                         .addComponent(_submitButton)
                         .addComponent(_closeButton))
 				);
+
+		// creates scroll panel that creates scroll bar for inner panel
+		JScrollPane scrollPane = new JScrollPane(_innerPanel,
+		        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+		        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setMinimumSize(_innerPanel.getPreferredSize());
+
+		// add scroll panel to control panel
+        this.add(scrollPane);
+        this.setPreferredSize(
+                new Dimension(this.getPreferredSize().width + 20,
+                        this.getPreferredSize().height + 20));
 	}
 
 	@Override
