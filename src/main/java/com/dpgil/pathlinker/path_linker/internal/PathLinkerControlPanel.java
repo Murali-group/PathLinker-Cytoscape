@@ -865,24 +865,28 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_kspSubgraphView.updateView();
 
-		// applies hierarchical layout if the k <= 200
-		if (_model.getK() <= 200)
-			applyHierarchicalLayout();
+		// apply layout according to the k value
+		applyLayout();
 	}
 
 	/**
-	 * Applies hierarchical layout to the sub-network If k <= 200
+	 * Applies hierarchical layout to the sub-network If k <= 200, otherwise default layout
 	 */
-	private void applyHierarchicalLayout() {
+	private void applyLayout() {
+        boolean hierarchical = _model.getK() <= 200;
 
-		// set node layout by applying the hierarchical layout algorithm
-		CyLayoutAlgorithm algo = _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical");
+        // set node layout by applying the default or hierarchical layout algorithm
+        CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
+                : _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
 		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
 				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		_adapter.getTaskManager().execute(iter);
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
 				.getService(SynchronousTaskManager.class);
 		synTaskMan.execute(iter);
+
+		if (!hierarchical) // ends if default layout
+		    return;
 
 		// if we applied the hierarchical layout, by default it is rendered upside down
 		// so we reflect all the nodes about the x axis

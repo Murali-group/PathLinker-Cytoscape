@@ -315,6 +315,8 @@ public class PathLinkerModel {
 
 	/**
 	 * Runs all the necessary algorithms to calculate kth shortest path
+	 * If path exists, selects corresponding nodes and edges in the network
+	 *     to prepare for the subnetwork creation
 	 * @return result, the list of paths
 	 */
 	public ArrayList<Path> runKSP() {
@@ -618,6 +620,14 @@ public class PathLinkerModel {
 		// to change their visual properties later
 		subgraphSources = new HashSet<CyNode>();
 		subgraphTargets = new HashSet<CyNode>();
+
+		// un-select all the selected nodes to make sure only nodes in the path are selected
+		for (CyNode node : originalNetwork.getNodeList())
+		    originalNetwork.getRow(node).set(CyNetwork.SELECTED, false);
+
+		// un-select all the selected edges to make sure only edges in the path are selected
+		for (CyEdge edge : originalNetwork.getEdgeList())
+		    originalNetwork.getRow(edge).set(CyNetwork.SELECTED, false);
 
 		for (Path currPath : paths) {
 			// excluding supersource and supertarget
