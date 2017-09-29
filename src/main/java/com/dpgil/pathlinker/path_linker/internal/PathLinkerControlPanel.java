@@ -508,7 +508,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ArrayList<Path> result = _model.runKSP();
 
 	    // If no paths were found, then exit with this error
-        if (result.size() == 0) {
+        if (_model.getOutputK() == 0) {
             JOptionPane.showMessageDialog(null, 
                     "No paths found", 
                     "Error Message", JOptionPane.ERROR_MESSAGE);
@@ -784,7 +784,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// Apply the new name to the sub-network
 		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
-		String subgraphName = "PathLinker-subnetwork-" + _model.getK() + "-paths";
+		String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths";
 		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 
 		// The current network view is set to the new sub-network view already
@@ -815,7 +815,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Applies hierarchical layout to the sub-network If k <= 200, otherwise default layout
 	 */
 	private void applyLayout() {
-        boolean hierarchical = _model.getK() <= 200;
+        boolean hierarchical = _model.getOutputK() <= 200;
 
         // set node layout by applying the default or hierarchical layout algorithm
         CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
