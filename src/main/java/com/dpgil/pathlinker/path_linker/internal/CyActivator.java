@@ -4,9 +4,6 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.events.ColumnCreatedListener;
 import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
-import org.cytoscape.model.events.NetworkAddedListener;
-import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
 import java.util.Properties;
@@ -78,10 +75,8 @@ extends AbstractCyActivator
 		registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
 		registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
 
-		// handle events triggered by changing, add, delete current network
+		// handle events triggered by changing current network
 		PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
 		registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
-		registerService(context, networkEventListener, NetworkAddedListener.class, new Properties());
-		registerService(context, networkEventListener, NetworkAboutToBeDestroyedListener.class, new Properties());
 	}
 }
