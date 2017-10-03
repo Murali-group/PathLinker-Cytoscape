@@ -979,7 +979,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_sourcesLabel = new JLabel("<html>Sources separated by spaces (e.g., S1 S2 S3)" 
                 + "<br>Must match the 'name' column in the Node Table</html>");
 
-		_sourcesTextField = new HintTextField("Select nodes in the network to add or enter node names manually");
+		_sourcesTextField = new HintTextField("Select nodes in the network to add or enter text manually");
 		_sourcesTextField.setMaximumSize(new Dimension(_sourcesTextField.getMaximumSize().width, 
 		        _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
@@ -991,7 +991,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_targetsLabel = new JLabel("Targets separated by spaces (e.g., T1 T2 T3)");
 
-		_targetsTextField = new HintTextField("Select nodes in the network to add or enter node names manually");
+		_targetsTextField = new HintTextField("Select nodes in the network to add or enter text manually");
 		_targetsTextField.setMaximumSize(new Dimension(_targetsTextField.getMaximumSize().width, 
 		        _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
