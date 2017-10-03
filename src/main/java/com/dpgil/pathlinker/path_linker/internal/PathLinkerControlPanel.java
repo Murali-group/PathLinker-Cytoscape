@@ -641,8 +641,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			    throw new NumberFormatException();
 
 		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid text entered for k: '" + kInput + "'.\n  - Must be a positive integer. Using default k=200.\n");
-			_kValue = 200;
+			errorMessage.append("Invalid text entered for k: '" + kInput + "'.\n  - Must be a positive integer. " +
+                    "\n  - Setting to default: 50.\n");
+			_kValue = 50;
+            _kTextField.setText("50");
 		}
 
 		// gets the option for edge weight setting
@@ -676,13 +678,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             errorMessage.append("Invalid text entered for edge penalty: '" + edgePenaltyInput + "'.\n");
             // invalid number was entered, invoked an exception
             if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-                errorMessage.append("  - Must be a number >= 1.0. Using default probability/multiplicative edge penalty=1.0.\n");
+                errorMessage.append("  - Must be a number >= 1.0 for the probability/multiplicative setting." + 
+                        "\n  - Setting to default: 1.0.\n");
                 _edgePenalty = 1.0;
+				_edgePenaltyTextField.setText("1");
             }
 
             if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-                errorMessage.append("  - Must be a number >= 0. Using default additive edge penalty=0.\n");
+                errorMessage.append("  - Must be a number >= 0 for the additive setting." +
+                        "\n  - Setting to default: 0.0\n");
                 _edgePenalty = 0;
+				_edgePenaltyTextField.setText("0");
             }
         }
 
@@ -1074,7 +1080,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kLabel = new JLabel("k (# of paths): ");
 
 		_kTextField = new JTextField(5);
-		_kTextField.setText("200");
+		_kTextField.setText("50");
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
         _kTextField.setToolTipText("Number of shortest paths to compute");
 
