@@ -6,7 +6,6 @@ import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerControlPanel.PanelState;
 import java.util.Properties;
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -15,8 +14,6 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -42,10 +39,6 @@ extends AbstractCyActivator
 				getService(context, CyServiceRegistrar.class);
 		CyNetworkManager networkManager =
 				getService(context, CyNetworkManager.class);
-		CyNetworkViewFactory networkViewFactory =
-				getService(context, CyNetworkViewFactory.class);
-		CyNetworkViewManager networkViewManager =
-				getService(context, CyNetworkViewManager.class);
 		CyAppAdapter adapter = getService(context, CyAppAdapter.class);
 		CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
 		registerService(
@@ -54,23 +47,10 @@ extends AbstractCyActivator
 				CytoPanelComponent.class,
 				new Properties());
 
-		// sets up the pathlinker open and close menu options
-		PathLinkerOpenMenuAction oplaction =
-				new PathLinkerOpenMenuAction(panel, cyApplicationManager);
-		PathLinkerCloseMenuAction cplaction =
-				new PathLinkerCloseMenuAction(panel, cyApplicationManager);
-		registerAllServices(context, oplaction, new Properties());
-		registerAllServices(context, cplaction, new Properties());
-
-		// sets up the help menu option
-		PathLinkerHelpMenuAction hmaction =
-				new PathLinkerHelpMenuAction(cyApplicationManager, networkViewManager);
-		registerAllServices(context, hmaction, new Properties());
-
-		// sets up the about dialog menu option
-		PathLinkerAboutMenuAction amaction =
-				new PathLinkerAboutMenuAction(cyApplicationManager, cySwingApp, networkViewManager, "1.3", "08.08.2017");
-		registerAllServices(context, amaction, new Properties());
+		// sets up the pathlinker menu option
+		PathLinkerMenuAction panelMenuAction =
+				new PathLinkerMenuAction(panel, cyApplicationManager);
+		registerAllServices(context, panelMenuAction, new Properties());
 
 		// initializes panel
 		panel.initialize(
@@ -78,12 +58,12 @@ extends AbstractCyActivator
 				serviceRegistrar,
 				cyApplicationManager,
 				networkManager,
-				networkViewFactory,
-				networkViewManager,
-				adapter);
+				adapter,
+				"1.3", 
+				"Sept. 22, 2017");
 
 		// starts off the panel in a closed state
-		panel.setPanelState(PanelState.CLOSED);
+		panel.getParent().remove(panel);
 
 		// handle load node to source/target button enable/disable events
 		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();

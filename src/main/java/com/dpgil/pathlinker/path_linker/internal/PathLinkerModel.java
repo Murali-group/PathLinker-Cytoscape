@@ -45,8 +45,10 @@ public class PathLinkerModel {
 	private ArrayList<CyNode> sourcesList;
 	/** The targets to be used in the algorithm */
 	private ArrayList<CyNode> targetsList;
-	/** The k value to be used in the algorithm */
-	private int k;
+	/** The input k value to be used in the algorithm */
+	private int inputK;
+	/** The output k number paths calculated by the algorithm */
+	private int outputK;
 	/** The value by which to penalize each edge weight */
 	private double edgePenalty;
 	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
@@ -79,13 +81,13 @@ public class PathLinkerModel {
 	 * @param includePathScoreTies		 the option to include all paths of equal length
 	 * @param sourcesTextField 			 source node names in string
 	 * @param targetsTextField 			 target node names in string
-	 * @param k					 		 k value
+	 * @param inputK					 input k value
 	 * @param edgeWeightSetting			 edge weight setting
 	 * @param edgePenalty				 edge penalty
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
 	        String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
-			int k, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
+			int inputK, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
 
 		this.originalNetwork 			= originalNetwork;
 		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
@@ -93,7 +95,7 @@ public class PathLinkerModel {
 		this.sourcesTextField 			= sourcesTextField;
 		this.targetsTextField 			= targetsTextField;
 		this.edgeWeightColumnName		= edgeWeightColumnName;
-		this.k 							= k;
+		this.inputK 					= inputK;
 		this.edgeWeightSetting 			= edgeWeightSetting;
 		this.edgePenalty 				= edgePenalty;
 
@@ -176,11 +178,19 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Getter method of k value
-	 * @return k value
+	 * Getter method of input k value
+	 * @return input k value
 	 */
-	public int getK() {
-		return this.k;
+	public int getInputK() {
+		return this.inputK;
+	}
+
+	/**
+	 * Getter method of output k value
+	 * @return output k value
+	 */
+	public int getOutputK() {
+	    return this.outputK;
 	}
 
 	/**
@@ -270,14 +280,6 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Setter method for k value
-	 * @param k value
-	 */
-	public void setK(int k) {
-		this.k = k;
-	}
-
-	/**
 	 * Setter method for edgePenalty
 	 * @param edgePenalty
 	 */
@@ -315,6 +317,8 @@ public class PathLinkerModel {
 
 	/**
 	 * Runs all the necessary algorithms to calculate kth shortest path
+	 * If path exists, selects corresponding nodes and edges in the network
+	 *     to prepare for the subnetwork creation
 	 * @return result, the list of paths
 	 */
 	public ArrayList<Path> runKSP() {
@@ -343,7 +347,7 @@ public class PathLinkerModel {
 
 		// runs the KSP algorithm
 		ArrayList<Path> result = Algorithms.ksp(network, cyNodeToId, superSource, superTarget, 
-				k + commonSourcesTargets, includePathScoreTies);
+				inputK + commonSourcesTargets, includePathScoreTies);
 
 		// discard first _commonSourcesTargets paths
 		// this is for a temporary hack: when there are n nodes that are both
@@ -364,6 +368,9 @@ public class PathLinkerModel {
 
 		// selects all the paths that involved in the resulting for generating ksp subgraph
 		selectKSPSubgraph(result);
+
+		// set the number of paths the subgraph contains
+		outputK = result.size();
 
 		return result;
 	}
@@ -618,6 +625,14 @@ public class PathLinkerModel {
 		// to change their visual properties later
 		subgraphSources = new HashSet<CyNode>();
 		subgraphTargets = new HashSet<CyNode>();
+
+		// un-select all the selected nodes to make sure only nodes in the path are selected
+		for (CyNode node : originalNetwork.getNodeList())
+		    originalNetwork.getRow(node).set(CyNetwork.SELECTED, false);
+
+		// un-select all the selected edges to make sure only edges in the path are selected
+		for (CyEdge edge : originalNetwork.getEdgeList())
+		    originalNetwork.getRow(edge).set(CyNetwork.SELECTED, false);
 
 		for (Path currPath : paths) {
 			// excluding supersource and supertarget

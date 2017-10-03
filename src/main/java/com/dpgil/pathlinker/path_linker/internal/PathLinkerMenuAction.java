@@ -12,30 +12,22 @@ import org.cytoscape.application.swing.AbstractCyAction;
  * @author Daniel Gil
  * @version Nov 4, 2015
  */
-public class PathLinkerOpenMenuAction
-    extends AbstractCyAction
-{
+public class PathLinkerMenuAction extends AbstractCyAction {
     private PathLinkerControlPanel _panel;
-
 
     /**
      * Constructor for the menu option
-     *
-     * @param panel
-     *            the panel to be opened
-     * @param applicationManager
-     *            the application manager to add this option into the menu
+     * @param panel the pathlinker control panel
+     * @param applicationManager the application manager to add this option into the menu
      */
-    public PathLinkerOpenMenuAction(
-        PathLinkerControlPanel panel,
-        CyApplicationManager applicationManager)
-    {
-        super("Open", applicationManager, null, null);
-        setPreferredMenu("Apps.PathLinker");
+    public PathLinkerMenuAction(
+            PathLinkerControlPanel panel,
+            CyApplicationManager applicationManager) {
+        super("PathLinker", applicationManager, null, null);
+        setPreferredMenu("Apps");
 
         _panel = panel;
     }
-
 
     @Override
     public void actionPerformed(ActionEvent arg0)

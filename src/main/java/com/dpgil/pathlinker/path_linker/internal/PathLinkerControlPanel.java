@@ -2,19 +2,26 @@ package com.dpgil.pathlinker.path_linker.internal;
 
 import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -39,8 +46,6 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
@@ -50,45 +55,60 @@ import org.cytoscape.work.TaskIterator;
 /** Panel for the PathLinker plugin */
 public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
 	/** UI components of the panel */
+    private JPanel _innerPanel;
+	private JPanel _titlePanel;
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
-	private JPanel _outputPanel;
+
+	private JLabel _logoLabel;
+	private JLabel _titleLabel;
 	private JLabel _sourcesLabel;
 	private JLabel _targetsLabel;
 	private JLabel _kLabel;
 	private JLabel _edgePenaltyLabel;
-	private JTextField _sourcesTextField;
-	private JTextField _targetsTextField;
+	private JLabel _edgeWeightColumnBoxLabel;
+	// private JLabel _runningMessage;
+
+	private HintTextField _sourcesTextField;
+	private HintTextField _targetsTextField;
 	private JTextField _kTextField;
 	private static JTextField _edgePenaltyTextField;
+
+	private JButton _helpBtn;
+	private JButton _aboutBtn;
 	protected static JButton _loadNodeToSourceButton;
 	protected static JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
-	private JLabel _edgeWeightColumnBoxLabel;
+	private JButton _closeButton;
+
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
 	private static JRadioButton _weightedAdditive;
 	private static JRadioButton _weightedProbabilities;
+
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	private JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
-	// private JLabel _runningMessage;
 
 	private CyServiceRegistrar _serviceRegistrar;
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
 	protected static CyApplicationManager _applicationManager;
-	private CyNetworkManager _networkManager;
+	private static CyNetworkManager _networkManager;
 	private CyAppAdapter _adapter;
 
 	/** The model that runs ksp algorithm from the user input */
 	private PathLinkerModel _model;
-	/** The network to perform the algorithm on */
-	private CyNetwork _network;
+    /** The about dialog box object */
+    private PathLinkerAboutMenuDialog _aboutMenuDialog;
+    /** the version of the current PathLinker app */
+    private String _version;
+    /** the build date of the current PathLinker app */
+    private String _buildDate;
 	/** Parent container of the panel to re add to when we call open */
 	private Container _parent;
 	/** State of the panel. Initially null b/c it isn't open or closed yet */
@@ -122,9 +142,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	/**
 	 * Sets the state of the panel (open or closed).
-	 *
-	 * @param newState
-	 *            the new state
+	 * @param newState the new state
 	 */
 	public void setPanelState(PanelState newState) {
 		if (newState == _state) {
@@ -145,7 +163,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		}
 
 		if (newState == PanelState.CLOSED) {
-			_state = PanelState.CLOSED;
+		    String[] options = {"Yes", "Cancel"};
+		    int choice = JOptionPane.showOptionDialog(null, "Do you want to exit the PathLinker?", 
+		            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+            if (choice != 0) return; // quit if they say cancel
+			
+            _state = PanelState.CLOSED;
 			_parent.remove(this);
 		}
 		// only occurs if panel is previously closed
@@ -179,22 +202,21 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 *            application manager
 	 * @param networkManager
 	 *            network manager
-	 * @param networkViewFactory
-	 *            network view factory
 	 * @param networkViewManager
 	 *            network view manager
 	 * @param adapter
 	 *            the cy application adapter
 	 */
 	public void initialize(CySwingApplication cySwingApp, CyServiceRegistrar serviceRegistrar,
-			CyApplicationManager applicationManager,
-			CyNetworkManager networkManager, CyNetworkViewFactory networkViewFactory,
-			CyNetworkViewManager networkViewManager, CyAppAdapter adapter) {
+			CyApplicationManager applicationManager, CyNetworkManager networkManager, CyAppAdapter adapter,
+			String version, String buildDate) {
 		_cySwingApp = cySwingApp;
 		_serviceRegistrar  = serviceRegistrar;
 		_applicationManager = applicationManager;
 		_networkManager = networkManager;
 		_adapter = adapter;
+		_version = version;
+		_buildDate = buildDate;
 		_parent = this.getParent();
 
 		initializeControlPanel(); // construct the GUI
@@ -254,6 +276,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 			String sourceText = _sourcesTextField.getText();
 
+			if (_sourcesTextField.showingHint)
+			    _sourcesTextField.gainFocus();
+
 			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
 				_sourcesTextField.setText(sourceText + " " + sources.toString());
 			else _sourcesTextField.setText(sourceText + sources.toString());
@@ -278,6 +303,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 			String targetText = _targetsTextField.getText();
 
+	         if (_targetsTextField.showingHint)
+	             _targetsTextField.gainFocus();
+
 			if (targetText.length() > 0 &&
 					targetText.charAt(targetText.length() - 1) != ' ')
 				_targetsTextField.setText(targetText + " " + targets.toString());
@@ -295,6 +323,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		public void actionPerformed(ActionEvent e) {
 			_sourcesTextField.setText("");
 			_targetsTextField.setText("");
+			
+			// gain focus to trigger shadow hint behavior
+			_sourcesTextField.loseFocus();
+			_targetsTextField.loseFocus();
+			
 			_allowSourcesTargetsInPathsOption.setSelected(false);
 			_targetsSameAsSourcesOption.setSelected(false);
 		}
@@ -390,13 +423,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// checks for identical sources/targets option selection to
 		// update the panel values
 		if (_targetsSameAsSourcesOption.isSelected()) {
+		    
+		    // ensure text field is not in shadow text mode
+	          if (_targetsTextField.showingHint)
+	              _targetsTextField.gainFocus();
+		    
 			_targetsTextField.setText(_sourcesTextField.getText());
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
-		
+
 		callRunKSP();
 
-/*		// this looks extremely stupid, but is very important.
+		/*		// this looks extremely stupid, but is very important.
 		// due to the multi-threaded nature of the swing gui, if
 		// this were simply runKSP() and then hideRunningMessage(), java
 		// would assign a thread to the hideRunningMessage and we would
@@ -415,7 +453,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	}
 
-/*	private void showRunningMessage() {
+	/*	private void showRunningMessage() {
 		_runningMessage.setVisible(true);
 		_runningMessage.setForeground(Color.BLUE);
 
@@ -440,7 +478,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// Check to see if network exists before starting reading the values from the panel
 		_originalNetwork = _applicationManager.getCurrentNetwork();
 		if (_originalNetwork == null) {
-			JOptionPane.showMessageDialog(null, "Network not found. Please load a valid network");
+            JOptionPane.showMessageDialog(null, 
+                    "Network not found. Please load a valid network", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -467,6 +507,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// runs the setup and KSP algorithm
 		ArrayList<Path> result = _model.runKSP();
 
+	    // If no paths were found, then exit with this error
+        if (_model.getOutputK() == 0) {
+            JOptionPane.showMessageDialog(null, 
+                    "No paths found", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+		
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
 		createKSPSubgraphAndView();
 
@@ -493,11 +541,15 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// makes sure that we actually have at least one valid source and target
 		if (sources.size() == 0) {
-			JOptionPane.showMessageDialog(null, "There are no valid sources to be used. Quitting...");
+	          JOptionPane.showMessageDialog(null, 
+	                  "There are no valid sources to be used. Quitting...", 
+	                  "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		if (targets.size() == 0) {
-			JOptionPane.showMessageDialog(null, "There are no valid targets to be used. Quitting...");
+            JOptionPane.showMessageDialog(null, 
+                    "There are no valid targets to be used. Quitting...", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -512,19 +564,27 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// edge case where only one source and one target are inputted,
 		// so no paths will be found. warn the user
 		if (sources.size() == 1 && sources.equals(targets)) {
-			JOptionPane.showMessageDialog(null,
-					"The only source node is the same as the only target node. PathLinker will not compute any paths. Please add more nodes to the sources or targets.");
+            JOptionPane.showMessageDialog(null, 
+                    "The only source node is the same as the only target node.\n"
+                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.", 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            
+            return false;
 		}
 
 		// there is some error, tell the user
 		if (errorMessage.length() > 0) {
-			errorMessage.append("Continue anyway?");
-			int choice = JOptionPane.showConfirmDialog(null, errorMessage.toString());
-			if (choice != 0) {
-				// quit if they say no or cancel
-				return false;
-			}
+		    errorMessage.append("Continue?");
+		    
+		    String[] options = {"Yes", "Cancel"};
+		    
+		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
+                    "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+		    
+		    if (choice != 0) // quit if they say cancel
+		        return false;
 		}
+		
 
 		// checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
 		// if a weighted option was selected, but not all edges have weights
@@ -533,13 +593,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_originalNetwork = _model.getOriginalNetwork();
 		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-		    try {
-		        Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
-		    } catch (NullPointerException  e) {
-		        JOptionPane.showMessageDialog(null,
-		                "Weighted option was selected, but there exists at least one edge without a weight. Quitting...");
-	                return false;
-		    }
+			try {
+				Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
+			} catch (NullPointerException  e) {
+		           JOptionPane.showMessageDialog(null, 
+		                   "Weighted option was selected, but there exists at least one edge without a weight. Quitting...", 
+		                   "Error Message", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
 		}
 
 		// successful parsing
@@ -561,8 +622,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		String kInput = _kTextField.getText().trim();
 		try {
 			_kValue = Integer.parseInt(kInput);
+
+			// throw exception if _kValue is a integer but less than 1
+			if (_kValue < 1)
+			    throw new NumberFormatException();
+
 		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid number " + kInput + " entered for k. Using default k=200.\n");
+			errorMessage.append("Invalid number entered for k. Using default k=200.\n");
 			_kValue = 200;
 		}
 
@@ -673,16 +739,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
-		// delete the copy of the network created for running pathlinker
-		_network = null;
-
-		// If no paths were found, then exit with this error
-		// TODO This should be done before the empty kspSubgraph is created 
-		if (paths.size() == 0) {
-			JOptionPane.showMessageDialog(null, "No paths found.");
-			return;
-		}
-
 		// create and register a new panel in result panel with specific title
 		// if user did not generate sub-network then we pass down the original network to the result panel
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
@@ -704,51 +760,31 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	/**
 	 * Creates a new sub-network and sub-network view for the subgraph generated by the KSP
-	 * CONTAINS HACK, more info in the line comments, welcome future modification
 	 */
 	private void createKSPSubgraphAndView() {
 		// creates task iterator and execute it to generate a sub-network from the original network
 		// the bypass values and other styles from the original network will be pass down to the sub-network
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
-		
-		// obtain the current network size before running the TaskIterator 
+
+		// obtain the current network size before running the TaskIterator
 		int currentNetworkSize = _networkManager.getNetworkSet().size();
-		
+
 		_adapter.getTaskManager().execute(subNetworkTask);
 
-		// This IS A HACK
-		// Currently we are aren't able to access the new sub-network
-		// Therefore we are accessing the new sub-network through the network set
-		// We need to pause execution with sleep to wait for the sub network to be added into the network set
-		// The new network is add to the set by detecting if the the network set size is changed
-		// More about the issue:
-		//    https://github.com/Murali-group/PathLinker-Cytoscape/issues/33
-		//    https://groups.google.com/forum/#!topic/cytoscape-app-dev/cSUOwhk30fA
-		// Source of the hack:
-		// https://github.com/smd-faizan/CySpanningTree
-		//    -> PrimsTreadThread.java line 219
+        // sleep until the subgraph is been created
+		// by checking if the size of the network is incremented
 		try {
-		    while (currentNetworkSize == _networkManager.getNetworkSet().size())
-		        Thread.sleep(200);
+			while (currentNetworkSize == _networkManager.getNetworkSet().size())
+				Thread.sleep(200);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		// THIS IS A HACK CONT. 
-		// As we can't access the new sub-network generated from the task
-		// loop through all the networks and find one with the highest SUID, 
-		// which is the SUID of the sub-network we created
-		Set<CyNetwork> allNetworks = _networkManager.getNetworkSet();
-		long maxSUID = Integer.MIN_VALUE;
-		for(CyNetwork network : allNetworks) {
-			if (network.getSUID() > maxSUID) maxSUID = network.getSUID();
-		}
-
 		// Apply the new name to the sub-network
-		_kspSubgraph = _networkManager.getNetwork(maxSUID);
-		String subgraphName = "PathLinker-subnetwork-" + _model.getK() + "-paths";
+		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
+		String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths";
 		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 
 		// The current network view is set to the new sub-network view already
@@ -771,24 +807,28 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_kspSubgraphView.updateView();
 
-		// applies hierarchical layout if the k <= 200
-		if (_model.getK() <= 200)
-			applyHierarchicalLayout();
+		// apply layout according to the k value
+		applyLayout();
 	}
 
 	/**
-	 * Applies hierarchical layout to the sub-network If k <= 200
+	 * Applies hierarchical layout to the sub-network If k <= 200, otherwise default layout
 	 */
-	private void applyHierarchicalLayout() {
+	private void applyLayout() {
+        boolean hierarchical = _model.getOutputK() <= 200;
 
-		// set node layout by applying the hierarchical layout algorithm
-		CyLayoutAlgorithm algo = _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical");
+        // set node layout by applying the default or hierarchical layout algorithm
+        CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
+                : _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
 		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
 				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
 		_adapter.getTaskManager().execute(iter);
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
 				.getService(SynchronousTaskManager.class);
 		synTaskMan.execute(iter);
+
+		if (!hierarchical) // ends if default layout
+		    return;
 
 		// if we applied the hierarchical layout, by default it is rendered upside down
 		// so we reflect all the nodes about the x axis
@@ -833,6 +873,94 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
+     * Sets up title panel
+     * contains the logo and the title of the pathlinker app
+     * contains help and about button
+	 */
+	private void setUpTitlePanel() {
+		if (_titlePanel != null) // stops if panel already created
+			return;
+
+		// initialize the JPanel and group layout
+		_titlePanel = new JPanel();
+		final GroupLayout titlePanelLayout = new GroupLayout(_titlePanel);
+		_titlePanel.setLayout(titlePanelLayout);
+		titlePanelLayout.setAutoCreateContainerGaps(true);
+		titlePanelLayout.setAutoCreateGaps(true);
+
+		// set up all components
+		ImageIcon logo = new ImageIcon(getClass().getResource(("/logo.png")));
+		_logoLabel = new JLabel(new ImageIcon(logo.getImage().getScaledInstance(60, 80, java.awt.Image.SCALE_SMOOTH)));
+		
+		_titleLabel = new JLabel("PathLinker");
+		_titleLabel.setFont(_titleLabel.getFont().deriveFont(32f)); 
+		_titleLabel.setFont(_titleLabel.getFont().deriveFont(Font.BOLD));
+
+		_helpBtn = new JButton("Help");
+		_helpBtn.setToolTipText("Click to learn more on how to use PathLinker");
+		_helpBtn.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        // opens the instruction site upon clicking
+		        try {
+		            Desktop.getDesktop().browse(new URI("http://apps.cytoscape.org/apps/pathlinker"));
+		        }
+		        catch (IOException | URISyntaxException e1) {
+		            e1.printStackTrace();
+		        }
+		    }
+		});
+
+		_aboutBtn = new JButton("About");
+		_aboutBtn.setToolTipText("Click to learn more about PathLinker");
+		_aboutBtn.addActionListener(new ActionListener() {
+		    // sets up the about dialog option
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //display about box
+                synchronized (this) {
+                    if (_aboutMenuDialog == null)
+                        _aboutMenuDialog = new PathLinkerAboutMenuDialog(_cySwingApp, _version, _buildDate);
+
+                    if (!_aboutMenuDialog.isVisible()) {
+                        _aboutMenuDialog.setLocationRelativeTo(null);
+                        _aboutMenuDialog.setVisible(true);
+                    }
+                }
+                _aboutMenuDialog.toFront();     
+            }
+		}); 
+
+		// add all components into the horizontal and vertical group of the GroupLayout
+		titlePanelLayout.setHorizontalGroup(titlePanelLayout.createSequentialGroup()
+				.addGroup(titlePanelLayout.createParallelGroup()
+						.addComponent(_logoLabel))
+				.addPreferredGap(ComponentPlacement.RELATED, 
+				        GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+				.addGroup(titlePanelLayout.createParallelGroup(Alignment.TRAILING, true)
+						.addGroup(titlePanelLayout.createParallelGroup()
+								.addComponent(_titleLabel))
+						.addGroup(titlePanelLayout.createParallelGroup()
+								.addGroup(titlePanelLayout.createSequentialGroup()
+										.addComponent(_helpBtn)
+										.addPreferredGap(ComponentPlacement.RELATED)
+										.addComponent(_aboutBtn))))
+				);
+		titlePanelLayout.setVerticalGroup(titlePanelLayout.createParallelGroup()
+				.addGroup(titlePanelLayout.createSequentialGroup()
+						.addComponent(_logoLabel))
+				.addGroup(titlePanelLayout.createSequentialGroup()
+						.addGroup(titlePanelLayout.createSequentialGroup()
+								.addComponent(_titleLabel))
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addGroup(titlePanelLayout.createSequentialGroup()
+								.addGroup(titlePanelLayout.createParallelGroup()
+										.addComponent(_helpBtn)
+										.addComponent(_aboutBtn))))
+				);
+	}
+
+	/**
 	 * Sets up source target panel
 	 * contains input field for source and target
 	 * contains allow Sources Targets In Paths Option check box
@@ -852,12 +980,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 
-		// sets up all the components
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
-		_sourcesTextField = new JTextField(30);
-		_sourcesTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _sourcesTextField.getPreferredSize().height));
-		_sourcesTextField.setMinimumSize(_sourcesTextField.getPreferredSize());
+		_sourcesTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
+		_sourcesTextField.setMaximumSize(new Dimension(_sourcesTextField.getMaximumSize().width, 
+		        _sourcesTextField.getPreferredSize().height));
 		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToSourceButton = new JButton("Add selected source(s)");
@@ -867,9 +994,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
 
-		_targetsTextField = new JTextField(30);
-		_targetsTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _targetsTextField.getPreferredSize().height));
-		_targetsTextField.setMinimumSize(_targetsTextField.getPreferredSize());
+		_targetsTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
+		_targetsTextField.setMaximumSize(new Dimension(_targetsTextField.getMaximumSize().width, 
+		        _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
 
 		_loadNodeToTargetButton = new JButton("Add selected target(s)");
@@ -878,9 +1005,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
+		_allowSourcesTargetsInPathsOption.setToolTipText("Allow source/target nodes appear as intermediate nodes in "
+		        + "path computed.");
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
+		_targetsSameAsSourcesOption.setToolTipText("Copy the sources to the targets field.");
 		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
@@ -948,32 +1078,39 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_kTextField = new JTextField(5);
 		_kTextField.setText("200");
-		_kTextField.setMinimumSize(_kTextField.getPreferredSize());
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
 
-		_edgePenaltyLabel = new JLabel("Edge penalty:  ");
+		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
+		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
+				+ "is equal to the kth path's length/score");
+
+		_edgePenaltyLabel = new JLabel("Edge penalty: ");
 
 		_edgePenaltyTextField = new JTextField(5);
-		_edgePenaltyTextField.setMinimumSize(_edgePenaltyTextField.getPreferredSize());
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
-		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.TRAILING, true)
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
 				.addGroup(algorithmPanelLayout.createSequentialGroup()
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
+				.addGroup(algorithmPanelLayout.createSequentialGroup()
+						.addComponent(_includePathScoreTiesOption))
 				);
 		algorithmPanelLayout.setVerticalGroup(algorithmPanelLayout.createSequentialGroup()
-				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_kLabel)
 						.addComponent(_kTextField))
 				.addPreferredGap(ComponentPlacement.RELATED)
-				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
 						.addComponent(_edgePenaltyLabel)
 						.addComponent(_edgePenaltyTextField))
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addGroup(algorithmPanelLayout.createParallelGroup(Alignment.CENTER, true)
+						.addComponent(_includePathScoreTiesOption))
 				);
 	}
 
@@ -1052,89 +1189,77 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up the output panel
-	 * Contains check box to include path score ties
-	 */
-	private void setUpOutputPanel() {
-		if (_outputPanel != null) // stops if panel already created
-			return;
-
-		// initialize the JPanel, panel border, and group layout
-		_outputPanel = new JPanel();
-		TitledBorder subGraphBorder = BorderFactory.createTitledBorder("Output");
-		_outputPanel.setBorder(subGraphBorder);
-
-		final GroupLayout outputPanelLayout = new GroupLayout(_outputPanel);
-		_outputPanel.setLayout(outputPanelLayout);
-		outputPanelLayout.setAutoCreateContainerGaps(true);
-		outputPanelLayout.setAutoCreateGaps(true);
-
-	    // sets up all the components
-		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
-		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score is equal to the kth path's length/score");
-
-		// add all components into the horizontal and vertical group of the GroupLayout
-		outputPanelLayout.setHorizontalGroup(outputPanelLayout.createParallelGroup()
-				.addGroup(outputPanelLayout.createParallelGroup(Alignment.LEADING, true)
-						.addComponent(_includePathScoreTiesOption))
-				);
-		outputPanelLayout.setVerticalGroup(outputPanelLayout.createSequentialGroup()
-				.addGroup(outputPanelLayout.createSequentialGroup()
-						.addComponent(_includePathScoreTiesOption))
-				);
-	}
-
-	/**
 	 * Sets up the control panel layout
 	 * Sets up all the sub panel and its components and add to control panel
 	 */
 	private void initializeControlPanel() {
-	    
-	    // sets up the size of the control panel
-		setMinimumSize(new Dimension(340, 400));
-		setPreferredSize(new Dimension(340, 400));
-		
-		// set control panel layout to group layout
-		final GroupLayout mainLayout = new GroupLayout(this);
-		setLayout(mainLayout);
+
+	    // sets control panel to use border layout for maximizing scroll bar
+	    // creates inner panel for holding all components inside the scroll panel
+	    this.setLayout(new BorderLayout());
+	    _innerPanel = new JPanel(null);
+
+		// set inner panel layout to group layout
+		final GroupLayout mainLayout = new GroupLayout(_innerPanel);
+		_innerPanel.setLayout(mainLayout);
 
 		mainLayout.setAutoCreateContainerGaps(false);
 		mainLayout.setAutoCreateGaps(true);
 
 		// sets up all the sub panels and its components
+		setUpTitlePanel();
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
-		setUpOutputPanel();
-		
+
 		// creates the submit button
 		_submitButton = new JButton("Submit");
 		_submitButton.addActionListener(new SubmitButtonListener());
 
-        // add all components into the horizontal and vertical group of the GroupLayout
+		_closeButton = new JButton("Close");
+		_closeButton.addActionListener(new ActionListener() {
+		    // close the control panel upon clicking
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                setPanelState(PanelState.CLOSED);
+            }
+		});
+
+		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+				.addComponent(_titlePanel)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
-				.addComponent(_outputPanel)
-				.addComponent(_submitButton)
+				.addGroup(mainLayout.createSequentialGroup()
+				        .addComponent(_submitButton)
+				        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 300)
+				        .addComponent(_closeButton))
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
+				.addComponent(_titlePanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_sourceTargetPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_algorithmPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_graphPanel)
-				.addComponent(_outputPanel)
-				.addComponent(_submitButton)
+                .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_submitButton)
+                        .addComponent(_closeButton))
 				);
-	}
 
-	/**
-	 * Sets the edge weight value in the network table
-	 */
-	private void setNetworkTableWeight(CyEdge e, double weight) {
-		_network.getRow(e).set("edge_weight", weight);
+		// creates scroll panel that creates scroll bar for inner panel
+		JScrollPane scrollPane = new JScrollPane(_innerPanel,
+		        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+		        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setMinimumSize(_innerPanel.getPreferredSize());
+
+		// add scroll panel to control panel
+        this.add(scrollPane);
+        this.setPreferredSize(
+                new Dimension(this.getPreferredSize().width + 20,
+                        this.getPreferredSize().height + 20));
 	}
 
 	@Override
@@ -1155,5 +1280,67 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	@Override
 	public String getTitle() {
 		return "PathLinker";
+	}
+	
+	/**
+	 * A JTextField class that comes with "ghost test"
+	 * Giving the text field ability to shows hint message that disappears when focus upon
+	 * Source: https://stackoverflow.com/questions/1738966/java-jtextfield-with-input-hint
+	 */
+	class HintTextField extends JTextField implements FocusListener {
+	    
+	    private final String hint;
+	    private boolean showingHint;
+	    
+	    public HintTextField(final String hint) {
+	        super(hint);
+	        this.hint = hint;
+	        this.showingHint = true;
+	        super.setForeground(Color.GRAY);
+	        super.addFocusListener(this);    
+	    }
+
+	    /**
+	     * Method use to remove hint and gray color of the text field
+	     * Use by select node listeners
+	     */
+	    public void gainFocus() {
+            super.setText("");
+            super.setForeground(Color.BLACK);
+            showingHint = false;
+	    }
+	    
+	    /**
+	     * Method use to show hint and gray color of the text field
+	     * Use by clear button listeners
+	     */
+	    public void loseFocus() {
+            super.setText(hint);
+            super.setForeground(Color.GRAY);
+            showingHint = true;      
+	    }
+
+	    @Override
+	    public void focusGained(FocusEvent e) {
+	        if(this.getText().isEmpty()) {
+	            super.setText("");
+	            super.setForeground(Color.BLACK);
+	            showingHint = false;
+	        }
+	    }
+	    
+	    @Override
+	    public void focusLost(FocusEvent e) {
+	        if(this.getText().isEmpty()) {
+	            super.setText(hint);
+	            super.setForeground(Color.GRAY);
+	            showingHint = true;    
+	        }
+	    }
+	    
+	    @Override
+	    public String getText() {
+	        return showingHint ? "" : super.getText();    
+	    }    
 	}
 }
