@@ -237,13 +237,20 @@ public class PathLinkerModel {
 	 * Setter method for sourcesList, sourceNames, and sourcesNotInNet
 	 */
 	public void setSources() {
+		// stores the sources that were inputted but are not actually in the network, may have been mistyped
+		sourcesNotInNet = new ArrayList<String>();
+        // initialize the sourcesList here in case the text field is empty
+        sourcesList = new ArrayList<CyNode>(); 
+
+        // if nothing was entered, then return
+        if (sourcesTextField.length() == 0){
+            return;
+        }
+
 		// splits the names by spaces
 		String[] rawSourceNames = sourcesTextField.split(" ");
 
 		sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
-
-		// stores the sources that were inputted but are not actually in the network, may have been mistyped
-		sourcesNotInNet = new ArrayList<String>();
 
 		// checks for mistyped source names
 		for (String sourceName : sourceNames) {
@@ -260,13 +267,20 @@ public class PathLinkerModel {
 	 * Setter method for targetsList, targetNames, and targetsNotInNet
 	 */
 	public void setTargets() {
+		// stores the targets that were inputted but are not actually in the network, may have been mistyped
+		targetsNotInNet = new ArrayList<String>();
+        // initialize the targetsList here in case the text field is empty
+        targetsList = new ArrayList<CyNode>(); 
+
+        // if nothing was entered, then return
+        if (targetsTextField.length() == 0){
+            return;
+        }
+
 		// splits the names by spaces
 		String[] rawTargetNames = targetsTextField.split(" ");
 
 		targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
-
-		// stores the targets that were inputted but are not actually in the network, may have been mistyped
-		targetsNotInNet = new ArrayList<String>();
 
 		// checks for mistyped target  names
 		for (String targetName : targetNames) {
