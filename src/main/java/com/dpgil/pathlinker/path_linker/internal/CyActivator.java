@@ -6,7 +6,6 @@ import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
 import org.cytoscape.model.events.NetworkAddedListener;
-import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
 import java.util.Properties;
@@ -67,6 +66,13 @@ extends AbstractCyActivator
 
 		// starts off the panel in a closed state
 		panel.getParent().remove(panel);
+
+		// register all necessary services to the bundle
+	    registerService(context, adapter, CyAppAdapter.class, new Properties());
+		registerService(context, cySwingApp, CySwingApplication.class, new Properties());
+		registerService(context, networkManager, CyNetworkManager.class, new Properties());
+		registerService(context, serviceRegistrar, CyServiceRegistrar.class, new Properties());
+		registerService(context, cyApplicationManager, CyApplicationManager.class, new Properties());
 
 		// handle load node to source/target button enable/disable events
 		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();

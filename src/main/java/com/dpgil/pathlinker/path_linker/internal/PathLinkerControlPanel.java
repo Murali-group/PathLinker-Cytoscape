@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -1029,6 +1028,16 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _indexToSUIDMap = new HashMap<Integer, Long>(); // creates a empty index-SUID pair map
         _suidToIndexMap = new HashMap<Long, Integer>(); // creates a empty SUID-index pair map
         initializeNetworkCmb();
+
+        // add action listener to change network when selecting
+        _networkCmb.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                _applicationManager.setCurrentNetwork(
+                        _networkManager.getNetwork(
+                                _indexToSUIDMap.get(_networkCmb.getSelectedIndex())));
+            }
+        });
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
