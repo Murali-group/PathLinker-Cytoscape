@@ -20,8 +20,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -61,6 +64,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
 
+	private JLabel _networkCmbLabel;
 	private JLabel _logoLabel;
 	private JLabel _titleLabel;
 	private JLabel _sourcesLabel;
@@ -83,6 +87,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JButton _closeButton;
 
+	protected static JComboBox<String> _networkCmb;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -129,6 +134,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private static String _savedEdgeWeightSelection;
+	/** The map stores the index-SUID pair of each network inside the networkCmb */
+    protected static Map<Integer, Long> _indexToSUIDMap;
+    /** The map stores the SUID-index pair of each network inside the networkCmb */
+    protected static Map<Long, Integer> _suidToIndexMap;
 	/** The StringBuilder that construct error messages if any to the user */
 	private StringBuilder errorMessage;
 
@@ -367,6 +376,35 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					|| column.getType() == Long.class))
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
+	}
+	
+	/**
+	 * construct/update the combo box items for the network combo box
+	 * Use when the PathLinker starts
+	 *     when network name is changed
+	 */
+	protected static void initializeNetworkCmb() {
+	    
+	    _networkCmb.removeAllItems(); //make sure combo box is empty when initializing
+	    
+	    // No network exists in CytoScape
+	    if (_networkManager == null || _networkManager.getNetworkSet().size() == 0)
+	        return;
+	    
+	    _networkCmb.addItem(""); // add placeholder empty string
+	    
+	    for (CyNetwork network : _networkManager.getNetworkSet()) {
+	        _indexToSUIDMap.put(_networkCmb.getItemCount(), network.getSUID());
+	        _suidToIndexMap.put(network.getSUID(), _networkCmb.getItemCount());
+	        _networkCmb.addItem(network.getRow(network).get(CyNetwork.NAME, String.class));
+	    }
+
+	    // ends if no network is selected, otherwise sets the default value for networkCmb
+	    if (_applicationManager.getCurrentNetwork() == null)
+	        return;
+
+	    _networkCmb.setSelectedItem(
+	            _suidToIndexMap.get(_applicationManager.getCurrentNetwork().getSUID()));
 	}
 
 	/**
@@ -979,6 +1017,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
+		
+		_networkCmbLabel = new JLabel("Select network: ");
+        _networkCmbLabel.setToolTipText("The network to run PathLinker on.");
+
+        _networkCmb = new JComboBox<String>(new String[]{""});
+        _networkCmb.setToolTipText("Select the network to run PathLinke on");
+        _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
+                _networkCmb.getPreferredSize().height));
+        
+        _indexToSUIDMap = new HashMap<Integer, Long>(); // creates a empty index-SUID pair map
+        _suidToIndexMap = new HashMap<Long, Integer>(); // creates a empty SUID-index pair map
+        initializeNetworkCmb();
 
 		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
 
@@ -1020,6 +1070,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
+                .addGroup(sourceTargetPanelLayout.createSequentialGroup()
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1036,6 +1089,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
+                .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
