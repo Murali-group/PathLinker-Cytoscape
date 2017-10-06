@@ -34,6 +34,7 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 
@@ -46,26 +47,32 @@ import org.cytoscape.model.CyTableUtil;
  */
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
+    /** the network manager for the app */
+    private CyNetworkManager _networkManager;
     /** The k shortest paths generated from the network **/
     private final ArrayList<Path> _results;
     /** The current network associated with the result panel **/
     private final CyNetwork _currentNetwork;
     /** The tab title of the result panel **/
     private String _title;
-    private JButton _discardBtn;
+
     private JButton _exportBtn;
+    private JButton _deleteBtn;
     private JTable _resultTable;
     private JScrollPane _resultScrollPane;
 
     /**
      * Constructor for the result frame class
      * @param title the title of the result panel
+     * @param networkManager the network manager of the app
      * @param currentNetwork the current network associated with the result panel
      * @param results the results from pathlinker
      */
-    public PathLinkerResultPanel(String title, CyNetwork currentNetwork, ArrayList<Path> results)
+    public PathLinkerResultPanel(String title, CyNetworkManager networkManager,
+            CyNetwork currentNetwork, ArrayList<Path> results)
     {
         this._title = title;
+        this._networkManager = networkManager;
         this._currentNetwork = currentNetwork;
         this._results = results;
         initializePanel();
@@ -89,13 +96,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
     }
 
     /** 
-     * Listener for the discard button 
+     * Listener for the delete button
      *
-     * Listener is fired when user clicks on the discard button is been clicked
+     * Listener is fired when user clicks on the delete button is been clicked
      */
-    class DiscardButtonListener implements ActionListener {
+    class DeleteButtonListener implements ActionListener {
 
-        // Discard the entire currently selected result panel tab if user chooses yes
+        // Delete the entire currently selected result panel tab if user chooses yes
         @Override
         public void actionPerformed(ActionEvent e) {
 
@@ -105,7 +112,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             ;
             if (choice != 0) return; // quit if select cancel
 
-            Container btnParent = _discardBtn.getParent();
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
+                _networkManager.destroyNetwork(_currentNetwork);
+
+            Container btnParent = _deleteBtn.getParent();
             Container panelParent = btnParent.getParent();
             panelParent.remove(btnParent);
         }
@@ -185,9 +195,9 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         _exportBtn = new JButton("Export");
         _exportBtn.addActionListener(new ExportButtonListener());
 
-        // initialize discard button
-        _discardBtn = new JButton("Discard");
-        _discardBtn.addActionListener(new DiscardButtonListener());
+        // initialize delete button
+        _deleteBtn = new JButton("Delete");
+        _deleteBtn.addActionListener(new DeleteButtonListener());
 
         setupTable(); // initialize result table and scrollable pane
 
@@ -195,14 +205,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_exportBtn)
-                        .addComponent(_discardBtn))
+                        .addComponent(_deleteBtn))
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_resultScrollPane))
                 );
         mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_exportBtn)
-                        .addComponent(_discardBtn))
+                        .addComponent(_deleteBtn))
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_resultScrollPane))
                 );	

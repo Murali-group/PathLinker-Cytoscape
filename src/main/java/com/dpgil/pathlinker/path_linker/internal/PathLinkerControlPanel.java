@@ -392,7 +392,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	    // No network exists in CytoScape
 	    if (_networkManager == null || _networkManager.getNetworkSet().size() == 0)
 	        return;
-	    
+
 	    _networkCmb.addItem(""); // add placeholder empty string
 	    int indexCounter = 1; // the index counter to add before each item
 	    
@@ -782,10 +782,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
+
 		// create and register a new panel in result panel with specific title
 		// if user did not generate sub-network then we pass down the original network to the result panel
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
 				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
+				_networkManager,
 				_kspSubgraph == null ? _applicationManager.getCurrentNetwork() : _kspSubgraph,
 						paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
@@ -825,9 +827,39 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			e.printStackTrace();
 		}
 
-		// Apply the new name to the sub-network
-		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
+		// Create the new name to the sub-network
 		String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths";
+
+		int count = 1;
+		boolean condition = false;
+		List<CyNetwork> networkList = new ArrayList<CyNetwork>();
+        networkList.addAll(_networkManager.getNetworkSet());
+
+        // check if network network already exist
+		for (CyNetwork network : networkList) {
+		    if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName)) {
+		        condition = true;
+		        break;
+		    }
+		}
+
+		// if network name already exist, create alternative name
+		// check if alternative name also exists
+		outerLoop:
+		while (condition) {
+		    for (CyNetwork network : networkList) {
+		        if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName + "-" + count)) {
+		            count++;
+		            continue outerLoop;
+		        }
+		    }
+
+		    subgraphName += ("-" + count);
+		    condition = false;
+		}
+
+		// apply the name to the network
+		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
 		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 
 		// The current network view is set to the new sub-network view already
