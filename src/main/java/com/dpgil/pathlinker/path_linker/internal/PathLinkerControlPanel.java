@@ -384,18 +384,24 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	protected static void initializeNetworkCmb() {
 	    
-	    _networkCmb.removeAllItems(); //make sure combo box is empty when initializing
+	  //make sure combo box and related maps is empty when initializing
+	    _networkCmb.removeAllItems();
+	    _indexToSUIDMap.clear();
+	    _suidToIndexMap.clear();
 	    
 	    // No network exists in CytoScape
 	    if (_networkManager == null || _networkManager.getNetworkSet().size() == 0)
 	        return;
 	    
 	    _networkCmb.addItem(""); // add placeholder empty string
+	    int indexCounter = 1; // the index counter to add before each item
 	    
 	    for (CyNetwork network : _networkManager.getNetworkSet()) {
 	        _indexToSUIDMap.put(_networkCmb.getItemCount(), network.getSUID());
 	        _suidToIndexMap.put(network.getSUID(), _networkCmb.getItemCount());
-	        _networkCmb.addItem(network.getRow(network).get(CyNetwork.NAME, String.class));
+	        _networkCmb.addItem(
+	                indexCounter + ". " + network.getRow(network).get(CyNetwork.NAME, String.class));
+	        indexCounter++;
 	    }
 
 	    // ends if no network is selected, otherwise sets the default value for networkCmb
@@ -1033,9 +1039,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _networkCmb.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                _applicationManager.setCurrentNetwork(
-                        _networkManager.getNetwork(
-                                _indexToSUIDMap.get(_networkCmb.getSelectedIndex())));
+                if (_indexToSUIDMap.containsKey(_networkCmb.getSelectedIndex())) {
+                    _applicationManager.setCurrentNetwork(_networkManager.getNetwork(
+                            _indexToSUIDMap.get(_networkCmb.getSelectedIndex())));
+                }
             }
         });
 
