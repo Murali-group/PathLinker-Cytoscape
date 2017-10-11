@@ -9,6 +9,7 @@ import org.cytoscape.model.events.ColumnNameChangedListener;
 
 /**
  * Listener class for _edgeWeightColumnBox in PathLinkerPanel class
+ *      Updates the _suidToPathIndexMap and _pathIndexToSuidMap
  * Can be use by more GUI objects in the future
  */
 public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, ColumnDeletedListener, ColumnNameChangedListener {
@@ -16,11 +17,19 @@ public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, Co
 	@Override
 	public void handleEvent(ColumnNameChangedEvent e) {
 		PathLinkerControlPanel.updateEdgeWeightColumn();
+
+		long suid = PathLinkerControlPanel._pathIndexToSuidMap.remove(e.getOldColumnName());
+		PathLinkerControlPanel._suidToPathIndexMap.put(suid, e.getNewColumnName());
+		PathLinkerControlPanel._pathIndexToSuidMap.put(e.getNewColumnName(), suid);
 	}
 
 	@Override
 	public void handleEvent(ColumnDeletedEvent e) {
 		PathLinkerControlPanel.updateEdgeWeightColumn();
+
+        PathLinkerControlPanel._suidToPathIndexMap.remove(
+                PathLinkerControlPanel._pathIndexToSuidMap.remove(
+                        e.getColumnName()));
 	}
 
 	@Override

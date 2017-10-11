@@ -68,8 +68,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
      * @param currentNetwork the current network associated with the result panel
      * @param results the results from pathlinker
      */
-    public PathLinkerResultPanel(String title, CyNetworkManager networkManager,
-            CyNetwork currentNetwork, ArrayList<Path> results)
+    public PathLinkerResultPanel(String title,
+            CyNetworkManager networkManager,
+            CyNetwork currentNetwork,
+            ArrayList<Path> results)
     {
         this._title = title;
         this._networkManager = networkManager;
@@ -109,11 +111,31 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             String[] options = {"Yes", "Cancel"};
             int choice = JOptionPane.showOptionDialog(null, "Result will be permanently removed. Continue?", 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-            ;
+
             if (choice != 0) return; // quit if select cancel
 
+            // in order to remove path linker index, we must first make sure that there exists
+            // at least one network in the network list
+            if (_networkManager.getNetworkSet().size() > 0) {
+                CyNetwork network = _networkManager.getNetwork(
+                        _networkManager.getNetworkSet().iterator().next().getSUID());
+
+                // remove path index column if it exists
+                if (network != null && network.getDefaultEdgeTable()
+                        .getColumn(PathLinkerControlPanel._suidToPathIndexMap
+                                .get(_currentNetwork.getSUID())) != null)
+                    network.getDefaultEdgeTable().
+                    deleteColumn(PathLinkerControlPanel._suidToPathIndexMap.get(_currentNetwork.getSUID()));
+            }
+
+            // destroy the network associate with the result panel
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
                 _networkManager.destroyNetwork(_currentNetwork);
+
+            // clean up the suid-pathindex and pathindex-suid maps
+            PathLinkerControlPanel._pathIndexToSuidMap.remove(
+                    PathLinkerControlPanel._suidToPathIndexMap.remove(
+                            _currentNetwork.getSUID()));
 
             Container btnParent = _deleteBtn.getParent();
             Container panelParent = btnParent.getParent();
@@ -271,11 +293,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         // disable resize for horizontal scroll bar
         _resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _resultTable.getSelectionModel().addListSelectionListener(new ResultTableListener());
-        
+
         // set the view size for the scroll pane
         _resultTable.setPreferredScrollableViewportSize(_resultTable.getPreferredSize());
         _resultTable.setFillsViewportHeight(true);
-        
+
         // create scroll pane
         _resultScrollPane = new JScrollPane(_resultTable, 
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);

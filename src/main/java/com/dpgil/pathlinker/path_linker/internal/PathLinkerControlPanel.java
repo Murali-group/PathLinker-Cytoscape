@@ -138,6 +138,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
     /** The map stores the SUID-index pair of each network inside the networkCmb */
     protected static Map<Long, Integer> _suidToIndexMap;
 	/** The StringBuilder that construct error messages if any to the user */
+    protected static Map<Long, String> _suidToPathIndexMap;
+    protected static Map<String, Long> _pathIndexToSuidMap;
 	private StringBuilder errorMessage;
 
 	/** The state of the panel */
@@ -226,6 +228,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_version = version;
 		_buildDate = buildDate;
 		_parent = this.getParent();
+
+		// initialize the maps for path index columns
+		_suidToPathIndexMap = new HashMap<Long, String>();
+		_pathIndexToSuidMap = new HashMap<String, Long>();
 
 		initializeControlPanel(); // construct the GUI
 	}
@@ -775,6 +781,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						_originalNetwork.getRow(edge).set(columnName,  i + 1);
 			}
 		}
+
+		// add the newly created column into the maps
+        _pathIndexToSuidMap.put(columnName, _kspSubgraph.getSUID());
+        _suidToPathIndexMap.put(_kspSubgraph.getSUID(), columnName);
 	}
 
 	/**
@@ -784,12 +794,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private void writeResult(ArrayList<Path> paths) {
 
 		// create and register a new panel in result panel with specific title
-		// if user did not generate sub-network then we pass down the original network to the result panel
 		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
 				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
-				_networkManager,
-				_kspSubgraph == null ? _applicationManager.getCurrentNetwork() : _kspSubgraph,
-						paths);
+				_networkManager, _kspSubgraph, paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 
 		// open and show the result panel if in hide state
