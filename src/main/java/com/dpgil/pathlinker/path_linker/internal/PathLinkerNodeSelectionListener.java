@@ -8,18 +8,31 @@ import org.cytoscape.model.events.RowsSetListener;
 /** Listener class for _loadNodeToSourceButton and _loadNodeToTargetButton in PathLinkerPanel class */
 public class PathLinkerNodeSelectionListener implements RowsSetListener {
 
+    // field to enable/disable updating netowrk combo box
+    private static boolean active = true;
+
+    /**
+     * Setter method for active field
+     * @param active true if enable updating network combo box
+     *          false if disable
+     */
+    public static void setActive(boolean active) {
+        PathLinkerNodeSelectionListener.active = active;
+    }
+
 	/**
 	 * Enables the buttons if user selects a node in the network view, otherwise disable
 	 */
 	@Override
 	public void handleEvent(RowsSetEvent e) {
 
-	    // update the networkCmb if user changes rename certain network
-	    if (e.containsColumn(CyNetwork.NAME)) {
+	    // update the networkCmb if active is set to true
+	    // and if user changes rename certain network
+	    if (active && e.containsColumn(CyNetwork.NAME)) {
 	        PathLinkerControlPanel.initializeNetworkCmb();
 	        return;
 	    }
-		
+
 	    // if event is triggered by unselect/select an edge or blank screen then do nothing
 		// since user may select node and then edge simultaneously
 		// if event is triggered by selecting blank screen, then unselect nodes will triggered another RowsSetEvent to disable buttons

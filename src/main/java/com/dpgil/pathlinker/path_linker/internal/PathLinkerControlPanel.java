@@ -563,9 +563,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                     "Error Message", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-		
+
+        // disable the action to update the network combo box while creating the new network
+        PathLinkerNodeSelectionListener.setActive(false);
+
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
 		createKSPSubgraphAndView();
+
+		// enables the action to update the network combo box after creating the new network
+		PathLinkerNodeSelectionListener.setActive(true);
+
+		// manually updates the network combo box after creating the new network
+		initializeNetworkCmb();
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
