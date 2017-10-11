@@ -32,6 +32,7 @@ import javax.swing.table.TableColumn;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
@@ -108,25 +109,45 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         @Override
         public void actionPerformed(ActionEvent e) {
 
+            // obtain the path linker index column before removal
+            CyNetwork network = null;
+            CyColumn pathIndexColumn = null;
+
+            // to obtain, we must first make sure that there exists
+            // at least one network in the network list
+            if (_networkManager.getNetworkSet().size() > 0) {
+                network = _networkManager.getNetwork(
+                        _networkManager.getNetworkSet().iterator().next().getSUID());
+
+                // remove path index column if it exists
+                if (network != null) {
+                    pathIndexColumn = network.getDefaultEdgeTable()
+                            .getColumn(PathLinkerControlPanel._suidToPathIndexMap
+                                    .get(_currentNetwork.getSUID()));
+                }
+            }
+
+            // create error messages
+            StringBuilder errorMessage = new StringBuilder("Following item(s) will be permanently removed: \n");
+            errorMessage.append(getTitle() + "\n");
+
+            if (pathIndexColumn != null)
+                errorMessage.append(pathIndexColumn.getName() + "\n");
+
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
+                errorMessage.append(_currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "\n");
+
+            errorMessage.append("\nContinue?");
+            
             String[] options = {"Yes", "Cancel"};
-            int choice = JOptionPane.showOptionDialog(null, "Result will be permanently removed. Continue?", 
+            int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
             if (choice != 0) return; // quit if select cancel
 
-            // in order to remove path linker index, we must first make sure that there exists
-            // at least one network in the network list
-            if (_networkManager.getNetworkSet().size() > 0) {
-                CyNetwork network = _networkManager.getNetwork(
-                        _networkManager.getNetworkSet().iterator().next().getSUID());
-
-                // remove path index column if it exists
-                if (network != null && network.getDefaultEdgeTable()
-                        .getColumn(PathLinkerControlPanel._suidToPathIndexMap
-                                .get(_currentNetwork.getSUID())) != null)
-                    network.getDefaultEdgeTable().
-                    deleteColumn(PathLinkerControlPanel._suidToPathIndexMap.get(_currentNetwork.getSUID()));
-            }
+            // remove network and path index column if exist
+            if (network != null && pathIndexColumn != null)
+                network.getDefaultEdgeTable().deleteColumn(pathIndexColumn.getName());
 
             // destroy the network associate with the result panel
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
