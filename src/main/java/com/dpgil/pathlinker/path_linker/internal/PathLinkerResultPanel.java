@@ -129,17 +129,20 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
             // create error messages
             StringBuilder errorMessage = new StringBuilder("Following item(s) will be permanently removed: \n");
-            errorMessage.append(getTitle() + "\n");
-
-            if (pathIndexColumn != null)
-                errorMessage.append(pathIndexColumn.getName() + "\n");
 
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
-                errorMessage.append(_currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "\n");
+                errorMessage.append("<html><b>Network:</b> " +
+                        _currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "<html>\n");
+
+            errorMessage.append("<html><b>Results Panel tab:</b> " + getTitle() + "<html>\n");
+
+            if (pathIndexColumn != null)
+                errorMessage.append("<html><b>Edge Table column:</b> " +
+                        pathIndexColumn.getName() + "<html>\n");
 
             errorMessage.append("\nContinue?");
-            
-            String[] options = {"Yes", "Cancel"};
+
+            String[] options = {"Continue", "Cancel"};
             int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 

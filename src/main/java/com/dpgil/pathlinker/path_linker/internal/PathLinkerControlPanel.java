@@ -133,14 +133,19 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private static String _savedEdgeWeightSelection;
+    /** The StringBuilder that construct error messages if any to the user */
+    private StringBuilder errorMessage;
+
 	/** The map stores the index-SUID pair of each network inside the networkCmb */
     protected static Map<Integer, Long> _indexToSUIDMap;
     /** The map stores the SUID-index pair of each network inside the networkCmb */
     protected static Map<Long, Integer> _suidToIndexMap;
-	/** The StringBuilder that construct error messages if any to the user */
+	/** The map stores the SUID to path index column name pair of each network */
     protected static Map<Long, String> _suidToPathIndexMap;
+    /** The map stores path index column name to SUID pair of each network */
     protected static Map<String, Long> _pathIndexToSuidMap;
-	private StringBuilder errorMessage;
+    /** Global sync index number to sync network, Path Index, and result names upon creation */
+    protected static int nameIndex;
 
 	/** The state of the panel */
 	public enum PanelState {
@@ -232,6 +237,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// initialize the maps for path index columns
 		_suidToPathIndexMap = new HashMap<Long, String>();
 		_pathIndexToSuidMap = new HashMap<String, Long>();
+
+		// initialize the name index field
+		nameIndex = 0;
 
 		initializeControlPanel(); // construct the GUI
 	}
@@ -567,6 +575,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         // disable the action to update the network combo box while creating the new network
         PathLinkerNodeSelectionListener.setActive(false);
 
+        // increment the index use for creating the network, path index column, and result panel
+        nameIndex++;
+
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
 		createKSPSubgraphAndView();
 
@@ -578,6 +589,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
+
+		updateNetworkName();
 
 		// writes the result of the algorithm to a table
 		writeResult(result);
@@ -759,12 +772,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * 			the sorted paths of the network generated from the algorithm
 	 */
 	private void updatePathIndexAttribute(ArrayList<Path> paths) {
-		// create a new attribute "path index n" in the network edge table, where n is an unique number
-		int columnNum = 1;
-		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + columnNum) != null)
-			columnNum++;
+		// Use nameIndex to create a new attribute "path index n"
+	    // in the network edge table, where n is an unique number
+		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + nameIndex) != null)
+			nameIndex++;
 
-		String columnName = "path index " + (columnNum);
+		String columnName = "path index " + nameIndex;
 		_originalNetwork.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
 
 		for (int i = 0; i < paths.size(); i++) {
@@ -803,8 +816,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private void writeResult(ArrayList<Path> paths) {
 
 		// create and register a new panel in result panel with specific title
-		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
-				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
+	    // the result panel name will be sync with network and path index using nameIndex
+		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(String.valueOf(nameIndex),
 				_networkManager, _kspSubgraph, paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 
@@ -843,43 +856,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			e.printStackTrace();
 		}
 
-		// Create the new name to the sub-network
-		String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths";
-
-		int count = 1;
-		boolean condition = false;
-		List<CyNetwork> networkList = new ArrayList<CyNetwork>();
-        networkList.addAll(_networkManager.getNetworkSet());
-
-        // check if network network already exist
-		for (CyNetwork network : networkList) {
-		    if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName)) {
-		        condition = true;
-		        break;
-		    }
-		}
-
-		// if network name already exist, create alternative name
-		// check if alternative name also exists
-		outerLoop:
-		while (condition) {
-		    for (CyNetwork network : networkList) {
-		        if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName + "-" + count)) {
-		            count++;
-		            continue outerLoop;
-		        }
-		    }
-
-		    subgraphName += ("-" + count);
-		    condition = false;
-		}
-
-		// apply the name to the network
-		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
-		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
-
 		// The current network view is set to the new sub-network view already
 		// while current network is still the originalNetwork
+        _kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
 		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
 
 		// use a visual bypass to color the sources and targets for the sub-network view
@@ -900,6 +879,46 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// apply layout according to the k value
 		applyLayout();
+	}
+
+	/**
+	 * Assign appropriate network name to the new sub-network created using nameIndex field
+	 */
+	public void updateNetworkName() {
+	    // Create the new name to the sub-network
+        String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths-" + nameIndex;
+
+        int count = 1;
+        boolean condition = false;
+        List<CyNetwork> networkList = new ArrayList<CyNetwork>();
+        networkList.addAll(_networkManager.getNetworkSet());
+
+        // check if network network already exist
+        for (CyNetwork network : networkList) {
+            if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName)) {
+                condition = true;
+                break;
+            }
+        }
+
+        // if network name already exist, create alternative name
+        // check if alternative name also exists
+        outerLoop:
+        while (condition) {
+            for (CyNetwork network : networkList) {
+                if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().
+                        equals(subgraphName + " (" + count + ")")) {
+                    count++;
+                    continue outerLoop;
+                }
+            }
+
+            subgraphName += (" (" + count + ")");
+            condition = false;
+        }
+
+        // apply the name to the network
+        _kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 	}
 
 	/**
