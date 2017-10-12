@@ -109,24 +109,6 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         @Override
         public void actionPerformed(ActionEvent e) {
 
-            // obtain the path linker index column before removal
-            CyNetwork network = null;
-            CyColumn pathIndexColumn = null;
-
-            // to obtain, we must first make sure that there exists
-            // at least one network in the network list
-            if (_networkManager.getNetworkSet().size() > 0) {
-                network = _networkManager.getNetwork(
-                        _networkManager.getNetworkSet().iterator().next().getSUID());
-
-                // remove path index column if it exists
-                if (network != null) {
-                    pathIndexColumn = network.getDefaultEdgeTable()
-                            .getColumn(PathLinkerControlPanel._suidToPathIndexMap
-                                    .get(_currentNetwork.getSUID()));
-                }
-            }
-
             // create error messages
             StringBuilder errorMessage = new StringBuilder("Following item(s) will be permanently removed: \n");
 
@@ -135,6 +117,16 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
                         _currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "<html>\n");
 
             errorMessage.append("<html><b>Results Panel tab:</b> " + getTitle() + "<html>\n");
+
+            // obtain the path linker index column if network exists or column exists
+            CyColumn pathIndexColumn = null;
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null
+                    && PathLinkerControlPanel._suidToPathIndexMap
+                    .get(_currentNetwork.getSUID()) != null) {
+                pathIndexColumn = _currentNetwork.getDefaultEdgeTable()
+                        .getColumn(PathLinkerControlPanel._suidToPathIndexMap
+                                .get(_currentNetwork.getSUID()));
+            }
 
             if (pathIndexColumn != null)
                 errorMessage.append("<html><b>Edge Table column:</b> " +
@@ -149,8 +141,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             if (choice != 0) return; // quit if select cancel
 
             // remove network and path index column if exist
-            if (network != null && pathIndexColumn != null)
-                network.getDefaultEdgeTable().deleteColumn(pathIndexColumn.getName());
+            if (pathIndexColumn != null)
+                _currentNetwork.getDefaultEdgeTable().deleteColumn(pathIndexColumn.getName());
 
             // destroy the network associate with the result panel
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
