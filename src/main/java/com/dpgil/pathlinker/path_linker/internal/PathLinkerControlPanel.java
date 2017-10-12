@@ -71,7 +71,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JLabel _kLabel;
 	private JLabel _edgePenaltyLabel;
 	private JLabel _edgeWeightColumnBoxLabel;
-	// private JLabel _runningMessage;
+	private JLabel _runningMessage;
 
 	private HintTextField _sourcesTextField;
 	private HintTextField _targetsTextField;
@@ -475,7 +475,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Will be removed after alternative is found
 	 */
 	private void prepareAndRunKSP() {
-		// showRunningMessage();
+		showRunningMessage();
 
 		// checks for identical sources/targets option selection to
 		// update the panel values
@@ -489,9 +489,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
 
-		callRunKSP();
+		// callRunKSP();
 
-		/*		// this looks extremely stupid, but is very important.
+		// this looks extremely stupid, but is very important.
 		// due to the multi-threaded nature of the swing gui, if
 		// this were simply runKSP() and then hideRunningMessage(), java
 		// would assign a thread to the hideRunningMessage and we would
@@ -506,23 +506,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					hideRunningMessage();
 				}
 			}
-		});*/
+		});
 
 	}
 
-	/*	private void showRunningMessage() {
+		private void showRunningMessage() {
 		_runningMessage.setVisible(true);
-		_runningMessage.setForeground(Color.BLUE);
-
-		repaint();
-		revalidate();
 	}
 
 	private void hideRunningMessage() {
 		_runningMessage.setVisible(false);
-		repaint();
-		revalidate();
-	}*/
+	}
 
 	/**
 	 * access user inputs to create the model for running ksp algorithm
@@ -1364,6 +1358,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             }
 		});
 
+		// initialize the running message
+		// set to invisible and only visible when pathlinker is generating subnetwork
+        _runningMessage = new JLabel("<html><b>Generating subnetwork...</b></html>");
+        _runningMessage.setForeground(Color.BLUE);
+        hideRunningMessage();
+
 		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_titlePanel)
@@ -1372,7 +1372,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_graphPanel)
 				.addGroup(mainLayout.createSequentialGroup()
 				        .addComponent(_submitButton)
-				        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 300)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
+		                .addComponent(_runningMessage)
+		                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
 				        .addComponent(_closeButton))
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
@@ -1385,6 +1387,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_graphPanel)
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_submitButton)
+                        .addComponent(_runningMessage)
                         .addComponent(_closeButton))
 				);
 
