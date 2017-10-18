@@ -32,8 +32,10 @@ import javax.swing.table.TableColumn;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 
@@ -46,26 +48,34 @@ import org.cytoscape.model.CyTableUtil;
  */
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
+    /** the network manager for the app */
+    private CyNetworkManager _networkManager;
     /** The k shortest paths generated from the network **/
     private final ArrayList<Path> _results;
     /** The current network associated with the result panel **/
     private final CyNetwork _currentNetwork;
     /** The tab title of the result panel **/
     private String _title;
-    private JButton _discardBtn;
+
     private JButton _exportBtn;
+    private JButton _deleteBtn;
     private JTable _resultTable;
     private JScrollPane _resultScrollPane;
 
     /**
      * Constructor for the result frame class
      * @param title the title of the result panel
+     * @param networkManager the network manager of the app
      * @param currentNetwork the current network associated with the result panel
      * @param results the results from pathlinker
      */
-    public PathLinkerResultPanel(String title, CyNetwork currentNetwork, ArrayList<Path> results)
+    public PathLinkerResultPanel(String title,
+            CyNetworkManager networkManager,
+            CyNetwork currentNetwork,
+            ArrayList<Path> results)
     {
         this._title = title;
+        this._networkManager = networkManager;
         this._currentNetwork = currentNetwork;
         this._results = results;
         initializePanel();
@@ -89,23 +99,61 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
     }
 
     /** 
-     * Listener for the discard button 
+     * Listener for the delete button
      *
-     * Listener is fired when user clicks on the discard button is been clicked
+     * Listener is fired when user clicks on the delete button is been clicked
      */
-    class DiscardButtonListener implements ActionListener {
+    class DeleteButtonListener implements ActionListener {
 
-        // Discard the entire currently selected result panel tab if user chooses yes
+        // Delete the entire currently selected result panel tab if user chooses yes
         @Override
         public void actionPerformed(ActionEvent e) {
 
-            String[] options = {"Yes", "Cancel"};
-            int choice = JOptionPane.showOptionDialog(null, "Result will be permanently removed. Continue?", 
+            // create error messages
+            StringBuilder errorMessage = new StringBuilder("Following item(s) will be permanently removed: \n");
+
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
+                errorMessage.append("<html><b>Network:</b> " +
+                        _currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "<html>\n");
+
+            errorMessage.append("<html><b>Results Panel tab:</b> " + getTitle() + "<html>\n");
+
+            // obtain the path linker index column if network exists or column exists
+            CyColumn pathIndexColumn = null;
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null
+                    && PathLinkerControlPanel._suidToPathIndexMap
+                    .get(_currentNetwork.getSUID()) != null) {
+                pathIndexColumn = _currentNetwork.getDefaultEdgeTable()
+                        .getColumn(PathLinkerControlPanel._suidToPathIndexMap
+                                .get(_currentNetwork.getSUID()));
+            }
+
+            if (pathIndexColumn != null)
+                errorMessage.append("<html><b>Edge Table column:</b> " +
+                        pathIndexColumn.getName() + "<html>\n");
+
+            errorMessage.append("\nContinue?");
+
+            String[] options = {"Continue", "Cancel"};
+            int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-            ;
+
             if (choice != 0) return; // quit if select cancel
 
-            Container btnParent = _discardBtn.getParent();
+            // remove network and path index column if exist
+            if (pathIndexColumn != null)
+                _currentNetwork.getDefaultEdgeTable().deleteColumn(pathIndexColumn.getName());
+
+            // destroy the network associate with the result panel
+            if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
+                _networkManager.destroyNetwork(_currentNetwork);
+
+            // clean up the suid-pathindex and pathindex-suid maps
+            PathLinkerControlPanel._pathIndexToSuidMap.remove(
+                    PathLinkerControlPanel._suidToPathIndexMap.remove(
+                            _currentNetwork.getSUID()));
+
+            Container btnParent = _deleteBtn.getParent();
             Container panelParent = btnParent.getParent();
             panelParent.remove(btnParent);
         }
@@ -185,9 +233,9 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         _exportBtn = new JButton("Export");
         _exportBtn.addActionListener(new ExportButtonListener());
 
-        // initialize discard button
-        _discardBtn = new JButton("Discard");
-        _discardBtn.addActionListener(new DiscardButtonListener());
+        // initialize delete button
+        _deleteBtn = new JButton("Delete");
+        _deleteBtn.addActionListener(new DeleteButtonListener());
 
         setupTable(); // initialize result table and scrollable pane
 
@@ -195,14 +243,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_exportBtn)
-                        .addComponent(_discardBtn))
+                        .addComponent(_deleteBtn))
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_resultScrollPane))
                 );
         mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_exportBtn)
-                        .addComponent(_discardBtn))
+                        .addComponent(_deleteBtn))
                 .addGroup(mainLayout.createSequentialGroup()
                         .addComponent(_resultScrollPane))
                 );	
@@ -261,11 +309,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         // disable resize for horizontal scroll bar
         _resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _resultTable.getSelectionModel().addListSelectionListener(new ResultTableListener());
-        
+
         // set the view size for the scroll pane
         _resultTable.setPreferredScrollableViewportSize(_resultTable.getPreferredSize());
         _resultTable.setFillsViewportHeight(true);
-        
+
         // create scroll pane
         _resultScrollPane = new JScrollPane(_resultTable, 
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);

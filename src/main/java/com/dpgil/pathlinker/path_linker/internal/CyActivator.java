@@ -4,6 +4,8 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.events.ColumnCreatedListener;
 import org.cytoscape.model.events.ColumnDeletedListener;
 import org.cytoscape.model.events.ColumnNameChangedListener;
+import org.cytoscape.model.events.NetworkAddedListener;
+import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetListener;
 
 import java.util.Properties;
@@ -65,6 +67,13 @@ extends AbstractCyActivator
 		// starts off the panel in a closed state
 		panel.getParent().remove(panel);
 
+		// register all necessary services to the bundle
+	    registerService(context, adapter, CyAppAdapter.class, new Properties());
+		registerService(context, cySwingApp, CySwingApplication.class, new Properties());
+		registerService(context, networkManager, CyNetworkManager.class, new Properties());
+		registerService(context, serviceRegistrar, CyServiceRegistrar.class, new Properties());
+		registerService(context, cyApplicationManager, CyApplicationManager.class, new Properties());
+
 		// handle load node to source/target button enable/disable events
 		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
 		registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
@@ -75,8 +84,10 @@ extends AbstractCyActivator
 		registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
 		registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
 
-		// handle events triggered by changing current network
+		// handle events triggered by changing, add, delete current network
 		PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
 		registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
+		registerService(context, networkEventListener, NetworkAddedListener.class, new Properties());
+		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
 	}
 }
