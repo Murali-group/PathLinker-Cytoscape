@@ -814,10 +814,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Applies hierarchical layout to the sub-network If k <= 200, otherwise default layout
+	 * Applies hierarchical layout to the sub-network If k <= 2000, otherwise the users default layout will be applied
 	 */
 	private void applyLayout() {
-        boolean hierarchical = _model.getOutputK() <= 200;
+        // Applying the hierarchical layout is quick for a small number of nodes and edges. 
+        // Applying the hierarchical layout took ~2 sec for k=1000, ~10 sec for k=2000, and ~5 min for k=5000. 
+        // The user can apply the layout after generating the network, so to keep running time down, set the max to k=2000
+        boolean hierarchical = _model.getOutputK() <= 2000;
 
         // set node layout by applying the default or hierarchical layout algorithm
         CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
@@ -844,31 +847,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// reflect nodes about the x-axis because the default hierarchical
 		// layout renders the nodes upside down
-		// reflect nodes
-		double maxY = Integer.MIN_VALUE;
-		double minY = Integer.MAX_VALUE;
+		// Update: only reflect nodes if k < 200. For k >= 200, the hierarchical layout is right-side up
+		if (_model.getOutputK() < 200){
+			double maxY = Integer.MIN_VALUE;
+			double minY = Integer.MAX_VALUE;
 
-		// finds the midpoint x coordinate
-		for (CyNode node : _kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+			// finds the midpoint x coordinate
+			for (CyNode node : _kspSubgraph.getNodeList()) {
+				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
+				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
-			if (yCoord > maxY)
-				maxY = yCoord;
+				if (yCoord > maxY)
+					maxY = yCoord;
 
-			if (yCoord < minY)
-				minY = yCoord;
-		}
+				if (yCoord < minY)
+					minY = yCoord;
+			}
 
-		double midY = (maxY + minY) / 2;
+			double midY = (maxY + minY) / 2;
 
-		// reflects each node about the midpoint x axis
-		for (CyNode node : _kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+			// reflects each node about the midpoint x axis
+			for (CyNode node : _kspSubgraph.getNodeList()) {
+				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
+				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
-			double newY = -1 * yCoord + 2 * midY;
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
+				double newY = -1 * yCoord + 2 * midY;
+				nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
+			}
 		}
 
 		_kspSubgraphView.updateView();
