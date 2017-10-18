@@ -20,7 +20,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.*;
@@ -61,6 +63,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
 
+	private JLabel _networkCmbLabel;
 	private JLabel _logoLabel;
 	private JLabel _titleLabel;
 	private JLabel _sourcesLabel;
@@ -68,7 +71,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JLabel _kLabel;
 	private JLabel _edgePenaltyLabel;
 	private JLabel _edgeWeightColumnBoxLabel;
-	// private JLabel _runningMessage;
+	private JLabel _runningMessage;
 
 	private HintTextField _sourcesTextField;
 	private HintTextField _targetsTextField;
@@ -83,6 +86,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JButton _submitButton;
 	private JButton _closeButton;
 
+	protected static JComboBox<String> _networkCmb;
 	protected static JComboBox<String> _edgeWeightColumnBox;
 	private static ButtonGroup _weightedOptionGroup;
 	private static JRadioButton _unweighted;
@@ -129,8 +133,19 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private static String _savedEdgeWeightSelection;
-	/** The StringBuilder that construct error messages if any to the user */
-	private StringBuilder errorMessage;
+    /** The StringBuilder that construct error messages if any to the user */
+    private StringBuilder errorMessage;
+
+	/** The map stores the index-SUID pair of each network inside the networkCmb */
+    protected static Map<Integer, Long> _indexToSUIDMap;
+    /** The map stores the SUID-index pair of each network inside the networkCmb */
+    protected static Map<Long, Integer> _suidToIndexMap;
+	/** The map stores the SUID to path index column name pair of each network */
+    protected static Map<Long, String> _suidToPathIndexMap;
+    /** The map stores path index column name to SUID pair of each network */
+    protected static Map<String, Long> _pathIndexToSuidMap;
+    /** Global sync index number to sync network, Path Index, and result names upon creation */
+    protected static int nameIndex;
 
 	/** The state of the panel */
 	public enum PanelState {
@@ -219,6 +234,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_version = version;
 		_buildDate = buildDate;
 		_parent = this.getParent();
+
+		// initialize the maps for path index columns
+		_suidToPathIndexMap = new HashMap<Long, String>();
+		_pathIndexToSuidMap = new HashMap<String, Long>();
+
+		// initialize the name index field
+		nameIndex = 0;
 
 		initializeControlPanel(); // construct the GUI
 	}
@@ -369,6 +391,41 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
+	
+	/**
+	 * construct/update the combo box items for the network combo box
+	 * Use when the PathLinker starts
+	 *     when network name is changed
+	 */
+	protected static void initializeNetworkCmb() {
+	    
+	  //make sure combo box and related maps is empty when initializing
+	    _networkCmb.removeAllItems();
+	    _indexToSUIDMap.clear();
+	    _suidToIndexMap.clear();
+	    
+	    // No network exists in CytoScape
+	    if (_networkManager == null || _networkManager.getNetworkSet().size() == 0)
+	        return;
+
+	    _networkCmb.addItem(""); // add placeholder empty string
+	    int indexCounter = 1; // the index counter to add before each item
+	    
+	    for (CyNetwork network : _networkManager.getNetworkSet()) {
+	        _indexToSUIDMap.put(_networkCmb.getItemCount(), network.getSUID());
+	        _suidToIndexMap.put(network.getSUID(), _networkCmb.getItemCount());
+	        _networkCmb.addItem(
+	                indexCounter + ". " + network.getRow(network).get(CyNetwork.NAME, String.class));
+	        indexCounter++;
+	    }
+
+	    // ends if no network is selected, otherwise sets the default value for networkCmb
+	    if (_applicationManager.getCurrentNetwork() == null)
+	        return;
+
+	    _networkCmb.setSelectedItem(
+	            _suidToIndexMap.get(_applicationManager.getCurrentNetwork().getSUID()));
+	}
 
 	/**
 	 * update the edge penalty text field depending on user's selection edge weight radio button
@@ -419,7 +476,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Will be removed after alternative is found
 	 */
 	private void prepareAndRunKSP() {
-		// showRunningMessage();
+		showRunningMessage();
 
 		// checks for identical sources/targets option selection to
 		// update the panel values
@@ -433,9 +490,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			_allowSourcesTargetsInPathsOption.setSelected(true);
 		}
 
-		callRunKSP();
+		// callRunKSP();
 
-		/*		// this looks extremely stupid, but is very important.
+		// this looks extremely stupid, but is very important.
 		// due to the multi-threaded nature of the swing gui, if
 		// this were simply runKSP() and then hideRunningMessage(), java
 		// would assign a thread to the hideRunningMessage and we would
@@ -450,23 +507,17 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 					hideRunningMessage();
 				}
 			}
-		});*/
+		});
 
 	}
 
-	/*	private void showRunningMessage() {
+		private void showRunningMessage() {
 		_runningMessage.setVisible(true);
-		_runningMessage.setForeground(Color.BLUE);
-
-		repaint();
-		revalidate();
 	}
 
 	private void hideRunningMessage() {
 		_runningMessage.setVisible(false);
-		repaint();
-		revalidate();
-	}*/
+	}
 
 	/**
 	 * access user inputs to create the model for running ksp algorithm
@@ -515,12 +566,26 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                     "Error Message", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-		
+
+        // disable the action to update the network combo box while creating the new network
+        PathLinkerNodeSelectionListener.setActive(false);
+
+        // increment the index use for creating the network, path index column, and result panel
+        nameIndex++;
+
 		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
 		createKSPSubgraphAndView();
 
+		// enables the action to update the network combo box after creating the new network
+		PathLinkerNodeSelectionListener.setActive(true);
+
+		// manually updates the network combo box after creating the new network
+		initializeNetworkCmb();
+
 		// update the table path index attribute
 		updatePathIndexAttribute(result);
+
+		updateNetworkName();
 
 		// writes the result of the algorithm to a table
 		writeResult(result);
@@ -703,12 +768,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * 			the sorted paths of the network generated from the algorithm
 	 */
 	private void updatePathIndexAttribute(ArrayList<Path> paths) {
-		// create a new attribute "path index n" in the network edge table, where n is an unique number
-		int columnNum = 1;
-		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + columnNum) != null)
-			columnNum++;
+		// Use nameIndex to create a new attribute "path index n"
+	    // in the network edge table, where n is an unique number
+		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + nameIndex) != null)
+			nameIndex++;
 
-		String columnName = "path index " + (columnNum);
+		String columnName = "path index " + nameIndex;
 		_originalNetwork.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
 
 		for (int i = 0; i < paths.size(); i++) {
@@ -734,6 +799,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						_originalNetwork.getRow(edge).set(columnName,  i + 1);
 			}
 		}
+
+		// add the newly created column into the maps
+        _pathIndexToSuidMap.put(columnName, _kspSubgraph.getSUID());
+        _suidToPathIndexMap.put(_kspSubgraph.getSUID(), columnName);
 	}
 
 	/**
@@ -741,12 +810,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
 	private void writeResult(ArrayList<Path> paths) {
+
 		// create and register a new panel in result panel with specific title
-		// if user did not generate sub-network then we pass down the original network to the result panel
-		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(
-				String.valueOf(_cySwingApp.getCytoPanel(CytoPanelName.EAST).getCytoPanelComponentCount() + 1),
-				_kspSubgraph == null ? _applicationManager.getCurrentNetwork() : _kspSubgraph,
-						paths);
+	    // the result panel name will be sync with network and path index using nameIndex
+		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(String.valueOf(nameIndex),
+				_networkManager, _kspSubgraph, paths);
 		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
 
 		// open and show the result panel if in hide state
@@ -784,13 +852,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			e.printStackTrace();
 		}
 
-		// Apply the new name to the sub-network
-		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
-		String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths";
-		_kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
-
 		// The current network view is set to the new sub-network view already
 		// while current network is still the originalNetwork
+        _kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
 		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
 
 		// use a visual bypass to color the sources and targets for the sub-network view
@@ -811,6 +875,46 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// apply layout according to the k value
 		applyLayout();
+	}
+
+	/**
+	 * Assign appropriate network name to the new sub-network created using nameIndex field
+	 */
+	public void updateNetworkName() {
+	    // Create the new name to the sub-network
+        String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths-" + nameIndex;
+
+        int count = 1;
+        boolean condition = false;
+        List<CyNetwork> networkList = new ArrayList<CyNetwork>();
+        networkList.addAll(_networkManager.getNetworkSet());
+
+        // check if network network already exist
+        for (CyNetwork network : networkList) {
+            if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName)) {
+                condition = true;
+                break;
+            }
+        }
+
+        // if network name already exist, create alternative name
+        // check if alternative name also exists
+        outerLoop:
+        while (condition) {
+            for (CyNetwork network : networkList) {
+                if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().
+                        equals(subgraphName + " (" + count + ")")) {
+                    count++;
+                    continue outerLoop;
+                }
+            }
+
+            subgraphName += (" (" + count + ")");
+            condition = false;
+        }
+
+        // apply the name to the network
+        _kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
 	}
 
 	/**
@@ -986,6 +1090,29 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
 		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
+		
+		_networkCmbLabel = new JLabel("Select network: ");
+        _networkCmbLabel.setToolTipText("The network to run PathLinker on.");
+
+        _networkCmb = new JComboBox<String>(new String[]{""});
+        _networkCmb.setToolTipText("Select the network to run PathLinke on");
+        _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
+                _networkCmb.getPreferredSize().height));
+        
+        _indexToSUIDMap = new HashMap<Integer, Long>(); // creates a empty index-SUID pair map
+        _suidToIndexMap = new HashMap<Long, Integer>(); // creates a empty SUID-index pair map
+        initializeNetworkCmb();
+
+        // add action listener to change network when selecting
+        _networkCmb.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                if (_indexToSUIDMap.containsKey(_networkCmb.getSelectedIndex())) {
+                    _applicationManager.setCurrentNetwork(_networkManager.getNetwork(
+                            _indexToSUIDMap.get(_networkCmb.getSelectedIndex())));
+                }
+            }
+        });
 
 		_sourcesLabel = new JLabel("<html>Sources separated by spaces (e.g., S1 S2 S3)" 
                 + "<br>Must match the 'name' column in the Node Table</html>");
@@ -1028,6 +1155,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
+                .addGroup(sourceTargetPanelLayout.createSequentialGroup()
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1044,6 +1174,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
+                .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1237,6 +1370,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             }
 		});
 
+		// initialize the running message
+		// set to invisible and only visible when pathlinker is generating subnetwork
+        _runningMessage = new JLabel("<html><b>Generating subnetwork...</b></html>");
+        _runningMessage.setForeground(Color.BLUE);
+        hideRunningMessage();
+
 		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_titlePanel)
@@ -1245,7 +1384,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_graphPanel)
 				.addGroup(mainLayout.createSequentialGroup()
 				        .addComponent(_submitButton)
-				        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 300)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
+		                .addComponent(_runningMessage)
+		                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
 				        .addComponent(_closeButton))
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
@@ -1258,6 +1399,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				.addComponent(_graphPanel)
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_submitButton)
+                        .addComponent(_runningMessage)
                         .addComponent(_closeButton))
 				);
 
