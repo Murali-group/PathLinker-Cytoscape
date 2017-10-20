@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,9 +68,10 @@ public class PathLinkerModelTest {
 	/**
 	 * Creates an empty network with edge_weight as an attribute for edge table
 	 * @throws IOException 
+	 * @throws URISyntaxException 
 	 */
 	@Before
-	public void setUp() throws IOException {
+	public void setUp() throws IOException, URISyntaxException {
 		//setting up the general required objects for each test cases
 		support = new NetworkTestSupport();
 		setUpNetwork();
@@ -90,14 +92,15 @@ public class PathLinkerModelTest {
 	 * 							  graph-dir-output-probabilities_human-interactome.txt
 	 * network file source: http://bioinformatics.cs.vt.edu/~murali/supplements/2016-sys-bio-applications-pathlinker/ 
 	 * @throws IOException 
+	 * @throws URISyntaxException 
 	 **/
 	@Test
-	public void testDir() throws IOException {
+	public void testDir() throws IOException, URISyntaxException {
 
 		//================================= Test unweighted edge weight setting ====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-unweighted_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct the string list based on output file
 		@SuppressWarnings("resource")
@@ -124,7 +127,7 @@ public class PathLinkerModelTest {
 		//================================= Test additive edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-additive_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -149,7 +152,7 @@ public class PathLinkerModelTest {
 		//================================= Test probabilities edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-probabilities_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -180,14 +183,15 @@ public class PathLinkerModelTest {
 	 * 							  graph-undir-output-probabilities_human-interactome.txt
 	 * network file source: http://bioinformatics.cs.vt.edu/~murali/supplements/2016-sys-bio-applications-pathlinker/ 
 	 * @throws IOException 
+	 * @throws URISyntaxException 
 	 */
 	@Test
-	public void testUndir() throws IOException {
+	public void testUndir() throws IOException, URISyntaxException {
 
 		//================================= Test unweighted edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-unweighted_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct the string list based on output file
 		@SuppressWarnings("resource")
@@ -214,7 +218,7 @@ public class PathLinkerModelTest {
 		//================================= Test additive edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-additive_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -239,7 +243,7 @@ public class PathLinkerModelTest {
 		//================================= Test probabilities edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-probabilities_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -271,14 +275,15 @@ public class PathLinkerModelTest {
 	 * 							  graph-dir-output-probabilities_human-interactome.txt
 	 * network file source: http://bioinformatics.cs.vt.edu/~murali/supplements/2016-sys-bio-applications-pathlinker/ 
 	 * @throws IOException 
+	 * @throws URISyntaxException 
 	 */
 	@Test
-	public void testMixed() throws IOException {
+	public void testMixed() throws IOException, URISyntaxException {
 
 		//================================= Test unweighted edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-unweighted_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct the string list based on output file
 		@SuppressWarnings("resource")
@@ -305,7 +310,7 @@ public class PathLinkerModelTest {
 		//================================= Test additive edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-additive_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -330,7 +335,7 @@ public class PathLinkerModelTest {
 		//================================= Test probabilities edge weight setting =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-probabilities_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		readerOutput = new BufferedReader(new FileReader(file)); //construct the string list based on output file
 
@@ -380,12 +385,13 @@ public class PathLinkerModelTest {
 	 * path file (output file):   graph-dir-output-allowSourceTartgetInPaths_human-interactome.txt
 	 * network file source: http://bioinformatics.cs.vt.edu/~murali/supplements/2016-sys-bio-applications-pathlinker/
 	 * @throws IOException
+	 * @throws URISyntaxException 
 	 */
 	@Test
-	public void testAllowSourceTargetInPaths() throws IOException {
+	public void testAllowSourceTargetInPaths() throws IOException, URISyntaxException {
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-allowSourceTartgetInPaths_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct the string list based on output file
 		@SuppressWarnings("resource")
@@ -420,12 +426,13 @@ public class PathLinkerModelTest {
 	 * path file (output file):   graph-dir-output-targetSourceIdentical_human-interactome.txt
 	 * network file source: http://bioinformatics.cs.vt.edu/~murali/supplements/2016-sys-bio-applications-pathlinker/
 	 * @throws IOException
+	 * @throws URISyntaxException 
 	 */
 	@Test
-	public void testTargetSourceIdentical () throws IOException {
+	public void testTargetSourceIdentical () throws IOException, URISyntaxException {
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-targetSourceIdentical_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct the string list based on output file
 		@SuppressWarnings("resource")
@@ -457,8 +464,9 @@ public class PathLinkerModelTest {
 	/**
 	 * Sets up the required networks for testing
 	 * @throws IOException 
+	 * @throws URISyntaxException 
 	 */
-	private static void setUpNetwork() throws IOException {
+	private void setUpNetwork() throws IOException, URISyntaxException {
 
 		//================================= setting up direct network =====================================
 		originalNetworkMap = new HashMap<String, Long>();
@@ -466,8 +474,8 @@ public class PathLinkerModelTest {
 		originalNetworkDir.getDefaultEdgeTable().createColumn("edge_weight", Double.class, false);
 
 		//access input file
-		url = PathLinkerModelTest.class.getResource("/input/graph-dir_human-interactome.txt");
-		file = new File(url.getFile());
+		url = this.getClass().getResource("/input/graph-dir_human-interactome.txt");
+		file = new File(url.toURI());
 
 		//construct network based on input file
 		@SuppressWarnings("resource")
@@ -502,7 +510,7 @@ public class PathLinkerModelTest {
 
 		//access input file
 		url = PathLinkerModelTest.class.getResource("/input/graph-undir_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct network based on input file
 		readerInput = new BufferedReader(new FileReader(file));
@@ -536,7 +544,7 @@ public class PathLinkerModelTest {
 
 		//access input file
 		url = PathLinkerModelTest.class.getResource("/input/graph-mixed_human-interactome.txt");
-		file = new File(url.getFile());
+		file = new File(url.toURI());
 
 		//construct network based on input file
 		readerInput = new BufferedReader(new FileReader(file));
