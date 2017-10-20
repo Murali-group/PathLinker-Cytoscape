@@ -259,12 +259,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		/** Enable/disable the button based on the check boxes */
 		@Override
 		public void itemStateChanged(ItemEvent e) {
-			enableClearButton();
             if (_targetsSameAsSourcesOption.isSelected()) {
                 // ensure text field is not in shadow text mode
-                if (_targetsTextField.showingHint)
+                if (_targetsTextField.hintEnabled())
                     _targetsTextField.gainFocus();
-                
+
                 _targetsTextField.setText(_sourcesTextField.getText());
                 _targetsTextField.setEditable(false);
                 _allowSourcesTargetsInPathsOption.setSelected(true);
@@ -277,6 +276,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                 if (_loadNodeToSourceButton.isEnabled())
                     _loadNodeToTargetButton.setEnabled(true);
             }
+
+            enableClearButton();
 		}
 	}
 
@@ -293,8 +294,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Listener for the target text field in the panel
 	 * Enable/disable the _clearSourceTargetPanelButton and _submitButton based on the text fields
 	 */
-	class TextFieldListener implements DocumentListener {
-		@Override
+	class TargetTextFieldListener implements DocumentListener {
+
+	    @Override
 		public void changedUpdate(DocumentEvent e) {
 			enableClearButton();
             enableSubmitButton();
@@ -319,21 +321,21 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	class SourceTextFieldListener implements DocumentListener {
 		@Override
 		public void changedUpdate(DocumentEvent e) {
-			enableClearButton();
+		    updateTargets();
+		    enableClearButton();
             enableSubmitButton();
-            updateTargets(); 
 		}
 		@Override
 		public void insertUpdate(DocumentEvent e) {
-			enableClearButton();
+            updateTargets();
+		    enableClearButton();
             enableSubmitButton();
-            updateTargets(); 
 		}
 		@Override
 		public void removeUpdate(DocumentEvent e) {
-			enableClearButton();
+		    updateTargets(); 
+		    enableClearButton();
             enableSubmitButton();
-            updateTargets(); 
 		}
 
         private void updateTargets() {
@@ -360,7 +362,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 			String sourceText = _sourcesTextField.getText();
 
-			if (_sourcesTextField.showingHint)
+			if (_sourcesTextField.hintEnabled())
 			    _sourcesTextField.gainFocus();
 
 			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
@@ -387,7 +389,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 			String targetText = _targetsTextField.getText();
 
-	         if (_targetsTextField.showingHint)
+	         if (_targetsTextField.hintEnabled())
 	             _targetsTextField.gainFocus();
 
 			if (targetText.length() > 0 &&
@@ -405,15 +407,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		/** Responds to a click of the button */
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			_sourcesTextField.setText("");
-			_targetsTextField.setText("");
-			
-			// gain focus to trigger shadow hint behavior
-			_sourcesTextField.loseFocus();
-			_targetsTextField.loseFocus();
-			
-			_allowSourcesTargetsInPathsOption.setSelected(false);
+			// uncheck both checkboxes
+		    _allowSourcesTargetsInPathsOption.setSelected(false);
 			_targetsSameAsSourcesOption.setSelected(false);
+
+            // lose focus to trigger shadow hint behavior
+            _sourcesTextField.loseFocus();
+            _targetsTextField.loseFocus();
 		}
 	}
 
@@ -524,21 +524,21 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * based on the source/target text fields and the check boxes
 	 */
 	private void enableClearButton() {
-		if (_sourcesTextField.getText().equals("") && _targetsTextField.getText().equals("") 
-				&& !_allowSourcesTargetsInPathsOption.isSelected() && !_targetsSameAsSourcesOption.isSelected())
+		if ((_sourcesTextField.hintEnabled() || _sourcesTextField.getText().trim().equals(""))
+		        && (_targetsTextField.hintEnabled() || _targetsTextField.getText().trim().equals(""))
+				&& !_allowSourcesTargetsInPathsOption.isSelected()
+				&& !_targetsSameAsSourcesOption.isSelected())
 			_clearSourceTargetPanelButton.setEnabled(false);
 		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
-	/** enables/disable the _clearSourceTargetPanelButton 
+	/** enables/disable the _clearSourceTargetPanelButton
 	 * based on the source/target text fields and the check boxes
 	 */
 	private void enableSubmitButton() {
         // TODO if the text field is empty, sometimes the button is still enabled
-		if ((_sourcesTextField.getText().trim().equals("") || _sourcesTextField.showingHint) 
-                || (_targetsTextField.getText().trim().equals("") || _targetsTextField.showingHint) 
-                || _networkCmb.getSelectedItem().equals("")
-                )
+		if (_sourcesTextField.hintEnabled() || _targetsTextField.hintEnabled() 
+		        || _applicationManager.getCurrentNetwork() == null)
 			_submitButton.setEnabled(false);
 		else _submitButton.setEnabled(true);
 	}
@@ -573,7 +573,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	}
 
-		private void showRunningMessage() {
+	private void showRunningMessage() {
 		_runningMessage.setVisible(true);
 	}
 
@@ -1205,7 +1205,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_targetsTextField = new HintTextField("Select targets in the network or enter text manually");
 		_targetsTextField.setMaximumSize(new Dimension(_targetsTextField.getMaximumSize().width, 
 		        _targetsTextField.getPreferredSize().height));
-		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
+		_targetsTextField.getDocument().addDocumentListener(new TargetTextFieldListener());
 
 		_loadNodeToTargetButton = new JButton("Add selected target(s)");
 		_loadNodeToTargetButton.setToolTipText("Add selected node(s) from the network view into the targets field");
@@ -1529,14 +1529,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	        super.addFocusListener(this);    
 	    }
 
+	    public boolean hintEnabled() {
+	        return this.showingHint;
+	    }
+
 	    /**
 	     * Method use to remove hint and gray color of the text field
 	     * Use by select node listeners
 	     */
 	    public void gainFocus() {
+	        showingHint = false;
             super.setText("");
             super.setForeground(Color.BLACK);
-            showingHint = false;
 	    }
 	    
 	    /**
@@ -1544,32 +1548,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	     * Use by clear button listeners
 	     */
 	    public void loseFocus() {
+	        showingHint = true;
             super.setText(hint);
             super.setForeground(Color.GRAY);
-            showingHint = true;      
+            enableClearButton();
 	    }
 
 	    @Override
 	    public void focusGained(FocusEvent e) {
-	        if(this.getText().isEmpty()) {
+	        if (this.getText().trim().isEmpty()) {
+                showingHint = false;
 	            super.setText("");
 	            super.setForeground(Color.BLACK);
-	            showingHint = false;
 	        }
 	    }
 	    
 	    @Override
 	    public void focusLost(FocusEvent e) {
-	        if(this.getText().isEmpty()) {
+	        if (this.getText().trim().isEmpty()) {
+	            showingHint = true;
 	            super.setText(hint);
-	            super.setForeground(Color.GRAY);
-	            showingHint = true;    
+	            super.setForeground(Color.GRAY);    
 	        }
 	    }
 	    
 	    @Override
 	    public String getText() {
-	        return showingHint ? "" : super.getText();    
+	        return showingHint ? "" : super.getText();
 	    }    
 	}
 }
