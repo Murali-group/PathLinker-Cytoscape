@@ -1170,6 +1170,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _networkCmb.setToolTipText("Select the network to run PathLinker on");
         _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
                 _networkCmb.getPreferredSize().height));
+        _networkCmb.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         
         _indexToSUIDMap = new HashMap<Integer, Long>(); // creates a empty index-SUID pair map
         _suidToIndexMap = new HashMap<Long, Integer>(); // creates a empty SUID-index pair map
@@ -1379,6 +1380,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
 		_edgeWeightColumnBox.setToolTipText("Select the name of the edge table column to use as the edge weights");
+		_edgeWeightColumnBox.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
 		// sets up the correct behavior and default value for edge weight column and edge penalty text field
 		_unweighted.setSelected(true);
@@ -1487,7 +1489,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// add scroll panel to control panel
         this.add(scrollPane);
         this.setPreferredSize(
-                new Dimension(this.getPreferredSize().width + 20,
+                new Dimension(this.getPreferredSize().width + 30,
                         this.getPreferredSize().height + 20));
 	}
 
