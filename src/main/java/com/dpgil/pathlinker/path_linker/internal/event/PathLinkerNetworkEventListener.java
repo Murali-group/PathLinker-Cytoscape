@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal;
+package com.dpgil.pathlinker.path_linker.internal.event;
 
 import org.cytoscape.application.events.SetCurrentNetworkEvent;
 import org.cytoscape.application.events.SetCurrentNetworkListener;
@@ -7,6 +7,8 @@ import org.cytoscape.model.events.NetworkAddedEvent;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.model.events.NetworkDestroyedEvent;
 import org.cytoscape.model.events.NetworkDestroyedListener;
+
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
 /**
  * Listener class for _edgeWeightColumnBox

@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal;
+package com.dpgil.pathlinker.path_linker.internal.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +13,9 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.subnetwork.CyRootNetwork;
 import org.cytoscape.model.subnetwork.CySubNetwork;
 
-import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.Path;
 
 /** Back end model for the PathLinker plugin */
 public class PathLinkerModel {

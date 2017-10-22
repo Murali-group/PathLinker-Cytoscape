@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal;
+package com.dpgil.pathlinker.path_linker.internal.view;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;

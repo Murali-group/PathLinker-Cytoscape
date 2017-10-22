@@ -1,9 +1,11 @@
 package com.dpgil.pathlinker.path_linker.internal;
 
-import com.dpgil.pathlinker.path_linker.internal.PathLinkerControlPanel.PanelState;
 import java.awt.event.ActionEvent;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
+
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel.PanelState;
 
 /**
  * // -------------------------------------------------------------------------

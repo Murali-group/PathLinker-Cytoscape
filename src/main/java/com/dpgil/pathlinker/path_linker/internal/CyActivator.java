@@ -18,6 +18,11 @@ import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.osgi.framework.BundleContext;
 
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerColumnUpdateListener;
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNetworkEventListener;
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNodeSelectionListener;
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
+
 /**
  * // -------------------------------------------------------------------------
  * /** CyActivator class for the PathLinker Cytoscape Plugin. Runs when

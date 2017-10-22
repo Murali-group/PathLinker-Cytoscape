@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal;
+package com.dpgil.pathlinker.path_linker.internal.util;
 
 import java.util.Comparator;
 import java.util.Collections;
