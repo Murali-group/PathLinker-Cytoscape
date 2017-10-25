@@ -1219,8 +1219,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 
 		_targetsSameAsSourcesOption = new JCheckBox("<html>Connect sources to each other</html>", false);
-		_targetsSameAsSourcesOption.setToolTipText("PathLinker will compute a subnetwork connecting sources to each other." + 
-                " Copies the nodes in the sources field to the targets field");
+		_targetsSameAsSourcesOption.setToolTipText("Nodes in the sources field are copied to the targets field." + 
+                " PathLinker will compute a subnetwork connecting sources to each other");
 		_targetsSameAsSourcesOption.addItemListener(new ConnectSourcesCheckBoxListener());
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
