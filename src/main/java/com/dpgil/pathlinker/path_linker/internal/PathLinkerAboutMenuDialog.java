@@ -82,10 +82,10 @@ public class PathLinkerAboutMenuDialog extends JDialog {
 					logoCode +
 					"<P align=center><b>PathLinker v" + _version + " (" + _buildDate + ")</b><BR>" +
 					"A Cytoscape App<BR><BR>" +
-					"Version " + _version + " by <a href='http://bioinformatics.cs.vt.edu/~murali/research.html'>Computational Systems Biology Research Group</a>, Virginia Tech<BR><BR>" +
+					"Version " + _version + " by the <a href='http://bioinformatics.cs.vt.edu/~murali/research.html'>Computational Systems Biology Research Group</a>, Virginia Tech<BR><BR>" +
 					"If you use this app in your research, please cite:<BR>" +
-					"<a href='https://www.ncbi.nlm.nih.gov/pubmed/28413614'>The PathLinker app: Connect the dots in protein interaction networks</a><BR>" +
-					"<a href='https://www.nature.com/articles/npjsba20162'>Pathways on demand: automated reconstruction of human signaling networks</a><BR>" +
+					"<a href='https://www.ncbi.nlm.nih.gov/pubmed/28413614'>The PathLinker app: Connect the dots in protein interaction networks</a>. <br>Daniel Gil, Jeffrey Law, Li Huang and T. M. Murali. F1000Research 2017, 6:58 <BR>" +
+					"<a href='https://www.nature.com/articles/npjsba20162'>Pathways on Demand: Automated Reconstruction of Human Signaling Networks</a>. <br>Anna Ritz, Christopher L. Poirel, Allison N. Tegge, Nicholas Sharp, Allison Powell, Kelsey Simmons, <br> Shiv D. Kale, and T. M. Murali. Systems Biology and Applications 2, 2016, 16002.<BR>" +
 					"<BR><BR><BR>" + // triple line break to make extra space for the logo image
 					"</P></body></html>";
 

@@ -44,7 +44,9 @@ public class PathLinkerNodeSelectionListener implements RowsSetListener {
 			for (RowSetRecord rowSet : e.getColumnRecords(CyNetwork.SELECTED)) {
 				if (rowSet.getRow().get(CyNetwork.SELECTED, Boolean.class)) {
 					PathLinkerControlPanel._loadNodeToSourceButton.setEnabled(true);
-					PathLinkerControlPanel._loadNodeToTargetButton.setEnabled(true);
+                    // if the targetsSame AsSources option is selected, then don't allow the user to add more targets
+                    if (!PathLinkerControlPanel._targetsSameAsSourcesOption.isSelected())
+                        PathLinkerControlPanel._loadNodeToTargetButton.setEnabled(true);
 					return;
 				}
 			}

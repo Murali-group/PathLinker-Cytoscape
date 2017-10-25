@@ -94,7 +94,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private static JRadioButton _weightedProbabilities;
 
 	private JCheckBox _allowSourcesTargetsInPathsOption;
-	private JCheckBox _targetsSameAsSourcesOption;
+	protected static  JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
 
 	private CyServiceRegistrar _serviceRegistrar;
@@ -178,10 +178,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		}
 
 		if (newState == PanelState.CLOSED) {
-		    String[] options = {"Yes", "Cancel"};
-		    int choice = JOptionPane.showOptionDialog(null, "Do you want to exit the PathLinker?", 
-		            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-            if (choice != 0) return; // quit if they say cancel
+            // Update: for now, close the app without warning.
+		    //String[] options = {"Yes", "Cancel"};
+		    //int choice = JOptionPane.showOptionDialog(null, "Are you sure you want to exit PathLinker?", 
+		    //        "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+            //if (choice != 0) return; // quit if they say cancel
 			
             _state = PanelState.CLOSED;
 			_parent.remove(this);
@@ -244,12 +245,38 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		initializeControlPanel(); // construct the GUI
 	}
 
-	/** Listener for _allowSourcesTargetsInPathsOption and _targetsSameAsSourcesOption */
+	/** Listener for _allowSourcesTargetsInPathsOption */
 	class CheckBoxListener implements ItemListener {
 		/** Enable/disable the button based on the check boxes */
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			enableClearButton();
+		}
+	}
+
+	/** Listener for _targetsSameAsSourcesOption */
+	class ConnectSourcesCheckBoxListener implements ItemListener {
+		/** Enable/disable the button based on the check boxes */
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			enableClearButton();
+            if (_targetsSameAsSourcesOption.isSelected()) {
+                // ensure text field is not in shadow text mode
+                if (_targetsTextField.showingHint)
+                    _targetsTextField.gainFocus();
+                
+                _targetsTextField.setText(_sourcesTextField.getText());
+                _targetsTextField.setEditable(false);
+                _allowSourcesTargetsInPathsOption.setSelected(true);
+                _loadNodeToTargetButton.setEnabled(false);
+            }
+            else{
+                _targetsTextField.setEditable(true);
+                if (_targetsTextField.getText().equals(""))
+                    _targetsTextField.loseFocus();
+                if (_loadNodeToSourceButton.isEnabled())
+                    _loadNodeToTargetButton.setEnabled(true);
+            }
 		}
 	}
 
@@ -263,22 +290,57 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Listener for the source and target text fields in the panel
-	 * enable/disable the _clearSourceTargetPanelButton based on the text fields
+	 * Listener for the target text field in the panel
+	 * Enable/disable the _clearSourceTargetPanelButton and _submitButton based on the text fields
 	 */
 	class TextFieldListener implements DocumentListener {
 		@Override
 		public void changedUpdate(DocumentEvent e) {
 			enableClearButton();
+            enableSubmitButton();
 		}
 		@Override
 		public void insertUpdate(DocumentEvent e) {
 			enableClearButton();
+            enableSubmitButton();
 		}
 		@Override
 		public void removeUpdate(DocumentEvent e) {
 			enableClearButton();
+            enableSubmitButton();
 		}
+	}
+
+	/**
+	 * Listener for the source text field in the panel
+	 * Enable/disable the _clearSourceTargetPanelButton and _submitButton based on the text fields
+     * Also update the targets text field if anything changes here
+	 */
+	class SourceTextFieldListener implements DocumentListener {
+		@Override
+		public void changedUpdate(DocumentEvent e) {
+			enableClearButton();
+            enableSubmitButton();
+            updateTargets(); 
+		}
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			enableClearButton();
+            enableSubmitButton();
+            updateTargets(); 
+		}
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			enableClearButton();
+            enableSubmitButton();
+            updateTargets(); 
+		}
+
+        private void updateTargets() {
+            if (_targetsSameAsSourcesOption.isSelected()) {
+                _targetsTextField.setText(_sourcesTextField.getText());
+            }
+        }
 	}
 
 	/**
@@ -468,6 +530,19 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		else _clearSourceTargetPanelButton.setEnabled(true);
 	}
 
+	/** enables/disable the _clearSourceTargetPanelButton 
+	 * based on the source/target text fields and the check boxes
+	 */
+	private void enableSubmitButton() {
+        // TODO if the text field is empty, sometimes the button is still enabled
+		if ((_sourcesTextField.getText().trim().equals("") || _sourcesTextField.showingHint) 
+                || (_targetsTextField.getText().trim().equals("") || _targetsTextField.showingHint) 
+                || _networkCmb.getSelectedItem().equals("")
+                )
+			_submitButton.setEnabled(false);
+		else _submitButton.setEnabled(true);
+	}
+
 	/**
 	 * RunningMessage and related methods are now temporarily removed from the PathLinker 
 	 * as new layout doesn't support dynamically adding components
@@ -476,18 +551,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 */
 	private void prepareAndRunKSP() {
 		showRunningMessage();
-
-		// checks for identical sources/targets option selection to
-		// update the panel values
-		if (_targetsSameAsSourcesOption.isSelected()) {
-		    
-		    // ensure text field is not in shadow text mode
-	          if (_targetsTextField.showingHint)
-	              _targetsTextField.gainFocus();
-		    
-			_targetsTextField.setText(_sourcesTextField.getText());
-			_allowSourcesTargetsInPathsOption.setSelected(true);
-		}
 
 		// callRunKSP();
 
@@ -530,7 +593,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_originalNetwork = _applicationManager.getCurrentNetwork();
 		if (_originalNetwork == null) {
             JOptionPane.showMessageDialog(null, 
-                    "Network not found. Please load a valid network", 
+                    "Network not found. Please load or select a cytoscape network", 
                     "Error Message", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
@@ -603,45 +666,84 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ArrayList<String> targetsNotInNet = _model.getTargetsNotInNet();
 		ArrayList<CyNode> sources = _model.getSourcesList();
 		ArrayList<CyNode> targets = _model.getTargetsList();
-
-		// makes sure that we actually have at least one valid source and target
-		if (sources.size() == 0) {
-	          JOptionPane.showMessageDialog(null, 
-	                  "There are no valid sources to be used. Quitting...", 
-	                  "Error Message", JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-		if (targets.size() == 0) {
-            JOptionPane.showMessageDialog(null, 
-                    "There are no valid targets to be used. Quitting...", 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-
-		// insert all missing sources/targets to the error message in the beginning
-		if (targetsNotInNet.size() > 0) {
-			errorMessage.insert(0, "The targets " + targetsNotInNet.toString() + " are not in the network.\n");
-		}
-		if (sourcesNotInNet.size() > 0) {
-			errorMessage.insert(0, "The sources " + sourcesNotInNet.toString() + " are not in the network.\n");
-		}
+        boolean quit = false;
 
 		// edge case where only one source and one target are inputted,
 		// so no paths will be found. warn the user
 		if (sources.size() == 1 && sources.equals(targets)) {
-            JOptionPane.showMessageDialog(null, 
-                    "The only source node is the same as the only target node.\n"
-                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.", 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-            
-            return false;
+            errorMessage.insert(0, "The only source node is the same as the only target node.\n"
+                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n");
+            quit = true;
 		}
 
-		// there is some error, tell the user
+		// makes sure that we actually have at least one valid source and target
+        if (targets.size() == 0 && targetsNotInNet.size() == 0) {
+            errorMessage.insert(0, "The targets text field is empty.\n  - Targets are required to run PathLinker.\n");
+            quit = true;
+        }
+        else if (targets.size() == 0) {
+            errorMessage.insert(0, "\n  - Targets are required to run PathLinker.\n");
+            quit = true;
+        }
+		// insert all missing targets/targets to the error message
+        if (targetsNotInNet.size() > 0) {
+            int totalTargets = targets.size() + targetsNotInNet.size();
+            errorMessage.insert(0, targets.size() + " out of " + totalTargets + " targets are found in the network." +
+                    "\n  - Targets not found: " + targetsNotInNet.toString() +
+                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n");
+		}
+
+        if (sources.size() == 0 && sourcesNotInNet.size() == 0) {
+            errorMessage.insert(0, "The sources text field is empty.\n  - Sources are required to run PathLinker.\n");
+            quit = true;
+        }
+        else if (sources.size() == 0) {
+            errorMessage.insert(0, "  - Sources are required to run PathLinker.\n");
+            quit = true;
+        }
+		// insert all missing sources/targets to the error message
+        if (sourcesNotInNet.size() > 0) {
+            int totalSources = sources.size() + sourcesNotInNet.size();
+            errorMessage.insert(0, sources.size() + " out of " + totalSources + " sources are found in the network." +
+                    "\n  - Sources not found: " + sourcesNotInNet.toString() +
+                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n");
+		}
+
+		// checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
+		// if a weighted option was selected, but not all edges have weights
+		// then we say something to the user.
+		if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED){
+
+            _originalNetwork = _model.getOriginalNetwork();
+            for (CyEdge edge : _originalNetwork.getEdgeList()) {
+                try {
+                    Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
+                } catch (NullPointerException  e) {
+                    errorMessage.append("Weighted option is selected, but at least one edge does not have a weight in the selected edge weight column '" + 
+                            _edgeWeightColumnName + "'. Please either select the Unweighted option, or ensure all edges have a weight to run PathLinker.\n");
+                    quit = true;
+                    break;
+                }
+            }
+        }
+
+        // if PathLinker cannot continue, then show the error message
+        if (quit) {
+            JOptionPane.showMessageDialog(null, errorMessage.toString(), 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+		// there is some error but PathLinker can continue, tell the user
 		if (errorMessage.length() > 0) {
-		    errorMessage.append("Continue?");
+		    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
+                    "\nOr continue and run PathLinker with " + sources.size() + " sources, " + + targets.size() + " targets, ");
+            if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+                errorMessage.append("k = " + _kValue + ", and edge penalty = " + _edgePenalty + "?");
+            else
+                errorMessage.append("and k = " + _kValue + "?");
 		    
-		    String[] options = {"Yes", "Cancel"};
+		    String[] options = {"Continue", "Cancel"};
 		    
 		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
@@ -650,23 +752,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		        return false;
 		}
 		
-
-		// checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
-		// if a weighted option was selected, but not all edges have weights
-		// then we say something to the user.
-		if (_edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED) return true;
-
-		_originalNetwork = _model.getOriginalNetwork();
-		for (CyEdge edge : _originalNetwork.getEdgeList()) {
-			try {
-				Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
-			} catch (NullPointerException  e) {
-		           JOptionPane.showMessageDialog(null, 
-		                   "Weighted option was selected, but there exists at least one edge without a weight. Quitting...", 
-		                   "Error Message", JOptionPane.ERROR_MESSAGE);
-				return false;
-			}
-		}
 
 		// successful parsing
 		return true;
@@ -693,67 +778,56 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			    throw new NumberFormatException();
 
 		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid number entered for k. Using default k=200.\n");
-			_kValue = 200;
+			errorMessage.append("Invalid text entered for k: '" + kInput + "'.\n  - Must be a positive integer. " +
+                    "\n  - Setting to default: 50.\n");
+			_kValue = 50;
+            _kTextField.setText("50");
 		}
 
 		// gets the option for edge weight setting
 		if (_unweighted.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+            // skip the rest of the code for getting the penalty and edge weight column
+            return;
 		} else if (_weightedAdditive.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
 		} else if (_weightedProbabilities.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
-		} else {
-			errorMessage.append("No option selected for edge weights. Using unweighted as default.\n");
-			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
 		}
-
 		// parses the value inputted for edge penalty
 		// if it is an invalid value, uses 1.0 by default for multiplicative
 		// option or 0.0 by default for additive option and also appends the
 		// error to the error message
 		String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
-		if (edgePenaltyInput.isEmpty()) {
-			// nothing was inputted, use the default values for the setting
-			if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-				_edgePenalty = 1.0;
-			} else if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-				_edgePenalty = 0.0;
-			}
-		} else {
-			// try to parse the user's input
-			try {
-				_edgePenalty = Double.parseDouble(edgePenaltyInput);
-			} catch (NumberFormatException exception) {
-				// invalid number was entered, invoked an exception
-				if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-					errorMessage.append("Invalid number " + edgePenaltyInput
-							+ " entered for edge penalty. Using default multiplicative edge penalty=1.0\n");
-					_edgePenalty = 1.0;
-				}
+        // try to parse the user's input
+        try {
+            _edgePenalty = Double.parseDouble(edgePenaltyInput);
+			// throw exception if the edge penalty is a double but less than 0
+			if (_edgePenalty < 0)
+			    throw new NumberFormatException();
+            // or if the option is probabilities and the edge penalty is less than 1
+            // this is because dividing by a number less than 1 could cause the edge weights to be > 1, 
+            // which would cause them to be negative after taking the -log.
+            if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+			    throw new NumberFormatException();
 
-				if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-					errorMessage.append("Invalid number " + edgePenaltyInput
-							+ " entered for edge penalty. Using default additive edge penalty=0\n");
-					_edgePenalty = 1.0;
-				}
-			}
+        } catch (NumberFormatException exception) {
+            errorMessage.append("Invalid text entered for edge penalty: '" + edgePenaltyInput + "'.\n");
+            // invalid number was entered, invoked an exception
+            if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+                errorMessage.append("  - Must be a number >= 1.0 for the probability/multiplicative setting." + 
+                        "\n  - Setting to default: 1.0.\n");
+                _edgePenalty = 1.0;
+				_edgePenaltyTextField.setText("1");
+            }
 
-			// valid number was entered, but not valid for the algorithm
-			// i.e., negative number
-			if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-				errorMessage.append(
-						"Invalid number entered for edge penalty with multiplicative option. Edge penalty for multiplicative option must be greater than or equal to 1. Using default penalty=1.0\n");
-				_edgePenalty = 1.0;
-			}
-
-			if (_edgePenalty < 0 && _edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-				errorMessage.append(
-						"Invalid number entered for edge penalty with additive option. Edge penalty for additive option must be greater than or equal to 0. Using default penalty=0\n");
-				_edgePenalty = 0.0;
-			}
-		}
+            if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+                errorMessage.append("  - Must be a number >= 0 for the additive setting." +
+                        "\n  - Setting to default: 0.0\n");
+                _edgePenalty = 0;
+				_edgePenaltyTextField.setText("0");
+            }
+        }
 
 		// set _edgeWeightColumnName to empty string if no item is selected in _edgeWeightColumnBox
 		_edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : _edgeWeightColumnBox.getSelectedItem().toString();
@@ -916,10 +990,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Applies hierarchical layout to the sub-network If k <= 200, otherwise default layout
+	 * Applies hierarchical layout to the sub-network If k <= 2000, otherwise the users default layout will be applied
 	 */
 	private void applyLayout() {
-        boolean hierarchical = _model.getOutputK() <= 200;
+        // Applying the hierarchical layout is quick for a small number of nodes and edges. 
+        // Applying the hierarchical layout took ~2 sec for k=1000, ~10 sec for k=2000, and ~5 min for k=5000. 
+        // The user can apply the layout after generating the network, so to keep running time down, set the max to k=2000
+        boolean hierarchical = _model.getOutputK() <= 2000;
 
         // set node layout by applying the default or hierarchical layout algorithm
         CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
@@ -946,31 +1023,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// reflect nodes about the x-axis because the default hierarchical
 		// layout renders the nodes upside down
-		// reflect nodes
-		double maxY = Integer.MIN_VALUE;
-		double minY = Integer.MAX_VALUE;
+		// Update: only reflect nodes if k < 200. For k >= 200, the hierarchical layout is right-side up
+		if (_model.getOutputK() < 200){
+			double maxY = Integer.MIN_VALUE;
+			double minY = Integer.MAX_VALUE;
 
-		// finds the midpoint x coordinate
-		for (CyNode node : _kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+			// finds the midpoint x coordinate
+			for (CyNode node : _kspSubgraph.getNodeList()) {
+				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
+				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
-			if (yCoord > maxY)
-				maxY = yCoord;
+				if (yCoord > maxY)
+					maxY = yCoord;
 
-			if (yCoord < minY)
-				minY = yCoord;
-		}
+				if (yCoord < minY)
+					minY = yCoord;
+			}
 
-		double midY = (maxY + minY) / 2;
+			double midY = (maxY + minY) / 2;
 
-		// reflects each node about the midpoint x axis
-		for (CyNode node : _kspSubgraph.getNodeList()) {
-			View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-			double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+			// reflects each node about the midpoint x axis
+			for (CyNode node : _kspSubgraph.getNodeList()) {
+				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
+				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
 
-			double newY = -1 * yCoord + 2 * midY;
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
+				double newY = -1 * yCoord + 2 * midY;
+				nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
+			}
 		}
 
 		_kspSubgraphView.updateView();
@@ -1001,7 +1080,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_titleLabel.setFont(_titleLabel.getFont().deriveFont(Font.BOLD));
 
 		_helpBtn = new JButton("Help");
-		_helpBtn.setToolTipText("Click to learn more on how to use PathLinker");
+		_helpBtn.setToolTipText("Visit https://github.com/Murali-group/PathLinker-Cytoscape to learn more about how to use PathLinker");
 		_helpBtn.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -1085,10 +1164,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		sourceTargetPanelLayout.setAutoCreateGaps(true);
 		
 		_networkCmbLabel = new JLabel("Select network: ");
-        _networkCmbLabel.setToolTipText("The network to run PathLinker on.");
+        _networkCmbLabel.setToolTipText("The network to run PathLinker on");
 
         _networkCmb = new JComboBox<String>(new String[]{""});
-        _networkCmb.setToolTipText("Select the network to run PathLinke on");
+        _networkCmb.setToolTipText("Select the network to run PathLinker on");
         _networkCmb.setMaximumSize(new Dimension(_networkCmb.getMaximumSize().width, 
                 _networkCmb.getPreferredSize().height));
         
@@ -1104,24 +1183,26 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                     _applicationManager.setCurrentNetwork(_networkManager.getNetwork(
                             _indexToSUIDMap.get(_networkCmb.getSelectedIndex())));
                 }
+                enableSubmitButton();
             }
         });
 
-		_sourcesLabel = new JLabel("Sources separated by spaces, e.g., S1 S2 S3");
+		_sourcesLabel = new JLabel("<html>Sources separated by spaces (e.g., S1 S2 S3)" 
+                + "<br>Must match the 'name' column in the Node Table</html>");
 
-		_sourcesTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
+		_sourcesTextField = new HintTextField("Select sources in the network or enter text manually");
 		_sourcesTextField.setMaximumSize(new Dimension(_sourcesTextField.getMaximumSize().width, 
 		        _sourcesTextField.getPreferredSize().height));
-		_sourcesTextField.getDocument().addDocumentListener(new TextFieldListener());
+		_sourcesTextField.getDocument().addDocumentListener(new SourceTextFieldListener());
 
 		_loadNodeToSourceButton = new JButton("Add selected source(s)");
 		_loadNodeToSourceButton.setToolTipText("Add selected node(s) from the network view into the sources field");
 		_loadNodeToSourceButton.setEnabled(false);
 		_loadNodeToSourceButton.addActionListener(new LoadNodeToSourceButtonListener());
 
-		_targetsLabel = new JLabel("Targets separated by spaces, e.g., T1 T2 T3");
+		_targetsLabel = new JLabel("Targets separated by spaces (e.g., T1 T2 T3)");
 
-		_targetsTextField = new HintTextField("Type or use button to add selected node name(s) in the network");
+		_targetsTextField = new HintTextField("Select targets in the network or enter text manually");
 		_targetsTextField.setMaximumSize(new Dimension(_targetsTextField.getMaximumSize().width, 
 		        _targetsTextField.getPreferredSize().height));
 		_targetsTextField.getDocument().addDocumentListener(new TextFieldListener());
@@ -1132,17 +1213,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_loadNodeToTargetButton.addActionListener(new LoadNodeToTargetButtonListener());
 
 		_allowSourcesTargetsInPathsOption = new JCheckBox("<html>Allow sources and targets in paths</html>", false);
-		_allowSourcesTargetsInPathsOption.setToolTipText("Allow source/target nodes appear as intermediate nodes in "
-		        + "path computed.");
+		_allowSourcesTargetsInPathsOption.setToolTipText("Allow source/target nodes to appear as intermediate nodes in "
+		        + "computed paths");
 		_allowSourcesTargetsInPathsOption.addItemListener(new CheckBoxListener());
 
-		_targetsSameAsSourcesOption = new JCheckBox("<html>Targets are identical to sources</html>", false);
-		_targetsSameAsSourcesOption.setToolTipText("Copy the sources to the targets field.");
-		_targetsSameAsSourcesOption.addItemListener(new CheckBoxListener());
+		_targetsSameAsSourcesOption = new JCheckBox("<html>Connect sources to each other</html>", false);
+		_targetsSameAsSourcesOption.setToolTipText("PathLinker will compute a subnetwork connecting sources to each other." + 
+                " Copies the nodes in the sources field to the targets field");
+		_targetsSameAsSourcesOption.addItemListener(new ConnectSourcesCheckBoxListener());
 
 		_clearSourceTargetPanelButton = new JButton("Clear");
 		_clearSourceTargetPanelButton.setEnabled(false);
-		_clearSourceTargetPanelButton.setToolTipText("Clear all inputs from Sources/Targets panel");
+		_clearSourceTargetPanelButton.setToolTipText("Clear all Sources and Targets inputs");
 		_clearSourceTargetPanelButton.addActionListener(new ClearSourceTargetPanelButtonListener());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
@@ -1210,8 +1292,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kLabel = new JLabel("k (# of paths): ");
 
 		_kTextField = new JTextField(5);
-		_kTextField.setText("200");
+		_kTextField.setText("50");
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
+        _kTextField.setToolTipText("Number of shortest paths to compute");
 
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
@@ -1221,6 +1304,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgePenaltyTextField = new JTextField(5);
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
+        _edgePenaltyTextField.setToolTipText("Penalize additional edges according to the edge weight type. " +
+                "The higher the penalty, the more short paths of high cost will appear before long paths of low cost");
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.TRAILING, true)
@@ -1270,17 +1355,18 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// sets up all the components
 		_unweighted = new JRadioButton("Unweighted");
 		_unweighted.setActionCommand("unweighted");
-		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path.");
+		_unweighted.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the number of edges in the path");
 		_unweighted.addActionListener(new RadioButtonListener());
 
 		_weightedAdditive = new JRadioButton("Weights are additive");
 		_weightedAdditive.setActionCommand("weightedAdditive");
-		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights.");
+		_weightedAdditive.setToolTipText("PathLinker will compute the k lowest cost paths, where the cost is the sum of the edge weights");
 		_weightedAdditive.addActionListener(new RadioButtonListener());
 
 		_weightedProbabilities = new JRadioButton("Weights are probabilities");
 		_weightedProbabilities.setActionCommand("weightedProbabilities");
-		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest cost paths, where the cost is the product of the edge weights.");
+		_weightedProbabilities.setToolTipText("PathLinker will compute the k highest weight, lowest cost paths, " +
+                "where the path weight is the product of the edge weights and the cost is the sum of the -log edge weights");
 		_weightedProbabilities.addActionListener(new RadioButtonListener());
 
 		_weightedOptionGroup = new ButtonGroup();
@@ -1289,10 +1375,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_weightedOptionGroup.add(_weightedProbabilities);
 
 		_edgeWeightColumnBoxLabel = new JLabel("Edge weight column: ");
-		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property");
+		_edgeWeightColumnBoxLabel.setToolTipText("The column in the edge table containing edge weight property. Must be integer or float");
 
 		_edgeWeightColumnBox = new JComboBox<String>(new String[]{""});
-		_edgeWeightColumnBox.setToolTipText("Select the name of the column in the edge table containing edge weight property");
+		_edgeWeightColumnBox.setToolTipText("Select the name of the edge table column to use as the edge weights");
 
 		// sets up the correct behavior and default value for edge weight column and edge penalty text field
 		_unweighted.setSelected(true);
@@ -1347,6 +1433,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// creates the submit button
 		_submitButton = new JButton("Submit");
+        _submitButton.setEnabled(false);
 		_submitButton.addActionListener(new SubmitButtonListener());
 
 		_closeButton = new JButton("Close");
