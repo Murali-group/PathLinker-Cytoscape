@@ -1086,7 +1086,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		    public void actionPerformed(ActionEvent e) {
 		        // opens the instruction site upon clicking
 		        try {
-		            Desktop.getDesktop().browse(new URI("http://apps.cytoscape.org/apps/pathlinker"));
+		            Desktop.getDesktop().browse(new URI("http://pathlinker-cytoscape-app.readthedocs.io/en/latest/PathLinker_Cytoscape.html"));
 		        }
 		        catch (IOException | URISyntaxException e1) {
 		            e1.printStackTrace();
