@@ -66,8 +66,8 @@ extends AbstractCyActivator
 				cyApplicationManager,
 				networkManager,
 				adapter,
-				"v1.3", 
-				"Oct. 03, 2017");
+				"1.3", 
+				"Oct. 25, 2017");
 
 		// starts off the panel in a closed state
 		panel.getParent().remove(panel);
