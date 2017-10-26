@@ -5,4 +5,4 @@
 target/
 .repo
 .uuid
-.gitignore
+.gitignore/bin/

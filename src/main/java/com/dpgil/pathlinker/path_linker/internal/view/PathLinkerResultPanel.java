@@ -37,7 +37,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 
-import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.Path;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
 /**
  * // -------------------------------------------------------------------------
@@ -51,7 +51,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
     /** the network manager for the app */
     private CyNetworkManager _networkManager;
     /** The k shortest paths generated from the network **/
-    private final ArrayList<Path> _results;
+    private final ArrayList<PathWay> _results;
     /** The current network associated with the result panel **/
     private final CyNetwork _currentNetwork;
     /** The tab title of the result panel **/
@@ -72,7 +72,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
     public PathLinkerResultPanel(String title,
             CyNetworkManager networkManager,
             CyNetwork currentNetwork,
-            ArrayList<Path> results)
+            ArrayList<PathWay> results)
     {
         this._title = title;
         this._networkManager = networkManager;
@@ -192,7 +192,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             // check the nodes in between the indexes
             for (int i = minIndex; i <= maxIndex; i++) {
                 if (lsm.isSelectedIndex(i)) {
-                    Path currPath = _results.get(i);
+                    PathWay currPath = _results.get(i);
                     // excluding supersource and supertarget
                     for (int j = 1; j < currPath.size() - 2; j++) {
                         CyNode node1 = currPath.get(j);
@@ -386,7 +386,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
      *            the path to convert to a string
      * @return the concatenation of the node names
      */
-    private String pathAsString(Path p)
+    private String pathAsString(PathWay p)
     {
         // builds the path string without supersource/supertarget [1,len-1]
         StringBuilder currPath = new StringBuilder();

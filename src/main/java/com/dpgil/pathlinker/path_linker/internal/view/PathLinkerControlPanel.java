@@ -3,7 +3,7 @@ package com.dpgil.pathlinker.path_linker.internal.view;
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNodeSelectionListener;
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
-import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.Path;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -622,7 +622,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			return false;
 
 		// runs the setup and KSP algorithm
-		ArrayList<Path> result = _model.runKSP();
+		ArrayList<PathWay> result = _model.runKSP();
 
 	    // If no paths were found, then exit with this error
         if (_model.getOutputK() == 0) {
@@ -842,7 +842,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @param paths 
 	 * 			the sorted paths of the network generated from the algorithm
 	 */
-	private void updatePathIndexAttribute(ArrayList<Path> paths) {
+	private void updatePathIndexAttribute(ArrayList<PathWay> paths) {
 		// Use nameIndex to create a new attribute "path index n"
 	    // in the network edge table, where n is an unique number
 		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + nameIndex) != null)
@@ -852,7 +852,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_originalNetwork.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
 
 		for (int i = 0; i < paths.size(); i++) {
-			Path currPath = paths.get(i);
+			PathWay currPath = paths.get(i);
 
 			// excluding supersource and supertarget
 			for (int j = 1; j < currPath.size() - 2; j++) {
@@ -884,7 +884,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Writes the ksp results to result panel given the results from the ksp algorithm
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
-	private void writeResult(ArrayList<Path> paths) {
+	private void writeResult(ArrayList<PathWay> paths) {
 
 		// create and register a new panel in result panel with specific title
 	    // the result panel name will be sync with network and path index using nameIndex

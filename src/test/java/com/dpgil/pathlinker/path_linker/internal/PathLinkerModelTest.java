@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
-import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.Path;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
 /** JUnit Test class for the PathLinker */
 public class PathLinkerModelTest {
@@ -591,7 +591,7 @@ public class PathLinkerModelTest {
 	 * @param p the path to convert to a string
 	 * @return the concatenation of the node names
 	 */
-	private String pathAsString(Path p) {
+	private String pathAsString(PathWay p) {
 		//builds the path string without supersource/supertarget [1,len-1]
 		StringBuilder currPath = new StringBuilder();
 		for (int i = 1; i < p.size() - 1; i++)
@@ -607,7 +607,7 @@ public class PathLinkerModelTest {
 	 * @param p list of paths
 	 * @return list of string
 	 */
-	private ArrayList<String> pathListToStringList(ArrayList<Path> result) {
+	private ArrayList<String> pathListToStringList(ArrayList<PathWay> result) {
 		ArrayList<String> output = new ArrayList<String>();
 
 		for (int i = 0; i < result.size(); i++) 

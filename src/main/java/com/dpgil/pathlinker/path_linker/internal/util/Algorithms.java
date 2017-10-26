@@ -61,7 +61,7 @@ public class Algorithms
 	 * Represents a pathway. Stores the list of nodes in order in the path,
 	 * the string name of each nodes, and the weight of the path
 	 */
-	public static class Path implements Comparable<Path>
+	public static class PathWay implements Comparable<PathWay>
 	{
 		/** the list of nodes in order in the path */
 		public ArrayList<CyNode> nodeList;
@@ -80,7 +80,7 @@ public class Algorithms
 		 * @param weight
 		 *            the total weight of the path
 		 */
-		public Path(ArrayList<CyNode> nodeList, HashMap<CyNode, String> map, double weight)
+		public PathWay(ArrayList<CyNode> nodeList, HashMap<CyNode, String> map, double weight)
 		{
 			this.nodeList = nodeList;
 			this.weight = weight;
@@ -120,7 +120,7 @@ public class Algorithms
 			if (o == null)
 				return false;
 
-			Path p = (Path)o;
+			PathWay p = (PathWay)o;
 
 			return this.nodeList.equals(p.nodeList);
 		}
@@ -138,7 +138,7 @@ public class Algorithms
 		 * if name is equal then return the path with less nodes
 		 */
 		@Override
-		public int compareTo(Path o) {
+		public int compareTo(PathWay o) {
 			if (Double.compare(this.weight, o.weight) != 0) return Double.compare(this.weight, o.weight);
 
 			int size = this.size() < o.size() ? this.size() : o.size();
@@ -173,7 +173,7 @@ public class Algorithms
 	 * 			  the option to include all paths of equal length
 	 * @return a list of k-shortest paths in sorted order by cost
 	 */
-	public static ArrayList<Path> ksp(
+	public static ArrayList<PathWay> ksp(
 			CyNetwork network,
 			HashMap<CyNode, String> cyNodeToId,
 			CyNode source,
@@ -182,7 +182,7 @@ public class Algorithms
 			boolean includePathScoreTies)
 			{
 		// the list of shortest paths
-		ArrayList<Path> A = new ArrayList<Path>();
+		ArrayList<PathWay> A = new ArrayList<PathWay>();
 
 		// compute the original distance from the source to use for the
 		// heuristic function
@@ -190,7 +190,7 @@ public class Algorithms
 				reverseSingleSourceDijkstra(network, target);
 
 		// compute the initial shortest path to initialize Yen's
-		Path shortestPath = dijkstra(network, cyNodeToId, source, target);
+		PathWay shortestPath = dijkstra(network, cyNodeToId, source, target);
 
 		// there is no path from source to target
 		if (shortestPath == null)
@@ -199,7 +199,7 @@ public class Algorithms
 		A.add(shortestPath);
 
 		// the heap, stores the potential k shortest paths
-		ArrayList<Path> B = new ArrayList<Path>();
+		ArrayList<PathWay> B = new ArrayList<PathWay>();
 
 		// A cache mapping prefixes of accepted paths to the next node after
 		// the prefix. Used to avoid scanning all previous paths many times,
@@ -227,7 +227,7 @@ public class Algorithms
 		for (int k = 1; k < maxK || includePathScoreTies; k++)
 		{
 			// previously computed shortest path
-			Path latestPath = A.get(A.size() - 1);
+			PathWay latestPath = A.get(A.size() - 1);
 
 			// process each node of the most recently found path, computing the
 			// shortest path that deviates at that node and adding it to the
@@ -267,7 +267,7 @@ public class Algorithms
 				}
 
 				// find the shortest path using A*
-				Path pathSpur =
+				PathWay pathSpur =
 						shortestPathAStar(network, cyNodeToId, nodeSpur, target, minDists);
 
 				// short circuit if the target node was unreachable, which is
@@ -281,7 +281,7 @@ public class Algorithms
 					pathTotal.addAll(pathSpur.nodeList);
 
 					double distTotal = computePathDist(network, pathTotal);
-					Path potentialK = new Path(pathTotal, cyNodeToId, distTotal);
+					PathWay potentialK = new PathWay(pathTotal, cyNodeToId, distTotal);
 
 					if (!B.contains(potentialK))
 					{
@@ -295,10 +295,10 @@ public class Algorithms
 			if (B.size() > 0)
 			{
 				// sorts the candidate paths by their weight
-				Collections.sort(B, new Comparator<Path>() {
+				Collections.sort(B, new Comparator<PathWay>() {
 
 					@Override
-					public int compare(Path path1, Path path2)
+					public int compare(PathWay path1, PathWay path2)
 					{
 						return Double.compare(path1.weight, path2.weight);
 					}
@@ -307,7 +307,7 @@ public class Algorithms
 
 				// accepts the next shortest path on the candidates heap, which
 				// is necessarily the next shortest path
-				Path newShortest = B.remove(0);
+				PathWay newShortest = B.remove(0);
 
 				// adds this to the list of prefixes for efficient lookup later
 				for (int i = 1; i < newShortest.size(); i++)
@@ -387,14 +387,14 @@ public class Algorithms
 	 *            the map of nodes to their minimum distance from the target
 	 * @return a path from source to target and its weight
 	 */
-	public static Path shortestPathAStar(
+	public static PathWay shortestPathAStar(
 			CyNetwork network,
 			HashMap<CyNode, String> cyNodeToId,
 			CyNode source,
 			CyNode target,
 			final HashMap<CyNode, Double> minDists)
 	{
-		Path currPath = new Path(new ArrayList<CyNode>(), null, 0.);
+		PathWay currPath = new PathWay(new ArrayList<CyNode>(), null, 0.);
 
 		// if source==target:
 		// return ({source:0}, {source:[source]})
@@ -518,7 +518,7 @@ public class Algorithms
 		if (nodeList == null)
 			return null;
 
-		return new Path(nodeList, cyNodeToId, distances.get(target));
+		return new PathWay(nodeList, cyNodeToId, distances.get(target));
 	}
 
 
@@ -663,7 +663,7 @@ public class Algorithms
 	 *            the target node of the graph
 	 * @return the path from source to target
 	 */
-	public static Path dijkstra(CyNetwork network, HashMap<CyNode, String> cyNodeToId, CyNode source, CyNode target)
+	public static PathWay dijkstra(CyNetwork network, HashMap<CyNode, String> cyNodeToId, CyNode source, CyNode target)
 	{
 		final HashMap<CyNode, Double> distances = new HashMap<CyNode, Double>();
 		HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
@@ -729,7 +729,7 @@ public class Algorithms
 		if (nodeList == null)
 			return null;
 
-		return new Path(nodeList, cyNodeToId, distances.get(target));
+		return new PathWay(nodeList, cyNodeToId, distances.get(target));
 	}
 
 
@@ -915,7 +915,7 @@ public class Algorithms
 	 * Sort the list of the paths using its custom compareTo method
 	 * @param result the sorted list of pathss
 	 */
-	public static void sortResult(ArrayList<Path> result)
+	public static void sortResult(ArrayList<PathWay> result)
 	{
 		Collections.sort(result);
 	}

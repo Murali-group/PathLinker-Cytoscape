@@ -21,6 +21,8 @@ import org.osgi.framework.BundleContext;
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerColumnUpdateListener;
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNetworkEventListener;
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNodeSelectionListener;
+import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerImpl;
+import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerResource;
 import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
 /**
@@ -96,6 +98,6 @@ extends AbstractCyActivator
 		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
 
 		// register CyRest for JAX-RS annotations
-		registerService(context, new PathLinkerImpl(), PathLinkerCyRest.class, new Properties());
+		registerService(context, new PathLinkerImpl(), PathLinkerResource.class, new Properties());
 	}
 }
