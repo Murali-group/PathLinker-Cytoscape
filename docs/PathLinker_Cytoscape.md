@@ -23,7 +23,7 @@ To run the plugin, fill in the inputs (as described below) and press the submit 
 
 ### Inputs
 
-**Sources/Targets:** The user can select nodes directly from the network and then use the buttons 'Add selected sources' and 'Add selected targets' to add the selected nodes names to the corresponding text field. Node names can also be entered manually, separated by spaces. If there are sources or targets named that do not exist in the network, PathLinker will warn the user. 
+**Sources/Targets:** The user can select nodes directly from the network and then use the buttons 'Add selected sources' and 'Add selected targets' to add the selected nodes names to the corresponding text field. Node names can also be entered manually, separated by spaces, but they must match the 'name' column of the Node table. If there are sources or targets named that do not exist in the network, PathLinker will warn the user. 
 
 There are two options available options here:
 
