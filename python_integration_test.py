@@ -1,27 +1,17 @@
-# HTTP Client for Python
-import requests
+import pandas as pd
+from py2cytoscape.data.cyrest_client import CyRestClient
 
-# Standard JSON library
-import json
 
-# Basic Setup
-PORT_NUMBER = 1234
-BASE = 'http://localhost:' + str(PORT_NUMBER) + '/v1/'
+# create an instance of cyRest client
+cy = CyRestClient()
 
-# Header for posting data to the server as JSON
-HEADERS = {'Content-Type': 'application/json'}
+# create a new network from the input txt file
+test_network_input = pd.read_csv('src/test/resources/input/test.txt', header=None, delimiter=r"\s+")
 
-# Define dictionary of empty network
-empty_network = {
-    'data': {
-        'name': 'I\'m empty!'
-    },
-    'elements': {
-        'nodes':[],
-        'edges':[]
-    }
-}
+source = test_network_input.columns[0]
+target = test_network_input.columns[1]
+edge = test_network_input.columns[2]
+interaction = test_network_input.columns[3]
+title = "test run"
 
-res = requests.post(BASE + 'networks?collection=My%20Collection', data=json.dumps(empty_network), headers=HEADERS)
-new_network_id = res.json()['networkSUID']
-print('Empty network created: SUID = ' + str(new_network_id))
+test_network = cy.network.create_from_dataframe(test_network_input, source_col=source, target_col=target, interaction_col=interaction, name=title)
