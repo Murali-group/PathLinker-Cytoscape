@@ -97,7 +97,8 @@ extends AbstractCyActivator
 		registerService(context, networkEventListener, NetworkAddedListener.class, new Properties());
 		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
 
-		// register CyRest for JAX-RS annotations
-		registerService(context, new PathLinkerImpl(), PathLinkerResource.class, new Properties());
+		// Create PathLinker CyRest implementations and register to the service
+		PathLinkerImpl cyRestClient = new PathLinkerImpl(cyApplicationManager);
+		registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
 	}
 }
