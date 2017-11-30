@@ -685,7 +685,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             quit = true;
         }
         else if (targets.size() == 0) {
-            errorMessage.insert(0, "\n  - Targets are required to run PathLinker.\n");
+            errorMessage.insert(0, "  - Targets are required to run PathLinker.\n");
             quit = true;
         }
 		// insert all missing targets/targets to the error message
