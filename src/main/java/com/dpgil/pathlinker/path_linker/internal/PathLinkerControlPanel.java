@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -911,30 +912,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
 
-		// obtain the current network size before running the TaskIterator 
-		int currentNetworkSize = _networkManager.getNetworkSet().size();
-
-		_adapter.getTaskManager().execute(subNetworkTask);
-
-		// This IS A HACK
-		// Currently we are aren't able to access the new sub-network and sub-network view
-		// Therefore we are accessing the new sub-network through the network set
-		//        Then access sub-network view through subnetwork
-		// We need to pause execution with sleep to wait for the sub network to be added into the network set
-		// The new network is add to the set by detecting if the the network set size is changed
-		// More about the issue:
-		//    https://github.com/Murali-group/PathLinker-Cytoscape/issues/33
-		//    https://groups.google.com/forum/#!topic/cytoscape-app-dev/cSUOwhk30fA
-		// Source of the hack:
-		// https://github.com/smd-faizan/CySpanningTree
-		//    -> PrimsTreadThread.java line 219
-		try {
-			while (currentNetworkSize == _networkManager.getNetworkSet().size())
-				Thread.sleep(200);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		// creates synchronous task manager to execute the task on creating the subnetwork
+		SynchronousTaskManager<?> synTaskMan =
+		        _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
+		synTaskMan.execute(subNetworkTask);
 
 		// THIS IS A HACK CONT. 
 		// As we can't access the new sub-network generated from the task
