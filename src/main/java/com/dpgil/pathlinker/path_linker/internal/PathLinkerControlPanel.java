@@ -19,14 +19,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -54,10 +51,8 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
-import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskObserver;
 
 /** Panel for the PathLinker plugin */
 public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent {
@@ -997,23 +992,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                 : _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
 		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
 				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
-		_adapter.getTaskManager().execute(iter);
+
+        // creates synchronous task manager to execute the task on applying the layout
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
 				.getService(SynchronousTaskManager.class);
 		synTaskMan.execute(iter);
 
 		if (!hierarchical) // ends if default layout
 		    return;
-
-		// if we applied the hierarchical layout, by default it is rendered upside down
-		// so we reflect all the nodes about the x axis
-		// sleep so the hierarchical layout can get applied
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		// reflect nodes about the x-axis because the default hierarchical
 		// layout renders the nodes upside down
