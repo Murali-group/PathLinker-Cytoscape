@@ -912,24 +912,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
 				.createTaskIterator(_model.getOriginalNetwork());
 
-		// obtain the current network size before running the TaskIterator
-		int currentNetworkSize = _networkManager.getNetworkSet().size();
+		// creates synchronous task manager to execute the task on creating the subnetwork
+		SynchronousTaskManager<?> synTaskMan =
+		        _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
+		synTaskMan.execute(subNetworkTask);
 
-		_adapter.getTaskManager().execute(subNetworkTask);
-
-        // sleep until the subgraph is been created
-		// by checking if the size of the network is incremented
-		try {
-			while (currentNetworkSize == _networkManager.getNetworkSet().size())
-				Thread.sleep(200);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		// The current network view is set to the new sub-network view already
-		// while current network is still the originalNetwork
-        _kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
+		// assign the new sub network and network views
+		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
 		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
 
 		// use a visual bypass to color the sources and targets for the sub-network view
@@ -1006,23 +995,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                 : _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
 		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
 				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
-		_adapter.getTaskManager().execute(iter);
+
+        // creates synchronous task manager to execute the task on applying the layout
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
 				.getService(SynchronousTaskManager.class);
 		synTaskMan.execute(iter);
 
 		if (!hierarchical) // ends if default layout
 		    return;
-
-		// if we applied the hierarchical layout, by default it is rendered upside down
-		// so we reflect all the nodes about the x axis
-		// sleep so the hierarchical layout can get applied
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		// reflect nodes about the x-axis because the default hierarchical
 		// layout renders the nodes upside down
