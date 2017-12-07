@@ -1,15 +1,22 @@
 package com.dpgil.pathlinker.path_linker.internal.rest;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.ci.CIErrorFactory;
+import org.cytoscape.ci.CIExceptionFactory;
+import org.cytoscape.ci.model.CIError;
+import org.cytoscape.ci.model.CIResponse;
 import org.cytoscape.model.CyNetwork;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerPath;
+
 /**
  * Implementation of the PathLinkerResource interface
  */
@@ -18,12 +25,31 @@ public class PathLinkerImpl implements PathLinkerResource {
     /** CytoScape application manager */
     private CyApplicationManager cyApplicationManager;
 
+    /** CI Factories for Exceptions */
+    private final CIExceptionFactory ciExceptionFactory;
+    /** CI Factories for Errors */
+    private final CIErrorFactory ciErrorFactory;
+    /** Response String for error origin */
+    private final static String resourceErrorRoot = "urn:cytoscape:ci:pathlinker-app:v1";
+
+    /** Error code for Network Not Found */
+    private static final String CY_NETWORK_NOT_FOUND_CODE = "1";
+
+    /** PathLinker Model object to run analysis */
+    private PathLinkerModel pathLinkerModel;
+
     /**
      * Default constructor
      * @param cyApplicationManager application manager
+     * @param ciExceptionFactory CIException Factory
+     * @param ciErrorFactory CIError Factory
      */
-    public PathLinkerImpl(CyApplicationManager cyApplicationManager) {
+    public PathLinkerImpl(CyApplicationManager cyApplicationManager, 
+            CIExceptionFactory ciExceptionFactory,
+            CIErrorFactory ciErrorFactory) {
         this.cyApplicationManager = cyApplicationManager;
+        this.ciExceptionFactory = ciExceptionFactory;
+        this.ciErrorFactory = ciErrorFactory;
     }
 
     /**
@@ -31,133 +57,91 @@ public class PathLinkerImpl implements PathLinkerResource {
      * Creates a PathLinkerModel and generate a ksp subgraph of the given network
      */
     @Override
-    public ArrayList<String> postModel(PathLinkerModelParams modelParams) {
+    public Response runKSP(PathLinkerModelParams modelParams) {
+
+        // access current network
+        CyNetwork cyNetwork = getCyNetwork("Run PathLinker Algorithm", CY_NETWORK_NOT_FOUND_CODE);
 
         // Initialize EdgeWeightSetting enum accordingly
-        EdgeWeightSetting setting;
+        EdgeWeightSetting edgeWeightSetting;
         if (modelParams.edgeWeightSetting.equals("unweighted"))
-            setting = EdgeWeightSetting.UNWEIGHTED;
+            edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
         else if (modelParams.edgeWeightSetting.equals("additive"))
-            setting = EdgeWeightSetting.ADDITIVE;
+            edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
         else
-            setting = EdgeWeightSetting.PROBABILITIES;
+            edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
 
-        // creates the model to run ksp
-        PathLinkerModel model = new PathLinkerModel(
-                modelParams.network, 
+        // initialize the PathLinkerModel to run ksp
+        pathLinkerModel = new PathLinkerModel(
+                cyNetwork, 
                 modelParams.allowSourcesTargetsInPaths, 
                 modelParams.includePathScoreTies, 
                 modelParams.sourcesTextField, 
                 modelParams.targetsTextField, 
                 modelParams.edgeWeightColumnName,
                 modelParams.inputK,
-                setting, 
+                edgeWeightSetting, 
                 modelParams.edgePenalty);
 
         // run ksp and stores result
-        ArrayList<PathWay> paths = model.runKSP();
-
-        // string formatter for path weight
-        DecimalFormat df = new DecimalFormat("#.######");
-        df.setRoundingMode(RoundingMode.HALF_UP);
-
-        // StringBuilder to construct PathWay object to string
-        StringBuilder sb;
+        pathLinkerModel.prepareIdSourceTarget();
+        ArrayList<PathWay> paths = pathLinkerModel.runKSP();
 
         // the result that stores all paths in string format
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<PathLinkerPath> result = new ArrayList<PathLinkerPath>();
 
-        // loop through the paths, construct string, and add to result
+        // loop through the paths, construct PathLinkerPath object, and add to result
         for (int i = 0; i < paths.size(); i++) {
+            PathWay path = paths.get(i);
+            ArrayList<String> currentPath = new ArrayList<String>();
 
-            sb = new StringBuilder(); // Initialize the string builder
-            sb.append(i + 1);
-            sb.append("\t");
-            sb.append(df.format(paths.get(i).weight));
-            sb.append("\t");
-            sb.append(pathAsString(paths.get(i)));
+            for (int j = 1; j < path.size() - 1; j++)
+                currentPath.add(path.nodeIdMap.get(path.get(j)));
 
-            result.add(sb.toString());
+            result.add(new PathLinkerPath(i + 1, paths.get(i).weight, currentPath));
         }
 
-        return result;
+        // construct the list of paths into JSON Response format
+        CIResponse<ArrayList<PathLinkerPath>>response = new CIResponse<ArrayList<PathLinkerPath>>();
+        ((CIResponse<ArrayList<PathLinkerPath>>)response).data = result;
+        response.errors = new ArrayList<CIError>();
+
+        return Response.status(Response.Status.OK)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(result).build();
     }
 
     /**
-     * Converts a path to a string concatenating the node names A path in the
-     * network involving A -> B -> C would return A|B|C
-     * @param p the path to convert to a string
-     * @return the concatenation of the node names
+     * Helper method which accesses current CyNetwork
+     * @param resourcePath error resource path
+     * @param errorType error type
+     * @return current CyNetwork if exists
+     *          otherwise throws CI Error
      */
-    private static String pathAsString(PathWay p)
-    {
-        // builds the path string without supersource/supertarget [1,len-1]
-        StringBuilder currPath = new StringBuilder();
-        for (int i = 1; i < p.size() - 1; i++)
-            currPath.append(p.nodeIdMap.get(p.get(i)) + "|");
-
-        currPath.setLength(currPath.length() - 1);
-
-        return currPath.toString();
-    }
-
-    /**
-     * Runs KSP method on current network
-     * Return the list of paths as string
-     */
-    @Override
-    public String runKSP() {
-        // access current network
+    private CyNetwork getCyNetwork(String resourcePath, String errorType) {
         CyNetwork cyNetwork = cyApplicationManager.getCurrentNetwork();
 
-        // check if current network exists
-        if (cyNetwork == null) return "No network selected!";
-
-        // construct PathLinkerModel to run KSP algorithm
-        PathLinkerModel model = new PathLinkerModel(
-                cyNetwork,
-                false,
-                false,
-                "P35968 P00533 Q02763",
-                "Q15797 Q14872 Q16236 P14859 P36956",
-                "", 50, EdgeWeightSetting.UNWEIGHTED, 0);
-
-        // sets up the source and targets, and check to see if network is construct correctly
-        boolean success = model.prepareIdSourceTarget();
-
-        // terminate and return error message if network is not c onstruct correctly
-        if (!success)
-            return "source and target not found!";
-
-        // run ksp and stores result
-        ArrayList<PathWay> paths = model.runKSP();
-
-        // string formatter for path weight
-        DecimalFormat df = new DecimalFormat("#.######");
-        df.setRoundingMode(RoundingMode.HALF_UP);
-
-        // StringBuilder to construct PathWay object to string
-        StringBuilder sb;
-
-        // the result that stores all paths in string format
-        // ArrayList<String> result = new ArrayList<String>();
-
-        // string to store all paths
-        String output = "";
-
-        // loop through the paths, construct string, and add to result
-        for (int i = 0; i < paths.size(); i++) {
-            sb = new StringBuilder(); // Initialize the string builder
-            sb.append(i + 1);
-            sb.append("\t");
-            sb.append(df.format(paths.get(i).weight));
-            sb.append("\t");
-            sb.append(pathAsString(paths.get(i)));
-
-            // result.add(sb.toString());
-            output += (sb.toString() + "\n");
+        if (cyNetwork == null) {
+            String messageString = "Could not find current Network";
+            throw ciExceptionFactory.getCIException(404, 
+                    new CIError[]{this.buildCIError(404, 
+                            resourcePath, errorType, messageString, null)});
         }
+        return cyNetwork;
+    }
 
-        return output;
+    /**
+     * Helper method which constructs CI Error
+     * @param status error status
+     * @param resourcePath error resource path
+     * @param code error code
+     * @param message error message
+     * @param e the exception that causes the error
+     * @return CIError object
+     */
+    private CIError buildCIError(int status, String resourcePath, 
+            String code, String message, Exception e) {
+        return ciErrorFactory.getCIError(status, 
+                resourceErrorRoot + ":" + resourcePath+ ":"+ code, message);
     }
 }

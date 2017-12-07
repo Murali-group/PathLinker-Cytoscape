@@ -14,6 +14,8 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.ci.CIErrorFactory;
+import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.osgi.framework.BundleContext;
@@ -98,7 +100,10 @@ extends AbstractCyActivator
 		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
 
 		// Create PathLinker CyRest implementations and register to the service
-		PathLinkerImpl cyRestClient = new PathLinkerImpl(cyApplicationManager);
+        CIExceptionFactory ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
+        CIErrorFactory ciErrorFactory = this.getService(context, CIErrorFactory.class);
+
+		PathLinkerImpl cyRestClient = new PathLinkerImpl(cyApplicationManager, ciExceptionFactory, ciErrorFactory);
 		registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
 	}
 }

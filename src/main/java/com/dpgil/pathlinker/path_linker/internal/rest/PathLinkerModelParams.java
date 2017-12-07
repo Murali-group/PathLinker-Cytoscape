@@ -8,7 +8,7 @@ import io.swagger.annotations.ApiModelProperty;
  * The Class that holds all the required parameters for PathLinkerModel
  *      in order to run ksp algorithm in CyRest
  */
-@ApiModel(value="PathLinkerModel Parameters", description="Parameters for PathLinkerModel")
+@ApiModel(value="PathLinker Parameters", description="Parameters for PathLinkerModel")
 public class PathLinkerModelParams {
     @ApiModelProperty(value = "The network to run ksp algorithm")
     public CyNetwork network;

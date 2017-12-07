@@ -213,6 +213,11 @@
 			<artifactId>cxio</artifactId>
 			<version>1.1.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.cytoscape-ci</groupId>
+			<artifactId>ci-bridge-impl</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 		<!-- JSON for Java -->
 		<dependency>

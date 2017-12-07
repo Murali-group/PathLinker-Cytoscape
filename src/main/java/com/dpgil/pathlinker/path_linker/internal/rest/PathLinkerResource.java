@@ -5,9 +5,16 @@ import java.util.ArrayList;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import org.cytoscape.ci.model.CIResponse;
+
+import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerPath;
+
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  * Interface for PathLinker Cytoscape CyRest Service
@@ -16,26 +23,23 @@ import io.swagger.annotations.ApiParam;
 @Path("/pathlinker/v1/")
 public interface PathLinkerResource {
 
-    /**
-     * The GET method accesses the current network selected in CytoScape and run KSP algorithm
-     *      on the selected network. The method does not create new network or modify
-     *      existing network. Instead it returns the sorted paths list as a string
-     * @return sorted paths list in string format
-     */
-    @Path("currentView/runKSP/")
-    @ApiOperation(value = "Run PathLinker on the current network, "
-            + "return array list path in string format")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public String runKSP();
+    @ApiModel(value="PathLinker App Response", 
+            description="PathLinker Analysis Results in CI Format", 
+            parent=CIResponse.class)
+    public static class PathLinkerAppResponse extends CIResponse<ArrayList<PathLinkerPath>> {
+    }
 
-    @Path("test/")
-    @ApiOperation(value = "Create and execute PathLinker on the given network, "
-            + "return array list path in string format")
     @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ArrayList<String> postModel(
-            @ApiParam(value = "PathLinker model parameters", required = true) PathLinkerModelParams modelParams
+    @Produces("application/json")
+    @Consumes("application/json")
+    @Path("currentView/runKSP/")
+    @ApiOperation(value = "Excute PathLinker on Current Network with Options, ", 
+    notes = "PathLinker takes user inputs to generate and return a k-number sorted path list",
+    response = PathLinkerAppResponse.class)
+    @ApiResponses(value = { 
+            @ApiResponse(code = 404, message = "Network does not exist", response = CIResponse.class),
+    })
+    public Response runKSP(
+            @ApiParam(value = "PathLinker Parameters", required = true) PathLinkerModelParams modelParams
             );
 }
