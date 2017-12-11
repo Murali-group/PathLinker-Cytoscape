@@ -29,17 +29,49 @@ public interface PathLinkerResource {
     public static class PathLinkerAppResponse extends CIResponse<ArrayList<PathLinkerPath>> {
     }
 
+    /**
+     * Post Function that takes user input and generate and return a k-number sorted path list
+     * Does not modify or generate network/network view in Cytoscape itself
+     * @param modelParams paramters needed to generate a network
+     * @return k-number sorted path list in JSON Array format
+     */
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    @Path("currentView/runKSP/")
+    @Path("currentView/generatePathList/")
     @ApiOperation(value = "Excute PathLinker on Current Network with Options, ", 
     notes = "PathLinker takes user inputs to generate and return a k-number sorted path list",
     response = PathLinkerAppResponse.class)
     @ApiResponses(value = { 
             @ApiResponse(code = 404, message = "Network does not exist", response = CIResponse.class),
     })
-    public Response runKSP(
+    public Response generatePathList(
+            @ApiParam(value = "PathLinker Parameters", required = true) PathLinkerModelParams modelParams
+            );
+
+    /**
+     * Post Function that takes user input and generate and return a k-number sorted path list
+     * Does not modify or generate network/network view in Cytoscape itself
+     * @param modelParams paramters needed to generate a network
+     * @return k-number sorted path list in JSON Array format
+     */
+    @POST
+    @Produces("application/json")
+    @Consumes("application/json")
+    @Path("{networkSUID}/views/{networkViewSUID}/generateKSPGraph")
+    @ApiOperation(value = "Excute PathLinker on Selected Network and Network View with Options, ", 
+    notes = "PathLinker takes user inputs to create a sub-network/network view and return a k-number sorted path list",
+    response = PathLinkerAppResponse.class)
+    @ApiResponses(value = { 
+            @ApiResponse(code = 404, message = "Network does not exist", response = CIResponse.class),
+    })
+    public Response generateKSPGraph(
+            @ApiParam(value="Network SUID (see GET /v1/networks)") 
+            @PathParam("networkSUID") long networkSUID, 
+
+            @ApiParam(value="Network View SUID (see GET /v1/networks/{networkId}/views)") 
+            @PathParam("networkViewSUID") long networkViewSUID,
+
             @ApiParam(value = "PathLinker Parameters", required = true) PathLinkerModelParams modelParams
             );
 }

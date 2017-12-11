@@ -10,22 +10,22 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(value="PathLinker Parameters", description="Parameters for PathLinkerModel")
 public class PathLinkerModelParams {
-    @ApiModelProperty(value = "The network to run ksp algorithm")
+    @ApiModelProperty(value = "Network Object")
     public CyNetwork network;
-    @ApiModelProperty(value = "boolean deciding if sources and targets should be allow in the result path")
+    @ApiModelProperty(value = "Allow Sources and Targets in Computed Path", example = "false")
     public boolean allowSourcesTargetsInPaths;
-    @ApiModelProperty(value = "the option to include all paths of equal length")
+    @ApiModelProperty(value = "Include All Paths With Same Score/Lengths", example = "false")
     public boolean includePathScoreTies; 
-    @ApiModelProperty(value = "source node names in string")
+    @ApiModelProperty(value = "Source Node Name Seperate By Space", example = "S1 S2 S3")
     public String sourcesTextField; 
-    @ApiModelProperty(value = "target node names in string")
+    @ApiModelProperty(value = "Target Node Name Seperate By Space", example = "T1 T2 T3")
     public String targetsTextField;
-    @ApiModelProperty(value = "the column name that contains the edge weight information")
+    @ApiModelProperty(value = "Edge Weight Column Name", example = "edge_weight")
     public String edgeWeightColumnName;
-    @ApiModelProperty(value = "input k value")
+    @ApiModelProperty(value = "Number of Paths to be Generated", example = "50")
     public int inputK; 
-    @ApiModelProperty(value = "edge weight setting in string")
+    @ApiModelProperty(value = "Edge Weight Setting", example = "unweighted/additive/probability")
     public String edgeWeightSetting; 
-    @ApiModelProperty(value = "edge penalty")
+    @ApiModelProperty(value = "Edge Penality", example = "0")
     public double edgePenalty;
 }

@@ -57,7 +57,7 @@ public class PathLinkerImpl implements PathLinkerResource {
      * Creates a PathLinkerModel and generate a ksp subgraph of the given network
      */
     @Override
-    public Response runKSP(PathLinkerModelParams modelParams) {
+    public Response generatePathList(PathLinkerModelParams modelParams) {
 
         // access current network
         CyNetwork cyNetwork = getCyNetwork("Run PathLinker Algorithm", CY_NETWORK_NOT_FOUND_CODE);
@@ -109,6 +109,12 @@ public class PathLinkerImpl implements PathLinkerResource {
         return Response.status(Response.Status.OK)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(result).build();
+    }
+
+    @Override
+    public Response generateKSPGraph(long networkSUID, long networkViewSUID, PathLinkerModelParams modelParams) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /**
