@@ -64,9 +64,9 @@ public class PathLinkerImpl implements PathLinkerResource {
 
         // Initialize EdgeWeightSetting enum accordingly
         EdgeWeightSetting edgeWeightSetting;
-        if (modelParams.edgeWeightSetting.equals("unweighted"))
+        if (modelParams.edgeWeightSettingName.equals("unweighted"))
             edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
-        else if (modelParams.edgeWeightSetting.equals("additive"))
+        else if (modelParams.edgeWeightSettingName.equals("additive"))
             edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
         else
             edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;

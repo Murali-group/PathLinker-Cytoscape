@@ -2,6 +2,8 @@ package com.dpgil.pathlinker.path_linker.internal.rest;
 
 import org.cytoscape.model.CyNetwork;
 
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 /**
@@ -24,8 +26,11 @@ public class PathLinkerModelParams {
     public String edgeWeightColumnName;
     @ApiModelProperty(value = "Number of Paths to be Generated", example = "50")
     public int inputK; 
-    @ApiModelProperty(value = "Edge Weight Setting", example = "unweighted/additive/probability")
-    public String edgeWeightSetting; 
+    @ApiModelProperty(value = "Edge Weight Setting Name", example = "unweighted/additive/probability")
+    public String edgeWeightSettingName;
     @ApiModelProperty(value = "Edge Penality", example = "0")
     public double edgePenalty;
+
+    /** EdgeWeightSetting parameter to store from user UI input **/
+    public EdgeWeightSetting edgeWeightSetting;
 }
