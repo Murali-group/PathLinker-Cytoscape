@@ -412,7 +412,6 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 26 to ensure relatively small output
 		testModel = new PathLinkerModel(originalNetworkDir, true, false, source, target, 
 		        edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
-		testModel.prepareIdSourceTarget();
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
@@ -452,7 +451,6 @@ public class PathLinkerModelTest {
 		boolean allowSourceTargetInPaths = true;
 		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, 
 				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
-		testModel.prepareIdSourceTarget();
 
 		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
 
@@ -582,7 +580,6 @@ public class PathLinkerModelTest {
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
 		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, 
 				source, target, edgeWeightColumnName, k, edgeWeightSetting, edgePenalty); //construct model
-		testModel.prepareIdSourceTarget();
 	}
 
 	/**

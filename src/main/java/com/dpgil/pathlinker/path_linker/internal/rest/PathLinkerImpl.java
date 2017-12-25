@@ -84,7 +84,6 @@ public class PathLinkerImpl implements PathLinkerResource {
                 modelParams.edgePenalty);
 
         // run ksp and stores result
-        pathLinkerModel.prepareIdSourceTarget();
         ArrayList<PathWay> paths = pathLinkerModel.runKSP();
 
         // the result that stores all paths in string format

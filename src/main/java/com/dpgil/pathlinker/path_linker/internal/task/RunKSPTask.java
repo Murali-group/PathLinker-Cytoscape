@@ -35,7 +35,7 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
             return (R) pathLinkerModel;
         else if (type.equals(Collection.class))
             return (R) result;
-        
+
         return null;
     }
 
@@ -60,10 +60,7 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
                 modelParams.edgeWeightSetting, 
                 modelParams.edgePenalty);
 
-        // sets up the source and targets
-        pathLinkerModel.prepareIdSourceTarget();
         taskMonitor.setStatusMessage("Running KSP algorithm...");
-
         // runs the KSP algorithm
         result = pathLinkerModel.runKSP();
     }

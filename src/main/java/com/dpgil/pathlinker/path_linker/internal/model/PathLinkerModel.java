@@ -317,19 +317,15 @@ public class PathLinkerModel {
 	 * 		sourcesList, sourceNames, sourcesNotInNet
 	 * 		targetsList, targetNames, targetsNoInNet
 	 * 		idToCyNode
-	 * @return true if success, otherwise false
 	 */
-	public boolean prepareIdSourceTarget() {
+	private void prepareIdSourceTarget() {
 		// populates a mapping from the name of a node to the actual node object
-		// used for converting user input to node objects. populates the map
-		// named _idToCyNode. is unsuccessful if there is no network
-		if (!populateIdCyNodePair()) return false;
+		// used for converting user input to node objects. populates the map named _idToCyNode
+		populateIdCyNodePair();
 
 		// sets source and target
 		setSources();
 		setTargets();
-
-		return true;
 	}
 
 	/**
@@ -339,7 +335,10 @@ public class PathLinkerModel {
 	 * @return result, the list of paths
 	 */
 	public ArrayList<PathWay> runKSP() {
-		// sets the number of common sources and targets
+	    // set up source and target
+	    prepareIdSourceTarget();
+
+	    // sets the number of common sources and targets
 		// this is for a temporary hack
 		setCommonSourcesTargets();
 
@@ -395,19 +394,13 @@ public class PathLinkerModel {
 	/**
 	 * Populates idToCyNode, the map of node names to their objects
 	 * Populates cyNodeToId, the map of node objects to their names
-	 * @return false if originalNetwork does not exist, otherwise populate idToCyNode, cyNodeToId, and return true
 	 */
-	private boolean populateIdCyNodePair() {
-		if (this.originalNetwork == null)
-			return false;
-
+	private void populateIdCyNodePair() {
 		for (CyNode node : originalNetwork.getNodeList()) {
 			String nodeName = originalNetwork.getRow(node).get(CyNetwork.NAME, String.class);
 			idToCyNode.put(nodeName, node);
 			cyNodeToId.put(node, nodeName);
 		}
-
-		return true;
 	}
 
 	/**

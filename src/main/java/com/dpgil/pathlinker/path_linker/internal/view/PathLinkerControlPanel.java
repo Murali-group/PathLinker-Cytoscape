@@ -640,11 +640,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		TaskIterator runKSPTaskIterator = new TaskIterator(runKSPTask);
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
 		synTaskMan.execute(runKSPTaskIterator);
-		
+
 		_model = runKSPTask.getResults(PathLinkerModel.class);
 		@SuppressWarnings("unchecked")
         ArrayList<PathWay> result = (ArrayList<PathWay>) runKSPTask.getResults(Collection.class);
-		
+
 	    // If no paths were found, then exit with this error
         if (_model.getOutputK() == 0) {
             JOptionPane.showMessageDialog(null, 
