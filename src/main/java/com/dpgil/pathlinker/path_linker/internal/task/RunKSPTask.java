@@ -1,8 +1,5 @@
 package com.dpgil.pathlinker.path_linker.internal.task;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.task.AbstractNetworkTask;
 import org.cytoscape.work.ObservableTask;
@@ -10,18 +7,26 @@ import org.cytoscape.work.TaskMonitor;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerModelParams;
-import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
+/**
+ * Class which creates a task that runs the KSP algorithm
+ */
 public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
 
-
+    /** network to perform ksp algorithm */
     private CyNetwork network;
+    /** parameters to create model for running the ksp algorithm */
     private PathLinkerModelParams modelParams;
+    /** the model to run ksp algorithm */
     private PathLinkerModel pathLinkerModel;
-    private ArrayList<PathWay> result;
+    /** task monitor for the RUunKSPTask */
+    private TaskMonitor taskMonitor;
 
-    protected TaskMonitor taskMonitor;
-
+    /**
+     * Default constructor
+     * @param network network to perform ksp algorithm
+     * @param modelParams parameters to create model for running the ksp algorithm
+     */
     public RunKSPTask(CyNetwork network, 
             PathLinkerModelParams modelParams) {
         super(network);
@@ -29,16 +34,25 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
         this.modelParams = modelParams;
     }
 
+    /**
+     * Get Result method
+     * returns PathLinkerModel used by the RunKSPTask
+     *      the model consist of error lists and results from running the ksp algorithm
+     * @return object based on user input type
+     *          otherwise null
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public <R> R getResults(Class<? extends R> type) {
         if (type.equals(PathLinkerModel.class))
             return (R) pathLinkerModel;
-        else if (type.equals(Collection.class))
-            return (R) result;
 
         return null;
     }
 
+    /**
+     * Runs the KSP algorithm
+     */
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
         this.taskMonitor = taskMonitor;
@@ -47,7 +61,11 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
         runKSP();
     }
 
-    protected void runKSP() {
+    /**
+     * Wrapper method that runs the KSP algorithm
+     * Initialize the PathLinkerModel to run KSP algorithm
+     */
+    private void runKSP() {
         // initialize the PathLinkerModel to run ksp
         pathLinkerModel = new PathLinkerModel(
                 network, 
@@ -61,7 +79,11 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
                 modelParams.edgePenalty);
 
         taskMonitor.setStatusMessage("Running KSP algorithm...");
+
         // runs the KSP algorithm
-        result = pathLinkerModel.runKSP();
+        if (pathLinkerModel.runKSP())
+            taskMonitor.setStatusMessage("PathLinker run success.");
+        else
+            taskMonitor.setStatusMessage("PathLinker run failed, error found.");
     }
 }

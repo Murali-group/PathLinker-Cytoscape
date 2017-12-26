@@ -44,6 +44,7 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
+import org.cytoscape.ci.model.CIError;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -592,8 +593,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * generate result panel and/or sub network graph for the user
 	 */
 	private boolean callRunKSP() {
-		boolean success;
-
 		// Check to see if network exists before starting reading the values from the panel
 		_originalNetwork = _applicationManager.getCurrentNetwork();
 		if (_originalNetwork == null) {
@@ -603,8 +602,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			return false;
 		}
 
-		// reads the raw values from the panel and converts them into useful
-		readValuesFromPanel();
+		// reads the raw values from the panel and converts them into paramters for the model
+		// terminates the process if user decides to fix the error manually
+		if (!readValuesFromPanel()) return false;
 
 		// initialize the params from user inputs
 		PathLinkerModelParams params = new PathLinkerModelParams();
@@ -617,41 +617,29 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		params.edgeWeightSetting = _edgeWeightSetting;
 		params.edgePenalty = _edgePenalty;
 
-/*		// initialize the model from the user inputs
-		_model= new PathLinkerModel(_originalNetwork, _allowSourcesTargetsInPathsOption.isSelected(), 
-				_includePathScoreTiesOption.isSelected(), _sourcesTextField.getText().trim(), 
-				_targetsTextField.getText().trim(), _edgeWeightColumnName, 
-				_kValue, _edgeWeightSetting, _edgePenalty);
-
-		// sets up the source and targets, and check to see if network is construct correctly
-		success = _model.prepareIdSourceTarget();
-
-		if (!success)
-			return false;
-
-		// check to see if source, targets, and edges are set up correctly
-		success = checkSourceTargetEdge();
-		if (!success)
-			return false;
-
-		// runs the setup and KSP algorithm
-		ArrayList<PathWay> result = _model.runKSP();*/
+		// performs KSP algorithm by creating the runKSPTask
 		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, params);
 		TaskIterator runKSPTaskIterator = new TaskIterator(runKSPTask);
 		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
 		synTaskMan.execute(runKSPTaskIterator);
 
+		// obtain results from the runKSPTask
 		_model = runKSPTask.getResults(PathLinkerModel.class);
-		@SuppressWarnings("unchecked")
-        ArrayList<PathWay> result = (ArrayList<PathWay>) runKSPTask.getResults(Collection.class);
+		List<CIError> errorList = _model.getErrorList();
 
-	    // If no paths were found, then exit with this error
-        if (_model.getOutputK() == 0) {
-            JOptionPane.showMessageDialog(null, 
-                    "No paths found", 
+		// check if runKSPTask is terminated due to errors, if true construct error messages
+		if (errorList.size() > 0) {
+		    errorMessage = new StringBuilder();
+		    for (int i = 0; i < errorList.size(); i++)
+		        errorMessage.append(errorList.get(i).message);
+
+            JOptionPane.showMessageDialog(null, errorMessage.toString(), 
                     "Error Message", JOptionPane.ERROR_MESSAGE);
             return false;
-        }
+		}
+
+		// obtain result computed from the model
+		ArrayList<PathWay> result = _model.getResult();
 
         // disable the action to update the network combo box while creating the new network
         PathLinkerNodeSelectionListener.setActive(false);
@@ -680,115 +668,16 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Check user inputs on source, target, and edge weights
-	 * @return true if check passes, otherwise false
-	 */
-	private boolean checkSourceTargetEdge() {
-
-		// obtain sources and targets from the model
-		ArrayList<String> sourcesNotInNet = _model.getSourcesNotInNet();
-		ArrayList<String> targetsNotInNet = _model.getTargetsNotInNet();
-		ArrayList<CyNode> sources = _model.getSourcesList();
-		ArrayList<CyNode> targets = _model.getTargetsList();
-        boolean quit = false;
-
-		// edge case where only one source and one target are inputted,
-		// so no paths will be found. warn the user
-		if (sources.size() == 1 && sources.equals(targets)) {
-            errorMessage.insert(0, "The only source node is the same as the only target node.\n"
-                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n");
-            quit = true;
-		}
-
-		// makes sure that we actually have at least one valid source and target
-        if (targets.size() == 0 && targetsNotInNet.size() == 0) {
-            errorMessage.insert(0, "The targets text field is empty.\n  - Targets are required to run PathLinker.\n");
-            quit = true;
-        }
-        else if (targets.size() == 0) {
-            errorMessage.insert(0, "  - Targets are required to run PathLinker.\n");
-            quit = true;
-        }
-		// insert all missing targets/targets to the error message
-        if (targetsNotInNet.size() > 0) {
-            int totalTargets = targets.size() + targetsNotInNet.size();
-            errorMessage.insert(0, targets.size() + " out of " + totalTargets + " targets are found in the network." +
-                    "\n  - Targets not found: " + targetsNotInNet.toString() +
-                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n");
-		}
-
-        if (sources.size() == 0 && sourcesNotInNet.size() == 0) {
-            errorMessage.insert(0, "The sources text field is empty.\n  - Sources are required to run PathLinker.\n");
-            quit = true;
-        }
-        else if (sources.size() == 0) {
-            errorMessage.insert(0, "  - Sources are required to run PathLinker.\n");
-            quit = true;
-        }
-		// insert all missing sources/targets to the error message
-        if (sourcesNotInNet.size() > 0) {
-            int totalSources = sources.size() + sourcesNotInNet.size();
-            errorMessage.insert(0, sources.size() + " out of " + totalSources + " sources are found in the network." +
-                    "\n  - Sources not found: " + sourcesNotInNet.toString() +
-                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n");
-		}
-
-		// checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
-		// if a weighted option was selected, but not all edges have weights
-		// then we say something to the user.
-		if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED){
-
-            _originalNetwork = _model.getOriginalNetwork();
-            for (CyEdge edge : _originalNetwork.getEdgeList()) {
-                try {
-                    Double.parseDouble(_originalNetwork.getRow(edge).getRaw(_edgeWeightColumnName).toString());
-                } catch (NullPointerException  e) {
-                    errorMessage.append("Weighted option is selected, but at least one edge does not have a weight in the selected edge weight column '" + 
-                            _edgeWeightColumnName + "'. Please either select the Unweighted option, or ensure all edges have a weight to run PathLinker.\n");
-                    quit = true;
-                    break;
-                }
-            }
-        }
-
-        // if PathLinker cannot continue, then show the error message
-        if (quit) {
-            JOptionPane.showMessageDialog(null, errorMessage.toString(), 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
-		// there is some error but PathLinker can continue, tell the user
-		if (errorMessage.length() > 0) {
-		    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
-                    "\nOr continue and run PathLinker with " + sources.size() + " sources, " + + targets.size() + " targets, ");
-            if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
-                errorMessage.append("k = " + _kValue + ", and edge penalty = " + _edgePenalty + "?");
-            else
-                errorMessage.append("and k = " + _kValue + "?");
-		    
-		    String[] options = {"Continue", "Cancel"};
-		    
-		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
-                    "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-		    
-		    if (choice != 0) // quit if they say cancel
-		        return false;
-		}
-		
-
-		// successful parsing
-		return true;
-	}
-
-	/**
 	 * Reads in the raw values from the panel and converts them to useful
 	 * objects that can be used for the algorithm. Performs error checking on
 	 * the values and warns the user
+	 * @return true if user decides to continue with the warning,
+	 *         otherwise false
 	 */
-	private void readValuesFromPanel() {
+	private boolean readValuesFromPanel() {
 		// error message to report errors to the user if they occur
 		errorMessage = new StringBuilder();
+		boolean skip = false;
 
 		// parses the value inputted for k
 		// if it is an invalid value, uses 200 by default and also appends the
@@ -812,49 +701,75 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		if (_unweighted.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
             // skip the rest of the code for getting the penalty and edge weight column
-            return;
+            skip = true;
 		} else if (_weightedAdditive.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
 		} else if (_weightedProbabilities.isSelected()) {
 			_edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
 		}
-		// parses the value inputted for edge penalty
-		// if it is an invalid value, uses 1.0 by default for multiplicative
-		// option or 0.0 by default for additive option and also appends the
-		// error to the error message
-		String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
-        // try to parse the user's input
-        try {
-            _edgePenalty = Double.parseDouble(edgePenaltyInput);
-			// throw exception if the edge penalty is a double but less than 0
-			if (_edgePenalty < 0)
-			    throw new NumberFormatException();
-            // or if the option is probabilities and the edge penalty is less than 1
-            // this is because dividing by a number less than 1 could cause the edge weights to be > 1, 
-            // which would cause them to be negative after taking the -log.
-            if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
-			    throw new NumberFormatException();
 
-        } catch (NumberFormatException exception) {
-            errorMessage.append("Invalid text entered for edge penalty: '" + edgePenaltyInput + "'.\n");
-            // invalid number was entered, invoked an exception
-            if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-                errorMessage.append("  - Must be a number >= 1.0 for the probability/multiplicative setting." + 
-                        "\n  - Setting to default: 1.0.\n");
-                _edgePenalty = 1.0;
-				_edgePenaltyTextField.setText("1");
-            }
+		// skip the following checks if user uses unweighted setting
+		if (!skip) {
+		    // parses the value inputted for edge penalty
+		    // if it is an invalid value, uses 1.0 by default for multiplicative
+		    // option or 0.0 by default for additive option and also appends the
+		    // error to the error message
+		    String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
+		    // try to parse the user's input
+		    try {
+		        _edgePenalty = Double.parseDouble(edgePenaltyInput);
+		        // throw exception if the edge penalty is a double but less than 0
+		        if (_edgePenalty < 0)
+		            throw new NumberFormatException();
+		        // or if the option is probabilities and the edge penalty is less than 1
+		        // this is because dividing by a number less than 1 could cause the edge weights to be > 1, 
+		        // which would cause them to be negative after taking the -log.
+		        if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
+		            throw new NumberFormatException();
 
-            if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-                errorMessage.append("  - Must be a number >= 0 for the additive setting." +
-                        "\n  - Setting to default: 0.0\n");
-                _edgePenalty = 0;
-				_edgePenaltyTextField.setText("0");
-            }
-        }
+		    } catch (NumberFormatException exception) {
+		        errorMessage.append("Invalid text entered for edge penalty: '" + edgePenaltyInput + "'.\n");
+		        // invalid number was entered, invoked an exception
+		        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+		            errorMessage.append("  - Must be a number >= 1.0 for the probability/multiplicative setting." + 
+		                    "\n  - Setting to default: 1.0.\n");
+		            _edgePenalty = 1.0;
+		            _edgePenaltyTextField.setText("1");
+		        }
 
-		// set _edgeWeightColumnName to empty string if no item is selected in _edgeWeightColumnBox
-		_edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : _edgeWeightColumnBox.getSelectedItem().toString();
+		        if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+		            errorMessage.append("  - Must be a number >= 0 for the additive setting." +
+		                    "\n  - Setting to default: 0.0\n");
+		            _edgePenalty = 0;
+		            _edgePenaltyTextField.setText("0");
+		        }
+		    }
+
+		    // set _edgeWeightColumnName to empty string if no item is selected in _edgeWeightColumnBox
+		    _edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : 
+		        _edgeWeightColumnBox.getSelectedItem().toString();
+		}
+
+		// there is some error but PathLinker can continue, tell the user
+		if (errorMessage.length() > 0) {
+		    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
+		            "\nOr continue and run PathLinker with ");
+		    if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+		        errorMessage.append("k = " + _kValue + ", and edge penalty = " + _edgePenalty + "?");
+		    else
+		        errorMessage.append("and k = " + _kValue + "?");
+
+		    String[] options = {"Continue", "Cancel"};
+
+		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
+		            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+		    if (choice != 0) // quit if they say cancel
+		        return false;
+		}
+
+        // successful parsing
+        return true;
 	}
 
 	/**

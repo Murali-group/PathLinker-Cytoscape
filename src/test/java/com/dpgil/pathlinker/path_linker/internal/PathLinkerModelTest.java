@@ -118,7 +118,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -143,7 +144,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 31, EdgeWeightSetting.ADDITIVE, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -168,7 +170,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 13, EdgeWeightSetting.PROBABILITIES, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -209,7 +212,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 2.0 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 37, EdgeWeightSetting.UNWEIGHTED, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -234,7 +238,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 4.088853 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 47, EdgeWeightSetting.ADDITIVE, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -259,7 +264,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.4574040000000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 21, EdgeWeightSetting.PROBABILITIES, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -301,7 +307,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -326,7 +333,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 31, EdgeWeightSetting.ADDITIVE, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -351,7 +359,8 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 13, EdgeWeightSetting.PROBABILITIES, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -370,12 +379,14 @@ public class PathLinkerModelTest {
 	public void testDiff() throws IOException {
 		//construct paths for direct graph
 		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultDir); //sort the lists before comparison
 
 		//construct paths for undirect graph
 		modelSetUp(originalNetworkUndir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultUndir); //sort the lists before comparison
 
 		assertThat(resultDir, not(resultUndir));
@@ -412,7 +423,8 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 26 to ensure relatively small output
 		testModel = new PathLinkerModel(originalNetworkDir, true, false, source, target, 
 		        edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -451,8 +463,8 @@ public class PathLinkerModelTest {
 		boolean allowSourceTargetInPaths = true;
 		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, 
 				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
-
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
