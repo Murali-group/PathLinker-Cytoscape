@@ -19,7 +19,7 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
     private PathLinkerModelParams modelParams;
     /** the model to run ksp algorithm */
     private PathLinkerModel pathLinkerModel;
-    /** task monitor for the RUunKSPTask */
+    /** task monitor for the RunKSPTask */
     private TaskMonitor taskMonitor;
 
     /**
@@ -54,10 +54,10 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
      * Runs the KSP algorithm
      */
     @Override
-    public void run(TaskMonitor taskMonitor) throws Exception {
+    public void run(TaskMonitor taskMonitor) {
         this.taskMonitor = taskMonitor;
-        taskMonitor.setTitle("Running PathLinker");
-        taskMonitor.setStatusMessage("Running PathLinker. Please wait...");
+        taskMonitor.setTitle("Running KSP algorithm");
+        taskMonitor.setStatusMessage("Running KSP algorithm. Please wait...");
         runKSP();
     }
 
@@ -78,12 +78,10 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
                 modelParams.edgeWeightSetting, 
                 modelParams.edgePenalty);
 
-        taskMonitor.setStatusMessage("Running KSP algorithm...");
-
         // runs the KSP algorithm
         if (pathLinkerModel.runKSP())
-            taskMonitor.setStatusMessage("PathLinker run success.");
+            taskMonitor.setStatusMessage("Running KSP algorithm success.");
         else
-            taskMonitor.setStatusMessage("PathLinker run failed, error found.");
+            taskMonitor.setStatusMessage("Running KSP algorithm failed, error found.");
     }
 }

@@ -1,8 +1,8 @@
 package com.dpgil.pathlinker.path_linker.internal.view;
 
-import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNodeSelectionListener;
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerModelParams;
+import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
@@ -46,17 +46,11 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.ci.model.CIError;
 import org.cytoscape.model.CyColumn;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.view.layout.CyLayoutAlgorithm;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.View;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
@@ -127,8 +121,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private CyNetwork _originalNetwork;
 	/** The sub-network created by the algorithm */
 	private CyNetwork _kspSubgraph = null;
-	/** The sub-network view created by the algorithm */
-	private CyNetworkView _kspSubgraphView = null;
 	/** column name that links to the edge weight values */
 	private String _edgeWeightColumnName;
 	/** The k value to be used in the algorithm */
@@ -641,25 +633,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// obtain result computed from the model
 		ArrayList<PathWay> result = _model.getResult();
 
-        // disable the action to update the network combo box while creating the new network
-        PathLinkerNodeSelectionListener.setActive(false);
-
-        // increment the index use for creating the network, path index column, and result panel
-        nameIndex++;
-
-		// generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
-		createKSPSubgraphAndView();
-
-		// enables the action to update the network combo box after creating the new network
-		PathLinkerNodeSelectionListener.setActive(true);
-
-		// manually updates the network combo box after creating the new network
-		initializeNetworkCmb();
-
-		// update the table path index attribute
-		updatePathIndexAttribute(result);
-
-		updateNetworkName();
+		// construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
+		CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(_originalNetwork, _model, _adapter, _applicationManager);
+		TaskIterator createKSPViewTaskIterator = new TaskIterator(createKSPViewTask);
+		synTaskMan.execute(createKSPViewTaskIterator);
+		_kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);
 
 		// writes the result of the algorithm to a table
 		writeResult(result);
@@ -773,50 +751,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Creates a path index attribute to the network edge tables
-	 * that rank each edge in the newly generated paths according to its weight
-	 * @param paths 
-	 * 			the sorted paths of the network generated from the algorithm
-	 */
-	public void updatePathIndexAttribute(ArrayList<PathWay> paths) {
-		// Use nameIndex to create a new attribute "path index n"
-	    // in the network edge table, where n is an unique number
-		while (_originalNetwork.getDefaultEdgeTable().getColumn("path index " + nameIndex) != null)
-			nameIndex++;
-
-		String columnName = "path index " + nameIndex;
-		_originalNetwork.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
-
-		for (int i = 0; i < paths.size(); i++) {
-			PathWay currPath = paths.get(i);
-
-			// excluding supersource and supertarget
-			for (int j = 1; j < currPath.size() - 2; j++) {
-				CyNode node1 = currPath.get(j);
-				CyNode node2 = currPath.get(j + 1);
-
-				// add all of the directed edges from node1 to node2
-				List<CyEdge> edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
-				for (CyEdge edge : edges)
-				{
-					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null &&
-							edge.getSource().equals(node1) && edge.getTarget().equals(node2)) // verifies the edges direction
-						_originalNetwork.getRow(edge).set(columnName, i + 1);
-				}
-				// also add all of the undirected edges from node1 to node2
-				edges = _originalNetwork.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
-				for (CyEdge edge : edges) 
-					if (_originalNetwork.getRow(edge).get(columnName, Integer.class) == null)
-						_originalNetwork.getRow(edge).set(columnName,  i + 1);
-			}
-		}
-
-		// add the newly created column into the maps
-        _pathIndexToSuidMap.put(columnName, _kspSubgraph.getSUID());
-        _suidToPathIndexMap.put(_kspSubgraph.getSUID(), columnName);
-	}
-
-	/**
 	 * Writes the ksp results to result panel given the results from the ksp algorithm
 	 * @param paths a list of paths generated from the ksp algorithm
 	 */
@@ -837,141 +771,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// set visible and selected
 		resultsPanel.setVisible(true);
 		cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(resultsPanel.getComponent()));
-	}
-
-	/**
-	 * Creates a new sub-network and sub-network view for the subgraph generated by the KSP
-	 */
-	public void createKSPSubgraphAndView() {
-		// creates task iterator and execute it to generate a sub-network from the original network
-		// the bypass values and other styles from the original network will be pass down to the sub-network
-		TaskIterator subNetworkTask = _adapter.get_NewNetworkSelectedNodesAndEdgesTaskFactory()
-				.createTaskIterator(_model.getOriginalNetwork());
-
-		// creates synchronous task manager to execute the task on creating the subnetwork
-		SynchronousTaskManager<?> synTaskMan =
-		        _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
-		synTaskMan.execute(subNetworkTask);
-
-		// assign the new sub network and network views
-		_kspSubgraph = _applicationManager.getCurrentNetworkView().getModel();
-		_kspSubgraphView = _applicationManager.getCurrentNetworkView();
-
-		// use a visual bypass to color the sources and targets for the sub-network view
-		Color targetColor = new Color(255, 223, 0);
-
-		for (CyNode source : _model.getSubgraphSources()) {
-			View<CyNode> currView = _kspSubgraphView.getNodeView(source);
-			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.DIAMOND);
-			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.CYAN);
-		}
-		for (CyNode target : _model.getSubgraphTargets()) {
-			View<CyNode> currView = _kspSubgraphView.getNodeView(target);
-			currView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.RECTANGLE);
-			currView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, targetColor);
-		}
-
-		_kspSubgraphView.updateView();
-
-		// apply layout according to the k value
-		applyLayout();
-	}
-
-	/**
-	 * Assign appropriate network name to the new sub-network created using nameIndex field
-	 */
-	public void updateNetworkName() {
-	    // Create the new name to the sub-network
-        String subgraphName = "PathLinker-subnetwork-" + _model.getOutputK() + "-paths-" + nameIndex;
-
-        int count = 1;
-        boolean condition = false;
-        List<CyNetwork> networkList = new ArrayList<CyNetwork>();
-        networkList.addAll(_networkManager.getNetworkSet());
-
-        // check if network network already exist
-        for (CyNetwork network : networkList) {
-            if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().equals(subgraphName)) {
-                condition = true;
-                break;
-            }
-        }
-
-        // if network name already exist, create alternative name
-        // check if alternative name also exists
-        outerLoop:
-        while (condition) {
-            for (CyNetwork network : networkList) {
-                if (network.getRow(network).get(CyNetwork.NAME, String.class).trim().
-                        equals(subgraphName + " (" + count + ")")) {
-                    count++;
-                    continue outerLoop;
-                }
-            }
-
-            subgraphName += (" (" + count + ")");
-            condition = false;
-        }
-
-        // apply the name to the network
-        _kspSubgraph.getRow(_kspSubgraph).set(CyNetwork.NAME, subgraphName);
-	}
-
-	/**
-	 * Applies hierarchical layout to the sub-network If k <= 2000, otherwise the users default layout will be applied
-	 */
-	private void applyLayout() {
-        // Applying the hierarchical layout is quick for a small number of nodes and edges. 
-        // Applying the hierarchical layout took ~2 sec for k=1000, ~10 sec for k=2000, and ~5 min for k=5000. 
-        // The user can apply the layout after generating the network, so to keep running time down, set the max to k=2000
-        boolean hierarchical = _model.getOutputK() <= 2000;
-
-        // set node layout by applying the default or hierarchical layout algorithm
-        CyLayoutAlgorithm algo = hierarchical ? _adapter.getCyLayoutAlgorithmManager().getLayout("hierarchical")
-                : _adapter.getCyLayoutAlgorithmManager().getDefaultLayout();
-		TaskIterator iter = algo.createTaskIterator(_kspSubgraphView, algo.createLayoutContext(),
-				CyLayoutAlgorithm.ALL_NODE_VIEWS, null);
-
-        // creates synchronous task manager to execute the task on applying the layout
-		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar()
-				.getService(SynchronousTaskManager.class);
-		synTaskMan.execute(iter);
-
-		if (!hierarchical) // ends if default layout
-		    return;
-
-		// reflect nodes about the x-axis because the default hierarchical
-		// layout renders the nodes upside down
-		// Update: only reflect nodes if k < 200. For k >= 200, the hierarchical layout is right-side up
-		if (_model.getOutputK() < 200){
-			double maxY = Integer.MIN_VALUE;
-			double minY = Integer.MAX_VALUE;
-
-			// finds the midpoint x coordinate
-			for (CyNode node : _kspSubgraph.getNodeList()) {
-				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-
-				if (yCoord > maxY)
-					maxY = yCoord;
-
-				if (yCoord < minY)
-					minY = yCoord;
-			}
-
-			double midY = (maxY + minY) / 2;
-
-			// reflects each node about the midpoint x axis
-			for (CyNode node : _kspSubgraph.getNodeList()) {
-				View<CyNode> nodeView = _kspSubgraphView.getNodeView(node);
-				double yCoord = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-
-				double newY = -1 * yCoord + 2 * midY;
-				nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, newY);
-			}
-		}
-
-		_kspSubgraphView.updateView();
 	}
 
 	/**
