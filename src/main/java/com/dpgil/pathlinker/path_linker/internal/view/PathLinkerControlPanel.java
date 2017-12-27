@@ -3,6 +3,7 @@ package com.dpgil.pathlinker.path_linker.internal.view;
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
 import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerModelParams;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
+import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
@@ -200,12 +200,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		this.revalidate();
 		this.repaint();
-	}
-
-	/**
-	 * Default constructor for the panel
-	 */
-	public PathLinkerControlPanel() {
 	}
 
 	/**
@@ -598,6 +592,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// terminates the process if user decides to fix the error manually
 		if (!readValuesFromPanel()) return false;
 
+		// create synchronous task manager to run the task on creating KSP subgraph and etc.
+        SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
+
 		// initialize the params from user inputs
 		PathLinkerModelParams params = new PathLinkerModelParams();
 		params.allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
@@ -611,9 +608,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// performs KSP algorithm by creating the runKSPTask
 		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, params);
-		TaskIterator runKSPTaskIterator = new TaskIterator(runKSPTask);
-		SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
-		synTaskMan.execute(runKSPTaskIterator);
 
 		// obtain results from the runKSPTask
 		_model = runKSPTask.getResults(PathLinkerModel.class);
@@ -635,12 +629,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
 		CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(_originalNetwork, _model, _adapter, _applicationManager);
-		TaskIterator createKSPViewTaskIterator = new TaskIterator(createKSPViewTask);
-		synTaskMan.execute(createKSPViewTaskIterator);
+		synTaskMan.execute(new TaskIterator(createKSPViewTask));
 		_kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);
 
 		// writes the result of the algorithm to a table
-		writeResult(result);
+		CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(_kspSubgraph, String.valueOf(nameIndex),
+                _networkManager, result, _serviceRegistrar, _cySwingApp);
+		synTaskMan.execute(new TaskIterator(createResultPanelTask));
 
 		return true;
 	}
@@ -748,29 +743,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
         // successful parsing
         return true;
-	}
-
-	/**
-	 * Writes the ksp results to result panel given the results from the ksp algorithm
-	 * @param paths a list of paths generated from the ksp algorithm
-	 */
-	public void writeResult(ArrayList<PathWay> paths) {
-
-		// create and register a new panel in result panel with specific title
-	    // the result panel name will be sync with network and path index using nameIndex
-		PathLinkerResultPanel resultsPanel = new PathLinkerResultPanel(String.valueOf(nameIndex),
-				_networkManager, _kspSubgraph, paths);
-		_serviceRegistrar.registerService(resultsPanel, CytoPanelComponent.class, new Properties());
-
-		// open and show the result panel if in hide state
-		CytoPanel cytoPanel = _cySwingApp.getCytoPanel(resultsPanel.getCytoPanelName());
-
-		if (cytoPanel.getState() == CytoPanelState.HIDE)
-			cytoPanel.setState(CytoPanelState.DOCK);
-
-		// set visible and selected
-		resultsPanel.setVisible(true);
-		cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(resultsPanel.getComponent()));
 	}
 
 	/**
