@@ -100,10 +100,12 @@ extends AbstractCyActivator
 		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
 
 		// Create PathLinker CyRest implementations and register to the service
-        CIExceptionFactory ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
-        CIErrorFactory ciErrorFactory = this.getService(context, CIErrorFactory.class);
-
-		PathLinkerImpl cyRestClient = new PathLinkerImpl(cyApplicationManager, ciExceptionFactory, ciErrorFactory);
+		CIExceptionFactory ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
+		CIErrorFactory ciErrorFactory = this.getService(context, CIErrorFactory.class);
+		PathLinkerImpl cyRestClient = new PathLinkerImpl(
+		        cyApplicationManager, networkManager, adapter,
+		        serviceRegistrar, cySwingApp,
+		        ciExceptionFactory, ciErrorFactory);
 		registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
 	}
 }

@@ -608,6 +608,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// performs KSP algorithm by creating the runKSPTask
 		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, params);
+		synTaskMan.execute(new TaskIterator(runKSPTask));
 
 		// obtain results from the runKSPTask
 		_model = runKSPTask.getResults(PathLinkerModel.class);

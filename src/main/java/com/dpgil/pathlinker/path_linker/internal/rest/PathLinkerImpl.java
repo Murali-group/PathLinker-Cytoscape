@@ -5,17 +5,26 @@ import java.util.ArrayList;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.ci.CIErrorFactory;
 import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.ci.model.CIError;
 import org.cytoscape.ci.model.CIResponse;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.work.SynchronousTaskManager;
+import org.cytoscape.work.TaskIterator;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
+import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
+import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
+import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
-import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
 import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerPath;
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
 /**
  * Implementation of the PathLinkerResource interface
@@ -24,68 +33,124 @@ public class PathLinkerImpl implements PathLinkerResource {
 
     /** CytoScape application manager */
     private CyApplicationManager cyApplicationManager;
+    private CyNetworkManager cyNetworkManager;
+    /** adapter to create necessary tasks to create the sub network */
+    private CyAppAdapter adapter;
+    /** service registrar to register result panel */
+    private CyServiceRegistrar serviceRegistrar;
+    /** swing application to set the status of the result panel */
+    private CySwingApplication cySwingApp;
+    /** PathLinker Model object to run analysis */
+    private PathLinkerModel pathLinkerModel;
 
     /** CI Factories for Exceptions */
     private final CIExceptionFactory ciExceptionFactory;
     /** CI Factories for Errors */
     private final CIErrorFactory ciErrorFactory;
     /** Response String for error origin */
-    private final static String resourceErrorRoot = "urn:cytoscape:ci:pathlinker-app:v1";
-
-    /** Error code for Network Not Found */
-    private static final String CY_NETWORK_NOT_FOUND_CODE = "1";
-
-    /** PathLinker Model object to run analysis */
-    private PathLinkerModel pathLinkerModel;
+    private final static String RESOURCE_ERROR_ROOT = "urn:cytoscape:ci:pathlinker-app:v1";
+    /** Error Message for Network Not Found */
+    private static final String CY_NETWORK_NOT_FOUND_ERROR = "CY_NETWORK_NOT_FOUND_ERROR";
 
     /**
      * Default constructor
      * @param cyApplicationManager application manager
-     * @param ciExceptionFactory CIException Factory
-     * @param ciErrorFactory CIError Factory
+     * @param cyNetworkManager network manager
+     * @param adapter app adapter
+     * @param serviceRegistrar service registrar
+     * @param cySwingApp swing app
+     * @param ciExceptionFactory CIException factory
+     * @param ciErrorFactory CIError factory
      */
-    public PathLinkerImpl(CyApplicationManager cyApplicationManager, 
+    public PathLinkerImpl(
+            CyApplicationManager cyApplicationManager, 
+            CyNetworkManager cyNetworkManager,
+            CyAppAdapter adapter,
+            CyServiceRegistrar serviceRegistrar,
+            CySwingApplication cySwingApp,
             CIExceptionFactory ciExceptionFactory,
             CIErrorFactory ciErrorFactory) {
         this.cyApplicationManager = cyApplicationManager;
+        this.cyNetworkManager = cyNetworkManager;
+        this.adapter = adapter;
+        this.serviceRegistrar = serviceRegistrar;
+        this.cySwingApp = cySwingApp;
         this.ciExceptionFactory = ciExceptionFactory;
         this.ciErrorFactory = ciErrorFactory;
     }
 
     /**
-     * Implementation of the postModel method
-     * Creates a PathLinkerModel and generate a ksp subgraph of the given network
+     * Helper method which accesses current CyNetwork
+     * @param resourcePath error resource path
+     * @param errorType error type
+     * @return current CyNetwork if exists
+     *          otherwise throws CI Error
+     */
+    private CyNetwork getCyNetwork(long networkSUID) {
+        CyNetwork cyNetwork = cyNetworkManager.getNetwork(networkSUID);
+
+        if (cyNetwork == null) {
+            String errorMsg = "The given network does not exist";
+            throw ciExceptionFactory.getCIException(404, 
+                    new CIError[]{this.buildCIError(404, 
+                            "runPathLinker", CY_NETWORK_NOT_FOUND_ERROR, errorMsg, null)});
+        }
+
+        return cyNetwork;
+    }
+
+    /**
+     * Helper method which constructs CI Error
+     * @param status error status
+     * @param resourcePath error resource path
+     * @param code error code
+     * @param message error message
+     * @param e the exception that causes the error
+     * @return CIError object
+     */
+    private CIError buildCIError(int status, String resourcePath, 
+            String code, String message, Exception e) {
+        return ciErrorFactory.getCIError(status, 
+                RESOURCE_ERROR_ROOT + ":" + resourcePath + ":"+ code, message);
+    }
+
+    /**
+     * Implementation of runPathLinker method from PathLinkerResource
+     * Runs PathLinker on the input network and user parameters
+     * 
+     * @param networkSUID the SUID of the network to run PathLinker
+     * @param modelParams user inputs
      */
     @Override
-    public Response generatePathList(PathLinkerModelParams modelParams) {
+    public Response runPathLinker(long networkSUID, PathLinkerModelParams modelParams) {
 
-        // access current network
-        CyNetwork cyNetwork = getCyNetwork("Run PathLinker Algorithm", CY_NETWORK_NOT_FOUND_CODE);
+        // access the network of the given network SUID
+        CyNetwork cyNetwork = getCyNetwork(networkSUID);
 
-        // Initialize EdgeWeightSetting enum accordingly
-        EdgeWeightSetting edgeWeightSetting;
-        if (modelParams.edgeWeightSettingName.equals("unweighted"))
-            edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
-        else if (modelParams.edgeWeightSettingName.equals("additive"))
-            edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
-        else
-            edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+        // create synchronous task manager to run the task on creating KSP subgraph and etc.
+        SynchronousTaskManager<?> synTaskMan = adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
 
-        // initialize the PathLinkerModel to run ksp
-        pathLinkerModel = new PathLinkerModel(
-                cyNetwork, 
-                modelParams.allowSourcesTargetsInPaths, 
-                modelParams.includePathScoreTies, 
-                modelParams.sourcesTextField, 
-                modelParams.targetsTextField, 
-                modelParams.edgeWeightColumnName,
-                modelParams.inputK,
-                edgeWeightSetting, 
-                modelParams.edgePenalty);
+        // performs KSP algorithm by creating the runKSPTask
+        RunKSPTask runKSPTask = new RunKSPTask(cyNetwork, modelParams);
+        synTaskMan.execute(new TaskIterator(runKSPTask));
 
-        // run ksp and store result
-        pathLinkerModel.runKSP();
+        // obtain results from the runKSPTask
+        pathLinkerModel = runKSPTask.getResults(PathLinkerModel.class);
         ArrayList<PathWay> paths = pathLinkerModel.getResult();
+
+        // only generate subgraph/view if user agrees to
+        if (modelParams.generateKSPSubgraph) {
+            // construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
+            CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
+            synTaskMan.execute(new TaskIterator(createKSPViewTask));
+            CyNetwork kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);
+
+            // writes the result of the algorithm to a table
+            CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(kspSubgraph, 
+                    String.valueOf(PathLinkerControlPanel.nameIndex),
+                    cyNetworkManager, paths, serviceRegistrar, cySwingApp);
+            synTaskMan.execute(new TaskIterator(createResultPanelTask));
+        }
 
         // the result that stores all paths in string format
         ArrayList<PathLinkerPath> result = new ArrayList<PathLinkerPath>();
@@ -104,50 +169,9 @@ public class PathLinkerImpl implements PathLinkerResource {
         // construct the list of paths into JSON Response format
         CIResponse<ArrayList<PathLinkerPath>>response = new CIResponse<ArrayList<PathLinkerPath>>();
         ((CIResponse<ArrayList<PathLinkerPath>>)response).data = result;
-        response.errors = new ArrayList<CIError>();
 
         return Response.status(Response.Status.OK)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(result).build();
-    }
-
-    @Override
-    public Response generateKSPGraph(long networkSUID, long networkViewSUID, PathLinkerModelParams modelParams) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /**
-     * Helper method which accesses current CyNetwork
-     * @param resourcePath error resource path
-     * @param errorType error type
-     * @return current CyNetwork if exists
-     *          otherwise throws CI Error
-     */
-    private CyNetwork getCyNetwork(String resourcePath, String errorType) {
-        CyNetwork cyNetwork = cyApplicationManager.getCurrentNetwork();
-
-        if (cyNetwork == null) {
-            String messageString = "Could not find current Network";
-            throw ciExceptionFactory.getCIException(404, 
-                    new CIError[]{this.buildCIError(404, 
-                            resourcePath, errorType, messageString, null)});
-        }
-        return cyNetwork;
-    }
-
-    /**
-     * Helper method which constructs CI Error
-     * @param status error status
-     * @param resourcePath error resource path
-     * @param code error code
-     * @param message error message
-     * @param e the exception that causes the error
-     * @return CIError object
-     */
-    private CIError buildCIError(int status, String resourcePath, 
-            String code, String message, Exception e) {
-        return ciErrorFactory.getCIError(status, 
-                resourceErrorRoot + ":" + resourcePath+ ":"+ code, message);
     }
 }
