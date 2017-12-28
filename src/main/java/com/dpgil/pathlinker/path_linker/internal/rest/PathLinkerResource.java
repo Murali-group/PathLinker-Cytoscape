@@ -1,6 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal.rest;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -26,7 +26,9 @@ public interface PathLinkerResource {
     @ApiModel(value="PathLinker App Response", 
             description="PathLinker Analysis Results in CI Format", 
             parent=CIResponse.class)
-    public static class PathLinkerAppResponse extends CIResponse<ArrayList<PathLinkerPath>> {
+    public static class PathLinkerAppResponse {
+        public long[] suids;
+        public List<PathLinkerPath> paths;
     }
 
     /**

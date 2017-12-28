@@ -13,11 +13,11 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.ci.CIErrorFactory;
 import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.ci.model.CIError;
-import org.cytoscape.ci.model.CIResponse;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 
@@ -164,6 +164,9 @@ public class PathLinkerImpl implements PathLinkerResource {
             throw ciExceptionFactory.getCIException(422, errorList.toArray(new CIError[errorList.size()]));
         }
 
+        // response to be returned
+        PathLinkerAppResponse response = new PathLinkerAppResponse();
+
         // obtain results from the runKSPTask
         pathLinkerModel = runKSPTask.getResults(PathLinkerModel.class);
         ArrayList<PathWay> paths = pathLinkerModel.getResult();
@@ -173,10 +176,16 @@ public class PathLinkerImpl implements PathLinkerResource {
             // construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
             CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
-            CyNetwork kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);
+
+            // store subgraph/view suids to the response
+            response.suids = new long[] {
+                    createKSPViewTask.getResults(CyNetwork.class).getSUID(), 
+                    createKSPViewTask.getResults(CyNetworkView.class).getSUID()
+            };
 
             // writes the result of the algorithm to a table
-            CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(kspSubgraph, 
+            CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(
+                    createKSPViewTask.getResults(CyNetwork.class), 
                     String.valueOf(PathLinkerControlPanel.nameIndex),
                     cyNetworkManager, paths, serviceRegistrar, cySwingApp);
             synTaskMan.execute(new TaskIterator(createResultPanelTask));
@@ -196,13 +205,10 @@ public class PathLinkerImpl implements PathLinkerResource {
             result.add(new PathLinkerPath(i + 1, paths.get(i).weight, currentPath));
         }
 
-        // construct the list of paths into JSON Response format
-        CIResponse<ArrayList<PathLinkerPath>>response = new CIResponse<ArrayList<PathLinkerPath>>();
-        ((CIResponse<ArrayList<PathLinkerPath>>)response).data = result;
+        // store results into response
+        response.paths = result;
 
-        return Response.status(Response.Status.OK)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(result).build();
+        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(response).build();
     }
 
     /**
@@ -212,7 +218,6 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @return a list of CIError
      */
     public List<CIError> validateUserInput(PathLinkerModelParams modelParams) {
-
         // construct errorList
         List<CIError> errorList = new ArrayList<CIError>();
 

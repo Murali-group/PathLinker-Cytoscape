@@ -66,13 +66,17 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
     }
 
     /**
-     * Used to access the ksp subgraph created by the task
+     * Used to access the ksp subgraph/view created by the task
+     * @return the subgraph/view created
      */
     @SuppressWarnings("unchecked")
     @Override
     public <R> R getResults(Class<? extends R> type) {
         if (type.equals(CyNetwork.class))
             return (R) kspSubgraph;
+
+        if (type.equals(CyNetworkView.class))
+            return (R) kspSubgraphView;
 
         return null;
     }
