@@ -1,6 +1,8 @@
 package com.dpgil.pathlinker.path_linker.internal.rest;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -12,6 +14,7 @@ import org.cytoscape.ci.CIErrorFactory;
 import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.ci.model.CIError;
 import org.cytoscape.ci.model.CIResponse;
+import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -23,6 +26,7 @@ import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
 import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerPath;
 import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
@@ -51,6 +55,10 @@ public class PathLinkerImpl implements PathLinkerResource {
     private final static String RESOURCE_ERROR_ROOT = "urn:cytoscape:ci:pathlinker-app:v1";
     /** Error Message for Network Not Found */
     private static final String CY_NETWORK_NOT_FOUND_ERROR = "CY_NETWORK_NOT_FOUND_ERROR";
+    /** Error Message for invalid user input */
+    private static final String INVALID_INPUT_ERROR = "INVALID_INPUT_ERROR";
+    /** Error Message for invalid source/target/edge inputs */
+    private static final String SOURCE_TARGET_EDGE_ERROR = "INVALID_SOURCE_TARGET_EDGE_INPUT_ERROR";
 
     /**
      * Default constructor
@@ -111,7 +119,7 @@ public class PathLinkerImpl implements PathLinkerResource {
     private CIError buildCIError(int status, String resourcePath, 
             String code, String message, Exception e) {
         return ciErrorFactory.getCIError(status, 
-                RESOURCE_ERROR_ROOT + ":" + resourcePath + ":"+ code, message);
+                RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + code, message);
     }
 
     /**
@@ -121,11 +129,19 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @param networkSUID the SUID of the network to run PathLinker
      * @param modelParams user inputs
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Response runPathLinker(long networkSUID, PathLinkerModelParams modelParams) {
 
         // access the network of the given network SUID
         CyNetwork cyNetwork = getCyNetwork(networkSUID);
+
+        // process validation for input parameters
+        // throw exception if error found
+        List<CIError> errorList = validateUserInput(modelParams);
+        if (errorList.size() > 0) {
+            throw ciExceptionFactory.getCIException(422, errorList.toArray(new CIError[errorList.size()]));
+        }
 
         // create synchronous task manager to run the task on creating KSP subgraph and etc.
         SynchronousTaskManager<?> synTaskMan = adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
@@ -133,6 +149,20 @@ public class PathLinkerImpl implements PathLinkerResource {
         // performs KSP algorithm by creating the runKSPTask
         RunKSPTask runKSPTask = new RunKSPTask(cyNetwork, modelParams);
         synTaskMan.execute(new TaskIterator(runKSPTask));
+
+        // obtain validation to see if any error occurs
+        errorList = (List<CIError>) runKSPTask.getResults(CIError.class);
+        if (errorList.size() > 0) {
+
+            // reconstruct error for JSON format
+            for (int i = 0; i < errorList.size(); i++) {
+                CIError error = this.buildCIError(422, 
+                        "runPathLinker", SOURCE_TARGET_EDGE_ERROR, errorList.get(i).message.replace("\n", ""), null);
+                errorList.set(i, error);
+            }
+
+            throw ciExceptionFactory.getCIException(422, errorList.toArray(new CIError[errorList.size()]));
+        }
 
         // obtain results from the runKSPTask
         pathLinkerModel = runKSPTask.getResults(PathLinkerModel.class);
@@ -173,5 +203,77 @@ public class PathLinkerImpl implements PathLinkerResource {
         return Response.status(Response.Status.OK)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(result).build();
+    }
+
+    /**
+     * Check for invalid user input
+     * Store all errors in a list for creating exception
+     * @param modelParams the user inputs
+     * @return a list of CIError
+     */
+    public List<CIError> validateUserInput(PathLinkerModelParams modelParams) {
+
+        // construct errorList
+        List<CIError> errorList = new ArrayList<CIError>();
+
+        // validate sources text field
+        if (modelParams.sourcesTextField == null || modelParams.sourcesTextField.trim().isEmpty()) {
+            String errorMsg = "Invalid sourcesTextField. Source field cannot be empty";
+            CIError error = this.buildCIError(422, 
+                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+        }
+
+        // validate targets text field
+        if (modelParams.targetsTextField == null || modelParams.targetsTextField.trim().isEmpty()) {
+            String errorMsg = "Invalid targetTextField. Target field cannot be empty";
+            CIError error = this.buildCIError(422, 
+                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+        }
+
+        // validate input k value
+        if (modelParams.inputK < 1) {
+            String errorMsg = "Invalid inputK. K value cannot be less than 1";
+            CIError error = this.buildCIError(422, 
+                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+        }
+
+        // skip validation for other parameters if edge weight setting is unweighted
+        if (modelParams.edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
+            return errorList;
+
+        // validation for edge penalty
+        if (modelParams.edgePenalty < 1 && modelParams.edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight setting PROBABILITIES";
+            CIError error = this.buildCIError(422, 
+                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);    
+        }
+
+        else if (modelParams.edgePenalty < 0) {
+            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 0";
+            CIError error = this.buildCIError(422, 
+                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+        }
+
+        // validation for edge weight column name
+        Collection<CyColumn> columns = cyApplicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();  
+        for (CyColumn column : columns) {
+            if (column.getName().equals(modelParams.edgeWeightColumnName) && (column.getType() == Double.class 
+                    || column.getType() == Integer.class || column.getType() == Float.class 
+                    || column.getType() == Long.class))
+                return errorList; // column name exists
+        }
+
+        // column name does not exist
+        String errorMsg  = "Invalid edgeWeightColumnName. Column name must point to a valid edge column with numerical type";
+        CIError error = this.buildCIError(422, 
+                "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+        errorList.add(error);   
+
+        return errorList;
     }
 }

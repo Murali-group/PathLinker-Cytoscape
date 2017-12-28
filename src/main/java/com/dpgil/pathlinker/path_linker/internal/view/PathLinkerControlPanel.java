@@ -360,7 +360,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 			if (sourceText.length() > 0 && sourceText.charAt(_sourcesTextField.getText().length() - 1) != ' ')
 				_sourcesTextField.setText(sourceText + " " + sources.toString());
 			else _sourcesTextField.setText(sourceText + sources.toString());
-
 		}
 	}
 
@@ -444,7 +443,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				_edgeWeightColumnBox.addItem(column.getName());		
 		}
 	}
-	
+
 	/**
 	 * construct/update the combo box items for the network combo box
 	 * Use when the PathLinker starts
@@ -528,11 +527,12 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * based on the source/target text fields and the check boxes
 	 */
 	private void enableSubmitButton() {
-        // TODO if the text field is empty, sometimes the button is still enabled
-		if (_sourcesTextField.hintEnabled() || _targetsTextField.hintEnabled() 
+	    if ((_sourcesTextField.hintEnabled() || _sourcesTextField.getText().trim().isEmpty()) 
+		        || (_targetsTextField.hintEnabled() || _targetsTextField.getText().trim().isEmpty())
 		        || _applicationManager.getCurrentNetwork() == null)
 			_submitButton.setEnabled(false);
-		else _submitButton.setEnabled(true);
+
+	    else _submitButton.setEnabled(true);
 	}
 
 	/**
@@ -610,9 +610,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, params);
 		synTaskMan.execute(new TaskIterator(runKSPTask));
 
-		// obtain results from the runKSPTask
-		_model = runKSPTask.getResults(PathLinkerModel.class);
-		List<CIError> errorList = _model.getErrorList();
+		// obtain validation to check if any error occurs
+		@SuppressWarnings("unchecked")
+        List<CIError> errorList = (List<CIError>) runKSPTask.getResults(CIError.class);
 
 		// check if runKSPTask is terminated due to errors, if true construct error messages
 		if (errorList.size() > 0) {
@@ -620,10 +620,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		    for (int i = 0; i < errorList.size(); i++)
 		        errorMessage.append(errorList.get(i).message);
 
-            JOptionPane.showMessageDialog(null, errorMessage.toString(), 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-            return false;
+		    JOptionPane.showMessageDialog(null, errorMessage.toString(), 
+		            "Error Message", JOptionPane.ERROR_MESSAGE);
+		    return false;
 		}
+
+		// obtain results from the runKSPTask
+		_model = runKSPTask.getResults(PathLinkerModel.class);
 
 		// obtain result computed from the model
 		ArrayList<PathWay> result = _model.getResult();

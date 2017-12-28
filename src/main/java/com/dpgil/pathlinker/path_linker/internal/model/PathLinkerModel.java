@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.cytoscape.ci.model.CIError;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -78,8 +77,6 @@ public class PathLinkerModel {
 	private HashSet<CyNode> subgraphTargets;
 	/** The path result produced by the ksp algorithm */
 	private ArrayList<PathWay> result;
-	/** store errors that occurred when running ksp algorithm */
-	private List<CIError> errorList;
 
 	/**
 	 * Constructor of the model
@@ -111,7 +108,6 @@ public class PathLinkerModel {
 		this.idToCyNode 		  = new HashMap<String, CyNode>();
 		this.cyNodeToId			  = new HashMap<CyNode, String>();
 		this.commonSourcesTargets = 0;
-		this.errorList            = new ArrayList<CIError>();
 	}
 
 	/**
@@ -219,6 +215,14 @@ public class PathLinkerModel {
 	}
 
 	/**
+	 * Getter method of edgeWeightColumnName
+	 * @return edgeWeightColumnName
+	 */
+	public String getEdgeWeightColumnName() {
+	    return this.edgeWeightColumnName;
+	}
+
+	/**
 	 * Getter method of kspSubgraph
 	 * @return kspSubgraph
 	 */
@@ -240,14 +244,6 @@ public class PathLinkerModel {
 	 */
 	public HashSet<CyNode> getSubgraphTargets() {
 		return this.subgraphTargets;
-	}
-
-	/**
-	 * Getter method of the error list
-	 * @return errorList
-	 */
-	public List<CIError> getErrorList() {
-	    return this.errorList;
 	}
 
 	/**
@@ -340,7 +336,7 @@ public class PathLinkerModel {
 	 * 		targetsList, targetNames, targetsNoInNet
 	 * 		idToCyNode
 	 */
-	private void prepareIdSourceTarget() {
+	public void prepareIdSourceTarget() {
 		// populates a mapping from the name of a node to the actual node object
 		// used for converting user input to node objects. populates the map named _idToCyNode
 		populateIdCyNodePair();
@@ -354,15 +350,8 @@ public class PathLinkerModel {
 	 * Runs all the necessary algorithms to calculate kth shortest path
 	 * If path exists, selects corresponding nodes and edges in the network
 	 *     to prepare for the subnetwork creation
-	 * @return true if run successful, otherwise false
 	 */
-	public boolean runKSP() {
-	    // set up source and target
-	    prepareIdSourceTarget();
-
-	    // check if source and target are set up correctly
-	    if (!checkSourceTargetEdge()) return false;
-
+	public void runKSP() {
 	    // sets the number of common sources and targets
 		// this is for a temporary hack
 		setCommonSourcesTargets();
@@ -412,16 +401,6 @@ public class PathLinkerModel {
 
 		// set the number of paths the subgraph contains
 		outputK = result.size();
-
-		// check if any path found
-		if (outputK == 0) {
-            CIError error = new CIError();
-            error.message = "No paths found";
-            errorList.add(0, error);
-            return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -808,97 +787,4 @@ public class PathLinkerModel {
 
 		return nodes;
 	}
-
-	/**
-     * Check user inputs on source, target, and edge weights
-     * @return true if check passes, otherwise false
-     */
-    private boolean checkSourceTargetEdge() {
-
-        // obtain sources and targets from the model
-        ArrayList<String> sourcesNotInNet = getSourcesNotInNet();
-        ArrayList<String> targetsNotInNet = getTargetsNotInNet();
-        ArrayList<CyNode> sources = getSourcesList();
-        ArrayList<CyNode> targets = getTargetsList();
-        boolean quit = false;
-
-        // edge case where only one source and one target are inputted,
-        // so no paths will be found. warn the user
-        if (sources.size() == 1 && sources.equals(targets)) {
-            CIError error = new CIError();
-            error.message = "The only source node is the same as the only target node.\n"
-                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-
-        // makes sure that we actually have at least one valid source and target
-        if (targets.size() == 0 && targetsNotInNet.size() == 0) {
-            CIError error = new CIError();
-            error.message = "The targets text field is empty.\n  - Targets are required to run PathLinker.\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-        else if (targets.size() == 0) {
-            CIError error = new CIError();
-            error.message = "  - Targets are required to run PathLinker.\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-        // insert all missing targets/targets to the error message
-        if (targetsNotInNet.size() > 0) {
-            int totalTargets = targets.size() + targetsNotInNet.size();
-            CIError error = new CIError();
-            error.message = targets.size() + " out of " + totalTargets + " targets are found in the network." +
-                    "\n  - Targets not found: " + targetsNotInNet.toString() +
-                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n";
-
-            errorList.add(0, error);
-            quit = true;
-        }
-
-        if (sources.size() == 0 && sourcesNotInNet.size() == 0) {
-            CIError error = new CIError();
-            error.message = "The sources text field is empty.\n  - Sources are required to run PathLinker.\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-        else if (sources.size() == 0) {
-            CIError error = new CIError();
-            error.message = "  - Sources are required to run PathLinker.\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-        // insert all missing sources/targets to the error message
-        if (sourcesNotInNet.size() > 0) {
-            int totalSources = sources.size() + sourcesNotInNet.size();
-            CIError error = new CIError();
-            error.message = sources.size() + " out of " + totalSources + " sources are found in the network." +
-                    "\n  - Sources not found: " + sourcesNotInNet.toString() +
-                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n";
-            errorList.add(0, error);
-            quit = true;
-        }
-
-        // checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
-        // if a weighted option was selected, but not all edges have weights
-        // then we say something to the user.
-        if (edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED){
-            for (CyEdge edge : originalNetwork.getEdgeList()) {
-                try {
-                    Double.parseDouble(originalNetwork.getRow(edge).getRaw(edgeWeightColumnName).toString());
-                } catch (NullPointerException  e) {
-                    CIError error = new CIError();
-                    error.message = "Weighted option is selected, but at least one edge does not have a weight in the selected edge weight column '" + 
-                            edgeWeightColumnName + "'. Please either select the Unweighted option, or ensure all edges have a weight to run PathLinker.\n";
-
-                    errorList.add(error);
-                    quit = true;
-                    break;
-                }
-            }
-        }
-
-        return !quit;
-    }
 }
