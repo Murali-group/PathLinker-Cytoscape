@@ -32,7 +32,8 @@ public interface PathLinkerResource {
     }
 
     /**
-     * Post Function that takes user input and generate and return a k-number sorted path list
+     * Post Function that takes user input, generate new network/network view, 
+     *      and return network/view SUIDs and k-number sorted path list
      * Does not modify or generate network/network view in Cytoscape itself
      * @param modelParams paramters needed to generate a network
      * @return k-number sorted path list in JSON Array format
@@ -42,8 +43,9 @@ public interface PathLinkerResource {
     @Consumes("application/json")
     @Path("{networkSUID}/runPathLinker")
     @ApiOperation(value = "Run PathLinker on Selected Network with Options, ", 
-    notes = "PathLinker takes user inputs to create a sub-network/network view and return a k-number sorted path list",
-    response = PathLinkerAppResponse.class)
+    notes = "PathLinker takes user inputs to create a sub-network/network view; "
+            + "returns network/view SUIDs and k-number sorted path list",
+            response = PathLinkerAppResponse.class)
     @ApiResponses(value = { 
             @ApiResponse(code = 404, message = "Input Network Does Not Exist", response = CIResponse.class),
             @ApiResponse(code = 422, message = "Invalid User Input", response = CIResponse.class),

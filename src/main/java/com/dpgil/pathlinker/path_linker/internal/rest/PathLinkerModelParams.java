@@ -15,20 +15,17 @@ public class PathLinkerModelParams {
             + " Default set to false", example = "false")
     public boolean generateKSPSubgraph = false;
 
-    @ApiModelProperty(value = "Allow Sources and Targets in Computed Path. Default set to false", example = "false")
-    public boolean allowSourcesTargetsInPaths= false;
-
-    @ApiModelProperty(value = "Include All Paths With Same Score/Lengths. Default set to false", example = "false")
-    public boolean includePathScoreTies = false; 
-
     @ApiModelProperty(value = "Source Node Name Seperate By Space", example = "S1 S2 S3", required = true)
     public String sourcesTextField; 
 
     @ApiModelProperty(value = "Target Node Name Seperate By Space", example = "T1 T2 T3", required = true)
     public String targetsTextField;
 
-    @ApiModelProperty(value = "Edge Weight Column Name", example = "edge_weight")
-    public String edgeWeightColumnName;
+    @ApiModelProperty(value = "Allow Sources and Targets in Computed Path. Default set to false", example = "false")
+    public boolean allowSourcesTargetsInPaths = false;
+
+    @ApiModelProperty(value = "Include All Paths With Same Score/Lengths. Default set to false", example = "false")
+    public boolean includePathScoreTies = false; 
 
     @ApiModelProperty(value = "Number of Paths to be Generated. Default set to 50", example = "50")
     public int inputK = 50;
@@ -38,4 +35,7 @@ public class PathLinkerModelParams {
 
     @ApiModelProperty(value = "Edge Penality. Default set to 0", example = "0")
     public double edgePenalty = 0;
+
+    @ApiModelProperty(value = "Edge Weight Column Name", example = "edge_weight")
+    public String edgeWeightColumnName;
 }
