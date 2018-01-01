@@ -15,6 +15,7 @@ import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
 
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerResultPanel;
 
 /**
@@ -22,6 +23,7 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerResultPanel;
  */
 public class CreateResultPanelTask extends AbstractNetworkTask implements ObservableTask {
 
+    private PathLinkerControlPanel controlPanel;
     /** the network that the result panel is corresponded to */
     private CyNetwork network;
     /** the title of the result panel */
@@ -47,6 +49,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
      * @param cySwingApp the CySwingApplication
      */
     public CreateResultPanelTask(
+            PathLinkerControlPanel controlPanel,
             CyNetwork network,
             String title,
             CyNetworkManager networkManager,
@@ -55,6 +58,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
             CySwingApplication cySwingApp) {
 
         super(network);
+        this.controlPanel = controlPanel;
         this.network = network;
         this.title = title;
         this.networkManager = networkManager;
@@ -96,7 +100,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
     private void createResultPanel() {
         // create and register a new panel in result panel with specific title
         // the result panel name will be sync with network and path index using nameIndex
-        resultPanel = new PathLinkerResultPanel(title, networkManager, network, results);
+        resultPanel = new PathLinkerResultPanel(controlPanel, title, networkManager, network, results);
         serviceRegistrar.registerService(resultPanel, CytoPanelComponent.class, new Properties());
 
         // open and show the result panel if in hide state

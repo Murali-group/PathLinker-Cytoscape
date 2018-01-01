@@ -17,18 +17,24 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerNetworkEventListener implements SetCurrentNetworkListener, NetworkAddedListener, NetworkDestroyedListener {
 
+    private PathLinkerControlPanel controlPanel;
+
+    public PathLinkerNetworkEventListener(PathLinkerControlPanel controlPanel) {
+        this.controlPanel = controlPanel;
+    }
+
     @Override
     public void handleEvent(SetCurrentNetworkEvent e) {
         // update edge weight column choices when  changing network
-        PathLinkerControlPanel.updateEdgeWeightColumn();
+        controlPanel.updateEdgeWeightColumn();
 
         // update the networkCmb when changing selected network
         CyNetwork network = e.getNetwork();
         if (network == null)
-            PathLinkerControlPanel._networkCmb.setSelectedIndex(0);
-        else if (PathLinkerControlPanel._suidToIndexMap.containsKey(network.getSUID())) {
-            PathLinkerControlPanel._networkCmb.setSelectedIndex(
-                    PathLinkerControlPanel._suidToIndexMap.get(network.getSUID()));
+            controlPanel._networkCmb.setSelectedIndex(0);
+        else if (controlPanel._suidToIndexMap.containsKey(network.getSUID())) {
+            controlPanel._networkCmb.setSelectedIndex(
+                    controlPanel._suidToIndexMap.get(network.getSUID()));
         }
     }
 
@@ -39,7 +45,7 @@ public class PathLinkerNetworkEventListener implements SetCurrentNetworkListener
         CyNetwork network = e.getNetwork();
 
         if (network != null) {
-            PathLinkerControlPanel.initializeNetworkCmb();
+            controlPanel.initializeNetworkCmb();
         }
     }
 
@@ -47,6 +53,6 @@ public class PathLinkerNetworkEventListener implements SetCurrentNetworkListener
     public void handleEvent(NetworkDestroyedEvent e) {
 
         // update the networkCmb when deleting a network
-        PathLinkerControlPanel.initializeNetworkCmb();
+        controlPanel.initializeNetworkCmb();
     }
 }

@@ -48,6 +48,8 @@ import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
  */
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
+
+    private PathLinkerControlPanel _controlPanel;
     /** the network manager for the app */
     private CyNetworkManager _networkManager;
     /** The k shortest paths generated from the network **/
@@ -69,11 +71,14 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
      * @param currentNetwork the current network associated with the result panel
      * @param results the results from pathlinker
      */
-    public PathLinkerResultPanel(String title,
+    public PathLinkerResultPanel(
+            PathLinkerControlPanel controlPanel,
+            String title,
             CyNetworkManager networkManager,
             CyNetwork currentNetwork,
             ArrayList<PathWay> results)
     {
+        this._controlPanel = controlPanel;
         this._title = title;
         this._networkManager = networkManager;
         this._currentNetwork = currentNetwork;
@@ -121,10 +126,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             // obtain the path linker index column if network exists or column exists
             CyColumn pathIndexColumn = null;
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null
-                    && PathLinkerControlPanel._suidToPathIndexMap
+                    && _controlPanel._suidToPathIndexMap
                     .get(_currentNetwork.getSUID()) != null) {
                 pathIndexColumn = _currentNetwork.getDefaultEdgeTable()
-                        .getColumn(PathLinkerControlPanel._suidToPathIndexMap
+                        .getColumn(_controlPanel._suidToPathIndexMap
                                 .get(_currentNetwork.getSUID()));
             }
 
@@ -149,8 +154,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
                 _networkManager.destroyNetwork(_currentNetwork);
 
             // clean up the suid-pathindex and pathindex-suid maps
-            PathLinkerControlPanel._pathIndexToSuidMap.remove(
-                    PathLinkerControlPanel._suidToPathIndexMap.remove(
+            _controlPanel._pathIndexToSuidMap.remove(
+                    _controlPanel._suidToPathIndexMap.remove(
                             _currentNetwork.getSUID()));
 
             Container btnParent = _deleteBtn.getParent();

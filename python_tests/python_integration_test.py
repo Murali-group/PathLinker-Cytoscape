@@ -37,12 +37,12 @@ input_data = {}
 input_data["generateKSPSubgraph"] = True
 input_data["sourcesTextField"] = "P35968 P00533 Q02763"
 input_data["targetsTextField"] = "Q15797 Q14872 Q16236 P14859 P36956"
-# input_data["allowSourcesTargetsInPaths"] = False
-# input_data["includePathScoreTies"] = False
-# input_data["inputK"] = 50
-# input_data["edgeWeightSetting"] = "UNWEIGHTED"
+input_data["allowSourcesTargetsInPaths"] = False
+input_data["includePathScoreTies"] = False
+input_data["inputK"] = 100
+input_data["edgeWeightSetting"] = "ADDITIVE"
 # input_data["edgePenalty"] = 0
-# input_data["edgeWeightColumnName"] = "edge_weight"
+input_data["edgeWeightColumnName"] = "weight"
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 result = requests.request("POST",

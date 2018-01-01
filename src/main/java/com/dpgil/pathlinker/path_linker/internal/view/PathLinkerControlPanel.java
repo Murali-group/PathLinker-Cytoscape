@@ -76,33 +76,33 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private HintTextField _sourcesTextField;
 	private HintTextField _targetsTextField;
 	private JTextField _kTextField;
-	private static JTextField _edgePenaltyTextField;
+	private JTextField _edgePenaltyTextField;
 
 	private JButton _helpBtn;
 	private JButton _aboutBtn;
-	public static JButton _loadNodeToSourceButton;
-	public static JButton _loadNodeToTargetButton;
+	public JButton _loadNodeToSourceButton;
+	public JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
 	private JButton _closeButton;
 
-	public static JComboBox<String> _networkCmb;
-	protected static JComboBox<String> _edgeWeightColumnBox;
-	private static ButtonGroup _weightedOptionGroup;
-	private static JRadioButton _unweighted;
-	private static JRadioButton _weightedAdditive;
-	private static JRadioButton _weightedProbabilities;
+	public JComboBox<String> _networkCmb;
+	protected JComboBox<String> _edgeWeightColumnBox;
+	private ButtonGroup _weightedOptionGroup;
+	private JRadioButton _unweighted;
+	private JRadioButton _weightedAdditive;
+	private JRadioButton _weightedProbabilities;
 
 	private JCheckBox _allowSourcesTargetsInPathsOption;
-	public static  JCheckBox _targetsSameAsSourcesOption;
+	public JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
 
 	private CyServiceRegistrar _serviceRegistrar;
 
 	/** Cytoscape class for network and view management */
 	private CySwingApplication _cySwingApp;
-	public static CyApplicationManager _applicationManager;
-	private static CyNetworkManager _networkManager;
+	private CyApplicationManager _applicationManager;
+	private CyNetworkManager _networkManager;
 	private CyAppAdapter _adapter;
 
 	/** The model that runs ksp algorithm from the user input */
@@ -130,20 +130,20 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** The value by which to penalize each edge weight */
 	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
-	private static String _savedEdgeWeightSelection;
+	private String _savedEdgeWeightSelection;
     /** The StringBuilder that construct error messages if any to the user */
     private StringBuilder errorMessage;
 
 	/** The map stores the index-SUID pair of each network inside the networkCmb */
-    protected static Map<Integer, Long> _indexToSUIDMap;
+    public Map<Integer, Long> _indexToSUIDMap;
     /** The map stores the SUID-index pair of each network inside the networkCmb */
-    public static Map<Long, Integer> _suidToIndexMap;
+    public Map<Long, Integer> _suidToIndexMap;
 	/** The map stores the SUID to path index column name pair of each network */
-    public static Map<Long, String> _suidToPathIndexMap;
+    public Map<Long, String> _suidToPathIndexMap;
     /** The map stores path index column name to SUID pair of each network */
-    public static Map<String, Long> _pathIndexToSuidMap;
+    public Map<String, Long> _pathIndexToSuidMap;
     /** Global sync index number to sync network, Path Index, and result names upon creation */
-    public static int nameIndex;
+    public int nameIndex;
 
 	/** The state of the panel */
 	public enum PanelState {
@@ -423,7 +423,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * construct/update the combo box items for selecting edge weight
 	 * Called by PathLinkerNetworkEventListener and PathLinkerColumnUpdateListener class if event triggered
 	 */
-	public static void updateEdgeWeightColumn() {
+	public void updateEdgeWeightColumn() {
 
 		_edgeWeightColumnBox.removeAllItems(); //remove all items for update
 
@@ -449,7 +449,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * Use when the PathLinker starts
 	 *     when network name is changed
 	 */
-	public static void initializeNetworkCmb() {
+	public void initializeNetworkCmb() {
 	    
 	  //make sure combo box and related maps is empty when initializing
 	    _networkCmb.removeAllItems();
@@ -483,7 +483,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * update the edge penalty text field depending on user's selection edge weight radio button
 	 * Called by RadioButtonListener class if user selects a radio button
 	 */
-	private static void updateEdgePenaltyTextField() {
+	private void updateEdgePenaltyTextField() {
 
 		// if user clicks on the same button that is previously selected then do nothing
 		if (_savedEdgeWeightSelection.equals(_weightedOptionGroup.getSelection().getActionCommand()))
@@ -632,12 +632,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		ArrayList<PathWay> result = _model.getResult();
 
 		// construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
-		CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(_originalNetwork, _model, _adapter, _applicationManager);
+		CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(this, _originalNetwork, _model, _adapter, _applicationManager);
 		synTaskMan.execute(new TaskIterator(createKSPViewTask));
 		_kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);
 
 		// writes the result of the algorithm to a table
-		CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(_kspSubgraph, String.valueOf(nameIndex),
+		CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(this,
+		        _kspSubgraph, String.valueOf(nameIndex),
                 _networkManager, result, _serviceRegistrar, _cySwingApp);
 		synTaskMan.execute(new TaskIterator(createResultPanelTask));
 

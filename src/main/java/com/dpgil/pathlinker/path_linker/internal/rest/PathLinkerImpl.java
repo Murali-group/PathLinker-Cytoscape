@@ -35,6 +35,7 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerImpl implements PathLinkerResource {
 
+    private PathLinkerControlPanel controlPanel;
     /** CytoScape application manager */
     private CyApplicationManager cyApplicationManager;
     private CyNetworkManager cyNetworkManager;
@@ -71,6 +72,7 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @param ciErrorFactory CIError factory
      */
     public PathLinkerImpl(
+            PathLinkerControlPanel controlPanel,
             CyApplicationManager cyApplicationManager, 
             CyNetworkManager cyNetworkManager,
             CyAppAdapter adapter,
@@ -78,6 +80,7 @@ public class PathLinkerImpl implements PathLinkerResource {
             CySwingApplication cySwingApp,
             CIExceptionFactory ciExceptionFactory,
             CIErrorFactory ciErrorFactory) {
+        this.controlPanel = controlPanel;
         this.cyApplicationManager = cyApplicationManager;
         this.cyNetworkManager = cyNetworkManager;
         this.adapter = adapter;
@@ -174,7 +177,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         // only generate subgraph/view if user agrees to
         if (modelParams.generateKSPSubgraph) {
             // construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
-            CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
+            CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(controlPanel, cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
 
             // store subgraph/view suids to the response
@@ -184,9 +187,9 @@ public class PathLinkerImpl implements PathLinkerResource {
             };
 
             // writes the result of the algorithm to a table
-            CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(
+            CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(controlPanel,
                     createKSPViewTask.getResults(CyNetwork.class), 
-                    String.valueOf(PathLinkerControlPanel.nameIndex),
+                    String.valueOf(controlPanel.nameIndex),
                     cyNetworkManager, paths, serviceRegistrar, cySwingApp);
             synTaskMan.execute(new TaskIterator(createResultPanelTask));
         }

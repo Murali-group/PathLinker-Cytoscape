@@ -31,6 +31,7 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class CreateKSPViewTask extends AbstractNetworkTask implements ObservableTask {
 
+    private PathLinkerControlPanel controlPanel;
     /** the network to be used to create subgraph and subgraphview */
     private CyNetwork network;
     /** the model to access the information necessary for creating the subgraph/view */
@@ -53,12 +54,14 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
      * @param applicationManager the application manager
      */
     public CreateKSPViewTask(
+            PathLinkerControlPanel controlPanel,
             CyNetwork network,
             PathLinkerModel model,
             CyAppAdapter adapter,
             CyApplicationManager applicationManager) {
         super(network);
 
+        this.controlPanel = controlPanel;
         this.network = network;
         this.model = model;
         this.adapter = adapter;
@@ -94,7 +97,7 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         PathLinkerNodeSelectionListener.setActive(false);
 
         // increment the index use for creating the network, path index column, and result panel
-        PathLinkerControlPanel.nameIndex++;
+        controlPanel.nameIndex++;
 
         // generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
         createKSPSubgraphAndView();
@@ -103,7 +106,7 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         PathLinkerNodeSelectionListener.setActive(true);
 
         // manually updates the network combo box after creating the new network
-        PathLinkerControlPanel.initializeNetworkCmb();
+        controlPanel.initializeNetworkCmb();
 
         // update the table path index attribute
         updatePathIndexAttribute(model.getResult());
@@ -215,10 +218,10 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
     public void updatePathIndexAttribute(ArrayList<PathWay> paths) {
         // Use nameIndex to create a new attribute "path index n"
         // in the network edge table, where n is an unique number
-        while (network.getDefaultEdgeTable().getColumn("path index " + PathLinkerControlPanel.nameIndex) != null)
-            PathLinkerControlPanel.nameIndex++;
+        while (network.getDefaultEdgeTable().getColumn("path index " + controlPanel.nameIndex) != null)
+            controlPanel.nameIndex++;
 
-        String columnName = "path index " + PathLinkerControlPanel.nameIndex;
+        String columnName = "path index " + controlPanel.nameIndex;
         network.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
 
         for (int i = 0; i < paths.size(); i++) {
@@ -246,8 +249,8 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         }
 
         // add the newly created column into the maps
-        PathLinkerControlPanel._pathIndexToSuidMap.put(columnName, kspSubgraph.getSUID());
-        PathLinkerControlPanel._suidToPathIndexMap.put(kspSubgraph.getSUID(), columnName);
+        controlPanel._pathIndexToSuidMap.put(columnName, kspSubgraph.getSUID());
+        controlPanel._suidToPathIndexMap.put(kspSubgraph.getSUID(), columnName);
     }
 
     /**
@@ -255,7 +258,7 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
      */
     public void updateNetworkName() {
         // Create the new name to the sub-network
-        String subgraphName = "PathLinker-subnetwork-" + model.getOutputK() + "-paths-" + PathLinkerControlPanel.nameIndex;
+        String subgraphName = "PathLinker-subnetwork-" + model.getOutputK() + "-paths-" + controlPanel.nameIndex;
 
         int count = 1;
         boolean condition = false;

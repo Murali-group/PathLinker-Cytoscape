@@ -16,26 +16,32 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, ColumnDeletedListener, ColumnNameChangedListener {
 
-	@Override
-	public void handleEvent(ColumnNameChangedEvent e) {
-		PathLinkerControlPanel.updateEdgeWeightColumn();
+    private PathLinkerControlPanel controlPanel;
 
-		long suid = PathLinkerControlPanel._pathIndexToSuidMap.remove(e.getOldColumnName());
-		PathLinkerControlPanel._suidToPathIndexMap.put(suid, e.getNewColumnName());
-		PathLinkerControlPanel._pathIndexToSuidMap.put(e.getNewColumnName(), suid);
-	}
+    public PathLinkerColumnUpdateListener(PathLinkerControlPanel controlPanel) {
+        this.controlPanel = controlPanel;
+    }
 
-	@Override
-	public void handleEvent(ColumnDeletedEvent e) {
-		PathLinkerControlPanel.updateEdgeWeightColumn();
+    @Override
+    public void handleEvent(ColumnNameChangedEvent e) {
+        controlPanel.updateEdgeWeightColumn();
 
-        PathLinkerControlPanel._suidToPathIndexMap.remove(
-                PathLinkerControlPanel._pathIndexToSuidMap.remove(
+        long suid = controlPanel._pathIndexToSuidMap.remove(e.getOldColumnName());
+        controlPanel._suidToPathIndexMap.put(suid, e.getNewColumnName());
+        controlPanel._pathIndexToSuidMap.put(e.getNewColumnName(), suid);
+    }
+
+    @Override
+    public void handleEvent(ColumnDeletedEvent e) {
+        controlPanel.updateEdgeWeightColumn();
+
+        controlPanel._suidToPathIndexMap.remove(
+                controlPanel._pathIndexToSuidMap.remove(
                         e.getColumnName()));
-	}
+    }
 
-	@Override
-	public void handleEvent(ColumnCreatedEvent e) {
-		PathLinkerControlPanel.updateEdgeWeightColumn();
-	}
+    @Override
+    public void handleEvent(ColumnCreatedEvent e) {
+        controlPanel.updateEdgeWeightColumn();
+    }
 }
