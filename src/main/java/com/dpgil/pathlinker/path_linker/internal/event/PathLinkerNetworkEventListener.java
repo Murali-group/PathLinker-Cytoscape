@@ -17,8 +17,13 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerNetworkEventListener implements SetCurrentNetworkListener, NetworkAddedListener, NetworkDestroyedListener {
 
+    /** The PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
 
+    /**
+     * Default constructor to gain access to the control panel
+     * @param controlPanel the PathLinkerControlPanel
+     */
     public PathLinkerNetworkEventListener(PathLinkerControlPanel controlPanel) {
         this.controlPanel = controlPanel;
     }

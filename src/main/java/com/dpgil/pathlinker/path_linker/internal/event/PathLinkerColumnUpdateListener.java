@@ -16,8 +16,13 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, ColumnDeletedListener, ColumnNameChangedListener {
 
+    /** the PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
 
+    /**
+     * Default constructor to gain access of the control panel
+     * @param controlPanel the PathLinkerControlPanel
+     */
     public PathLinkerColumnUpdateListener(PathLinkerControlPanel controlPanel) {
         this.controlPanel = controlPanel;
     }

@@ -11,11 +11,18 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 /** Listener class for _loadNodeToSourceButton and _loadNodeToTargetButton in PathLinkerPanel class */
 public class PathLinkerNodeSelectionListener implements RowsSetListener {
 
-    // field to enable/disable updating network combo box
+    /** field to enable/disable updating network combo box */
     private static boolean active;
+    /** the PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
+    /** the application manager associated with */
     private CyApplicationManager applicationManager;
 
+    /**
+     * Default constructor
+     * @param controlPanel          the PathLinkerControlPanel
+     * @param applicationManager    the CyApplicationManager
+     */
     public PathLinkerNodeSelectionListener(
             PathLinkerControlPanel controlPanel, 
             CyApplicationManager applicationManager) {

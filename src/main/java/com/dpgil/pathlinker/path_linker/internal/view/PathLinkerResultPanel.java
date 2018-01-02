@@ -49,14 +49,15 @@ import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 @SuppressWarnings("serial")
 public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent {
 
+    /** the PathLinker control panel associated with */
     private PathLinkerControlPanel _controlPanel;
     /** the network manager for the app */
     private CyNetworkManager _networkManager;
-    /** The k shortest paths generated from the network **/
+    /** The k shortest paths generated from the network */
     private final ArrayList<PathWay> _results;
-    /** The current network associated with the result panel **/
+    /** The current network associated with the result panel */
     private final CyNetwork _currentNetwork;
-    /** The tab title of the result panel **/
+    /** The tab title of the result panel */
     private String _title;
 
     private JButton _exportBtn;
@@ -66,10 +67,11 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
     /**
      * Constructor for the result frame class
+     * @param controlPanel the PathLinkerControlPanel
      * @param title the title of the result panel
      * @param networkManager the network manager of the app
      * @param currentNetwork the current network associated with the result panel
-     * @param results the results from pathlinker
+     * @param results the results from PathLinker
      */
     public PathLinkerResultPanel(
             PathLinkerControlPanel controlPanel,
@@ -115,15 +117,15 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
         public void actionPerformed(ActionEvent e) {
 
             // create error messages
-            StringBuilder errorMessage = new StringBuilder("This action will permanently delete the following items: \n");
+            StringBuilder warningMessage = new StringBuilder("This action will permanently delete the following items: \n");
 
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null)
-                errorMessage.append("<html><b>Network:</b> " +
+                warningMessage.append("<html><b>Network:</b> " +
                         _currentNetwork.getRow(_currentNetwork).get(CyNetwork.NAME, String.class) + "<html>\n");
 
-            errorMessage.append("<html><b>Results Panel tab:</b> " + getTitle() + "<html>\n");
+            warningMessage.append("<html><b>Results Panel tab:</b> " + getTitle() + "<html>\n");
 
-            // obtain the path linker index column if network exists or column exists
+            // obtain the PathLinker index column if network exists or column exists
             CyColumn pathIndexColumn = null;
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null
                     && _controlPanel._suidToPathIndexMap
@@ -134,13 +136,13 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             }
 
             if (pathIndexColumn != null)
-                errorMessage.append("<html><b>Edge Table column:</b> " +
+                warningMessage.append("<html><b>Edge Table column:</b> " +
                         pathIndexColumn.getName() + "<html>\n");
 
-            errorMessage.append("\nContinue?");
+            warningMessage.append("\nContinue?");
 
             String[] options = {"Continue", "Cancel"};
-            int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
+            int choice = JOptionPane.showOptionDialog(null, warningMessage.toString(), 
                     "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
             if (choice != 0) return; // quit if select cancel

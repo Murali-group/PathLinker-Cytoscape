@@ -35,6 +35,7 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class PathLinkerImpl implements PathLinkerResource {
 
+    /** the PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
     /** CytoScape application manager */
     private CyApplicationManager cyApplicationManager;
@@ -63,13 +64,14 @@ public class PathLinkerImpl implements PathLinkerResource {
 
     /**
      * Default constructor
-     * @param cyApplicationManager application manager
-     * @param cyNetworkManager network manager
-     * @param adapter app adapter
-     * @param serviceRegistrar service registrar
-     * @param cySwingApp swing app
-     * @param ciExceptionFactory CIException factory
-     * @param ciErrorFactory CIError factory
+     * @param controlPanel          the PathLinkerControlPanel
+     * @param cyApplicationManager  application manager
+     * @param cyNetworkManager      network manager
+     * @param adapter               app adapter
+     * @param serviceRegistrar      service registrar
+     * @param cySwingApp            swing app
+     * @param ciExceptionFactory    CIException factory
+     * @param ciErrorFactory        CIError factory
      */
     public PathLinkerImpl(
             PathLinkerControlPanel controlPanel,

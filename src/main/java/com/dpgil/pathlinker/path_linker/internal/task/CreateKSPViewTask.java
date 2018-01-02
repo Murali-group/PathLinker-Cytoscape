@@ -31,7 +31,8 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
  */
 public class CreateKSPViewTask extends AbstractNetworkTask implements ObservableTask {
 
-    private PathLinkerControlPanel controlPanel;
+    /** the current PathLinker control panel */
+    private PathLinkerControlPanel controlPanel;    
     /** the network to be used to create subgraph and subgraphview */
     private CyNetwork network;
     /** the model to access the information necessary for creating the subgraph/view */
@@ -48,6 +49,7 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
 
     /**
      * Default constructor
+     * @param controlPanel the PathLinkerControlPanel
      * @param network the network
      * @param model the model
      * @param adapter the adapter

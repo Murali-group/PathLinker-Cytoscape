@@ -23,6 +23,7 @@ import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerResultPanel;
  */
 public class CreateResultPanelTask extends AbstractNetworkTask implements ObservableTask {
 
+    /** the current PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
     /** the network that the result panel is corresponded to */
     private CyNetwork network;
@@ -41,6 +42,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
 
     /**
      * Default constructor
+     * @param controlPanel the PathLinkerControlPanel
      * @param network the network
      * @param title the title
      * @param networkManager the network manager

@@ -55,7 +55,6 @@ public class CyActivator extends AbstractCyActivator
     private CIErrorFactory ciErrorFactory;
     private PathLinkerImpl cyRestClient;
 
-
     @Override
     public void start(BundleContext context) throws Exception {
 

@@ -203,17 +203,14 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Initializer for the panel to reduce the number of parameters in the
-	 * constructor
-	 *
-	 * @param applicationManager
-	 *            application manager
-	 * @param networkManager
-	 *            network manager
-	 * @param networkViewManager
-	 *            network view manager
-	 * @param adapter
-	 *            the cy application adapter
+	 * Initializer for the panel to reduce the number of parameters in the constructor
+	 * @param cySwingApp           swing application
+	 * @param serviceRegistrar     service registrar
+	 * @param applicationManager   application manager
+	 * @param networkManager       network manager
+	 * @param adapter              app adapter
+	 * @param version              PathLinker app version
+	 * @param buildDate            PathLinker app build dates
 	 */
 	public void initialize(CySwingApplication cySwingApp, CyServiceRegistrar serviceRegistrar,
 			CyApplicationManager applicationManager, CyNetworkManager networkManager, CyAppAdapter adapter,
