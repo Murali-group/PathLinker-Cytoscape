@@ -34,19 +34,19 @@ cy_network_suid = cy_network.get_id() # obtain network object SUID
 
 # construct PathLinker input data for API request
 input_data = {}
-input_data["generateKSPSubgraph"] = True
-input_data["sourcesTextField"] = "P35968 P00533 Q02763"
-input_data["targetsTextField"] = "Q15797 Q14872 Q16236 P14859 P36956"
+input_data["sources"] = "P35968 P00533 Q02763"
+input_data["targets"] = "Q15797 Q14872 Q16236 P14859 P36956"
 input_data["allowSourcesTargetsInPaths"] = False
-input_data["includePathScoreTies"] = False
-input_data["inputK"] = 100
+input_data["includeTiedPaths"] = False
+input_data["k"] = 50
 input_data["edgeWeightSetting"] = "ADDITIVE"
-# input_data["edgePenalty"] = 0
+input_data["edgePenalty"] = 1
 input_data["edgeWeightColumnName"] = "weight"
+input_data["generateKSPSubgraph"] = True
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 result = requests.request("POST",
-                            "http://localhost:1234/pathlinker/v1/" + str(cy_network_suid) + "/runPathLinker",
+                            "http://localhost:1234/pathlinker/v1.4/" + str(cy_network_suid) + "/runPathLinker",
                             data = json.dumps(input_data),
                             params = None,
                             headers = headers)

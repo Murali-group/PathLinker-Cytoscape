@@ -14,21 +14,21 @@ import java.util.ArrayList;
 public class PathLinkerPath {
     /** the path index */
     private int pathIndex;
-    /** the total weight of the path */
-    private double  pathWeight;
+    /** the total score of the path */
+    private double  pathScore;
     /** the list of nodes in string in order in the path */
-    private ArrayList<String> nodeList;
+    private ArrayList<String> path;
 
     /**
      * Default constructor
      * @param pathIndex     the path index
-     * @param pathWeight    the path weight
+     * @param pathScore    the path score
      * @param nodeList      the node list
      */
-    public PathLinkerPath (int pathIndex, double pathWeight, ArrayList<String> nodeList) {
+    public PathLinkerPath (int pathIndex, double pathScore, ArrayList<String> nodeList) {
         this.pathIndex = pathIndex;
-        this.pathWeight = pathWeight;
-        this.nodeList = nodeList;
+        this.pathScore = pathScore;
+        this.path = nodeList;
     }
 
     /**
@@ -40,27 +40,11 @@ public class PathLinkerPath {
     }
 
     /**
-     * Setter method for path index
-     * @param pathIndex the pathIndex to set
-     */
-    public void setPathIndex(int pathIndex) {
-        this.pathIndex = pathIndex;
-    }
-
-    /**
      * Getter method for path weight
      * @return the pathWeight
      */
     public double getPathWeight() {
-        return pathWeight;
-    }
-
-    /**
-     * Setter method for path weight
-     * @param pathWeight the pathWeight to set
-     */
-    public void setPathWeight(double pathWeight) {
-        this.pathWeight = pathWeight;
+        return pathScore;
     }
 
     /**
@@ -68,14 +52,6 @@ public class PathLinkerPath {
      * @return the nodeList
      */
     public ArrayList<String> getNodeList() {
-        return nodeList;
-    }
-
-    /**
-     * Setter method for the node list
-     * @param nodeList the nodeList to set
-     */
-    public void setNodeList(ArrayList<String> nodeList) {
-        this.nodeList = nodeList;
+        return path;
     }
 }

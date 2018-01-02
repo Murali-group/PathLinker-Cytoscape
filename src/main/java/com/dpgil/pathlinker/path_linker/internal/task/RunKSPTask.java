@@ -81,11 +81,11 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
         pathLinkerModel = new PathLinkerModel(
                 network, 
                 modelParams.allowSourcesTargetsInPaths, 
-                modelParams.includePathScoreTies, 
-                modelParams.sourcesTextField, 
-                modelParams.targetsTextField, 
+                modelParams.includeTiedPaths, 
+                modelParams.sources, 
+                modelParams.targets, 
                 modelParams.edgeWeightColumnName,
-                modelParams.inputK,
+                modelParams.k,
                 modelParams.edgeWeightSetting, 
                 modelParams.edgePenalty);
 

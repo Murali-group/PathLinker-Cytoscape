@@ -20,14 +20,15 @@ import io.swagger.annotations.ApiResponses;
  * Interface for PathLinker Cytoscape CyRest Service
  */
 @Api(tags = "Apps: PathLinker")
-@Path("/pathlinker/v1/")
+@Path("/pathlinker/v1.4/")
 public interface PathLinkerResource {
 
     @ApiModel(value="PathLinker App Response", 
             description="PathLinker Analysis Results in CI Format", 
             parent=CIResponse.class)
     public static class PathLinkerAppResponse {
-        public long[] suids;
+        public long kspSubNetworkSUID = Long.MIN_VALUE;
+        public long kspSubNetworkViewSUID = Long.MIN_VALUE;
         public List<PathLinkerPath> paths;
     }
 

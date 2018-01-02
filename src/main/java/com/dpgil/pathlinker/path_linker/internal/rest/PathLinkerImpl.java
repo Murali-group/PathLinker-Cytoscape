@@ -1,5 +1,7 @@
 package com.dpgil.pathlinker.path_linker.internal.rest;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -183,10 +185,8 @@ public class PathLinkerImpl implements PathLinkerResource {
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
 
             // store subgraph/view suids to the response
-            response.suids = new long[] {
-                    createKSPViewTask.getResults(CyNetwork.class).getSUID(), 
-                    createKSPViewTask.getResults(CyNetworkView.class).getSUID()
-            };
+            response.kspSubNetworkSUID = createKSPViewTask.getResults(CyNetwork.class).getSUID();
+            response.kspSubNetworkViewSUID = createKSPViewTask.getResults(CyNetworkView.class).getSUID();
 
             // writes the result of the algorithm to a table
             CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(controlPanel,
@@ -199,15 +199,20 @@ public class PathLinkerImpl implements PathLinkerResource {
         // the result that stores all paths in string format
         ArrayList<PathLinkerPath> result = new ArrayList<PathLinkerPath>();
 
+        // A decimal formatter to round path score up to 6 decimal places
+        DecimalFormat df = new DecimalFormat("#.######");
+        df.setRoundingMode(RoundingMode.HALF_UP);
+
         // loop through the paths, construct PathLinkerPath object, and add to result
         for (int i = 0; i < paths.size(); i++) {
             PathWay path = paths.get(i);
             ArrayList<String> currentPath = new ArrayList<String>();
 
-            for (int j = 1; j < path.size() - 1; j++)
+            for (int j = 1; j < path.size() - 1; j++) {
                 currentPath.add(path.nodeIdMap.get(path.get(j)));
+            }
 
-            result.add(new PathLinkerPath(i + 1, paths.get(i).weight, currentPath));
+            result.add(new PathLinkerPath(i + 1, Double.valueOf(df.format(paths.get(i).weight)), currentPath));
         }
 
         // store results into response
@@ -227,7 +232,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         List<CIError> errorList = new ArrayList<CIError>();
 
         // validate sources text field
-        if (modelParams.sourcesTextField == null || modelParams.sourcesTextField.trim().isEmpty()) {
+        if (modelParams.sources == null || modelParams.sources.trim().isEmpty()) {
             String errorMsg = "Invalid sourcesTextField. Source field cannot be empty";
             CIError error = this.buildCIError(422, 
                     "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
@@ -235,7 +240,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         }
 
         // validate targets text field
-        if (modelParams.targetsTextField == null || modelParams.targetsTextField.trim().isEmpty()) {
+        if (modelParams.targets == null || modelParams.targets.trim().isEmpty()) {
             String errorMsg = "Invalid targetTextField. Target field cannot be empty";
             CIError error = this.buildCIError(422, 
                     "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
@@ -243,7 +248,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         }
 
         // validate input k value
-        if (modelParams.inputK < 1) {
+        if (modelParams.k < 1) {
             String errorMsg = "Invalid inputK. K value cannot be less than 1";
             CIError error = this.buildCIError(422, 
                     "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);

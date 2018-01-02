@@ -88,7 +88,7 @@ public class CyActivator extends AbstractCyActivator
                 cyApplicationManager,
                 networkManager,
                 adapter,
-                "1.3", 
+                "1.4", 
                 "Oct. 25, 2017");
 
         // Create PathLinker CyRest implementations

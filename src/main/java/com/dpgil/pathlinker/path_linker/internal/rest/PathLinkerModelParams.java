@@ -11,31 +11,31 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value="PathLinker Parameters", description="Parameters for PathLinkerModel")
 public class PathLinkerModelParams {
 
-    @ApiModelProperty(value = "Generate KSP subgraph/subgraph view, pathlinker index, and result panel in Cytoscape."
-            + " Default set to false", example = "false")
-    public boolean generateKSPSubgraph = false;
+    @ApiModelProperty(value = "Source Node Names Seperate By Spaces. Must match the name column in the Node Table.", example = "S1 S2 S3", required = true)
+    public String sources; 
 
-    @ApiModelProperty(value = "Source Node Name Seperate By Space", example = "S1 S2 S3", required = true)
-    public String sourcesTextField; 
-
-    @ApiModelProperty(value = "Target Node Name Seperate By Space", example = "T1 T2 T3", required = true)
-    public String targetsTextField;
+    @ApiModelProperty(value = "Target Node Names Seperate By Spaces. Must match the name column in the Node Table.", example = "T1 T2 T3", required = true)
+    public String targets;
 
     @ApiModelProperty(value = "Allow Sources and Targets in Computed Path. Default set to false", example = "false")
     public boolean allowSourcesTargetsInPaths = false;
 
     @ApiModelProperty(value = "Include All Paths With Same Score/Lengths. Default set to false", example = "false")
-    public boolean includePathScoreTies = false; 
+    public boolean includeTiedPaths = false; 
 
     @ApiModelProperty(value = "Number of Paths to be Generated. Default set to 50", example = "50")
-    public int inputK = 50;
+    public int k = 50;
 
     @ApiModelProperty(value = "Edge Weight Setting Name. Default set to UNWEIGHTED", example = "UNWEIGHTED")
     public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
 
-    @ApiModelProperty(value = "Edge Penality. Default set to 0", example = "0")
-    public double edgePenalty = 0;
+    @ApiModelProperty(value = "Edge Penality. Default set to 1", example = "1")
+    public double edgePenalty = 1;
 
     @ApiModelProperty(value = "Edge Weight Column Name", example = "edge_weight")
     public String edgeWeightColumnName;
+
+    @ApiModelProperty(value = "Generate KSP subgraph/subgraph view, pathlinker index, and result panel in Cytoscape."
+            + " Default set to false", example = "true")
+    public boolean generateKSPSubgraph = true;
 }

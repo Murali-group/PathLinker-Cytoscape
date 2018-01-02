@@ -595,11 +595,11 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// initialize the params from user inputs
 		PathLinkerModelParams params = new PathLinkerModelParams();
 		params.allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
-		params.includePathScoreTies = _includePathScoreTiesOption.isSelected();
-		params.sourcesTextField = _sourcesTextField.getText().trim();
-		params.targetsTextField = _targetsTextField.getText().trim();
+		params.includeTiedPaths = _includePathScoreTiesOption.isSelected();
+		params.sources = _sourcesTextField.getText().trim();
+		params.targets = _targetsTextField.getText().trim();
 		params.edgeWeightColumnName = _edgeWeightColumnName;
-		params.inputK = _kValue;
+		params.k = _kValue;
 		params.edgeWeightSetting = _edgeWeightSetting;
 		params.edgePenalty = _edgePenalty;
 
