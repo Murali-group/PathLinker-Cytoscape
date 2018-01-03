@@ -145,7 +145,7 @@ public class PathLinkerImpl implements PathLinkerResource {
 
         // process validation for input parameters
         // throw exception if error found
-        List<CIError> errorList = validateUserInput(modelParams);
+        List<CIError> errorList = validateUserInput(cyNetwork, modelParams);
         if (errorList.size() > 0) {
             throw ciExceptionFactory.getCIException(422, errorList.toArray(new CIError[errorList.size()]));
         }
@@ -185,8 +185,8 @@ public class PathLinkerImpl implements PathLinkerResource {
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
 
             // store subgraph/view suids to the response
-            response.kspSubNetworkSUID = createKSPViewTask.getResults(CyNetwork.class).getSUID();
-            response.kspSubNetworkViewSUID = createKSPViewTask.getResults(CyNetworkView.class).getSUID();
+            response.setKspSubNetworkSUID(createKSPViewTask.getResults(CyNetwork.class).getSUID());
+            response.setKspSubNetworkViewSUID(createKSPViewTask.getResults(CyNetworkView.class).getSUID());
 
             // writes the result of the algorithm to a table
             CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(controlPanel,
@@ -216,7 +216,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         }
 
         // store results into response
-        response.paths = result;
+        response.setPaths(result);
 
         return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(response).build();
     }
@@ -227,32 +227,38 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @param modelParams the user inputs
      * @return a list of CIError
      */
-    public List<CIError> validateUserInput(PathLinkerModelParams modelParams) {
+    public List<CIError> validateUserInput(CyNetwork network, PathLinkerModelParams modelParams) {
         // construct errorList
         List<CIError> errorList = new ArrayList<CIError>();
 
         // validate sources text field
         if (modelParams.sources == null || modelParams.sources.trim().isEmpty()) {
-            String errorMsg = "Invalid sourcesTextField. Source field cannot be empty";
-            CIError error = this.buildCIError(422, 
-                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            String errorMsg = "Source field cannot be empty";
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
             errorList.add(error);
         }
 
         // validate targets text field
         if (modelParams.targets == null || modelParams.targets.trim().isEmpty()) {
-            String errorMsg = "Invalid targetTextField. Target field cannot be empty";
-            CIError error = this.buildCIError(422, 
-                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            String errorMsg = "Target field cannot be empty";
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
             errorList.add(error);
         }
 
         // validate input k value
         if (modelParams.k < 1) {
-            String errorMsg = "Invalid inputK. K value cannot be less than 1";
-            CIError error = this.buildCIError(422, 
-                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            String errorMsg = "Invalid k. K value cannot be less than 1";
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
             errorList.add(error);
+        }
+
+        // check user input for edgeWeightSetting
+        if (modelParams.edgeWeightSetting == null) {
+            String errorMsg = "Invalid edgeWeightSetting. edgeWeightSetting must be UNWEIGHTED, ADDITIVE, or PROBABILITIES" ;
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+
+            return errorList;
         }
 
         // skip validation for other parameters if edge weight setting is unweighted
@@ -262,20 +268,24 @@ public class PathLinkerImpl implements PathLinkerResource {
         // validation for edge penalty
         if (modelParams.edgePenalty < 1 && modelParams.edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
             String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight setting PROBABILITIES";
-            CIError error = this.buildCIError(422, 
-                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
             errorList.add(error);    
         }
 
         else if (modelParams.edgePenalty < 0) {
             String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 0";
-            CIError error = this.buildCIError(422, 
-                    "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+            errorList.add(error);
+        }
+
+        if (modelParams.edgeWeightColumnName == null) {
+            String errorMsg  = "edgeWeightColumnName is empty, " + modelParams.edgeWeightSetting + " requires edgeWeightColumnName";
+            CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
             errorList.add(error);
         }
 
         // validation for edge weight column name
-        Collection<CyColumn> columns = cyApplicationManager.getCurrentNetwork().getDefaultEdgeTable().getColumns();  
+        Collection<CyColumn> columns = network.getDefaultEdgeTable().getColumns();  
         for (CyColumn column : columns) {
             if (column.getName().equals(modelParams.edgeWeightColumnName) && (column.getType() == Double.class 
                     || column.getType() == Integer.class || column.getType() == Float.class 
@@ -285,8 +295,7 @@ public class PathLinkerImpl implements PathLinkerResource {
 
         // column name does not exist
         String errorMsg  = "Invalid edgeWeightColumnName. Column name must point to a valid edge column with numerical type";
-        CIError error = this.buildCIError(422, 
-                "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
+        CIError error = this.buildCIError(422, "runPathLinker", INVALID_INPUT_ERROR, errorMsg, null);
         errorList.add(error);   
 
         return errorList;
