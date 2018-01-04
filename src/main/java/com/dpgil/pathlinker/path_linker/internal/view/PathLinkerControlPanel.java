@@ -6,7 +6,9 @@ import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.IntegerTextFieldFilter;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
+import com.dpgil.pathlinker.path_linker.internal.util.DoubleTextFieldInputFilter;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -36,6 +38,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.PlainDocument;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
@@ -989,6 +992,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
         _kTextField.setToolTipText("Number of shortest paths to compute");
 
+        PlainDocument inputKDoc = (PlainDocument) _kTextField.getDocument();
+        inputKDoc.setDocumentFilter(new IntegerTextFieldFilter());
+
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
 				+ "is equal to the kth path's length/score");
@@ -999,6 +1005,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_edgePenaltyTextField.setMaximumSize(_edgePenaltyTextField.getPreferredSize());
         _edgePenaltyTextField.setToolTipText("Penalize additional edges according to the edge weight type. " +
                 "The higher the penalty, the more short paths of high cost will appear before long paths of low cost");
+
+        PlainDocument edgePenaltyDoc = (PlainDocument) _edgePenaltyTextField.getDocument();
+        edgePenaltyDoc.setDocumentFilter(new DoubleTextFieldInputFilter());
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		algorithmPanelLayout.setHorizontalGroup(algorithmPanelLayout.createParallelGroup(Alignment.TRAILING, true)
