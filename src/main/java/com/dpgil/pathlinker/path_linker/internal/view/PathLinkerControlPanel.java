@@ -467,8 +467,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	    if (_applicationManager.getCurrentNetwork() == null)
 	        return;
 
-	    _networkCmb.setSelectedItem(
-	            _suidToIndexMap.get(_applicationManager.getCurrentNetwork().getSUID()));
+	    _networkCmb.setSelectedIndex(_suidToIndexMap.get(_applicationManager.getCurrentNetwork().getSUID()));
 	}
 
 	/**
