@@ -5,6 +5,9 @@ import javax.ws.rs.core.*;
 
 import org.cytoscape.ci.model.CIResponse;
 
+import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModelParams;
+import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerError;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -34,8 +37,9 @@ public interface PathLinkerResource {
             + "returns network/view SUIDs and k-number sorted path list",
             response = PathLinkerAppResponse.class)
     @ApiResponses(value = { 
-            @ApiResponse(code = 404, message = "Input Network Does Not Exist", response = CIResponse.class),
-            @ApiResponse(code = 422, message = "Invalid User Input", response = CIResponse.class),
+            @ApiResponse(code = PathLinkerError.CY_NETWORK_NOT_FOUND_CODE, message = "Input Network Does Not Exist", response = CIResponse.class),
+            @ApiResponse(code = PathLinkerError.INVALID_INPUT_CODE, message = "Invalid User Input", response = CIResponse.class),
+            @ApiResponse(code = PathLinkerError.PATH_NOT_FOUND_CODE, message = "No Path Found", response = CIResponse.class),
     })
     public Response runPathLinker(
             @ApiParam(value="Network SUID") 

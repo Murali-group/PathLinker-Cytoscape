@@ -1,10 +1,10 @@
 package com.dpgil.pathlinker.path_linker.internal.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.cytoscape.model.CyEdge;
@@ -23,171 +23,98 @@ public class PathLinkerModel {
 	private CyNetwork originalNetwork;
 	/** The network to perform the algorithm on */
 	private CyNetwork network;
-	/** A mapping of the name of a node to the actual node object */
-	private HashMap<String, CyNode> idToCyNode;
 	/** A mapping of the node object to its name*/
-	private HashMap<CyNode, String> cyNodeToId;
+	private Map<CyNode, String> cyNodeToId;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
-	/** original user input strings that contains sources */
-	private String sourcesTextField;
-	/** original user input strings that contains targets */
-	private String targetsTextField;
 	/** column name that links to the edge weight values */
 	private String edgeWeightColumnName;
 	/** list of source names */
-	private HashSet<String> sourceNames;
+	private Set<String> sourceNames;
 	/** list of target names */
-	private HashSet<String> targetNames;
-	/** list of source names that is not in the network */
-	private ArrayList<String> sourcesNotInNet; 
-	/** list of target names that is not in the network */
-	private ArrayList<String> targetsNotInNet;
+	private Set<String> targetNames;
 	/** The sources to be used in the algorithm */
-	private ArrayList<CyNode> sourcesList;
+	private List<CyNode> sourcesList;
 	/** The targets to be used in the algorithm */
-	private ArrayList<CyNode> targetsList;
+	private List<CyNode> targetsList;
 	/** The input k value to be used in the algorithm */
 	private int inputK;
 	/** The output k number paths calculated by the algorithm */
 	private int outputK;
 	/** The value by which to penalize each edge weight */
-	private double edgePenalty;
+	private Double edgePenalty;
 	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
 	private EdgeWeightSetting edgeWeightSetting;
 	/** Weight of edges to be used by the algorithm */
-	private HashMap<CyEdge, Double> edgeWeights;
+	private Map<CyEdge, Double> edgeWeights;
 	/** Edges that we hide from the algorithm */
-	private HashSet<CyEdge> hiddenEdges;
+	private Set<CyEdge> hiddenEdges;
 	/** The super source to call ksp with and removed after the algorithm */
 	private CyNode superSource;
 	/** The super target to call ksp with and removed after the algorithm */
 	private CyNode superTarget;
 	/** The edges attached to super(source/target) to be removed after ksp */
-	private HashSet<CyEdge> superEdges;
+	private Set<CyEdge> superEdges;
 	/** Number of shared nodes between sources and targets */
 	private int commonSourcesTargets;
 	/** Whether or not to include more than k paths if the path length/score is equal to the kth path's */
 	private boolean includePathScoreTies;
-	/** ksp subgraph */
-	private CyNetwork kspSubgraph;
 	/** sources in the ksp subgraph */
-	private HashSet<CyNode> subgraphSources;
+	private Set<CyNode> subgraphSources;
 	/** targets in the ksp subgraph */
-	private HashSet<CyNode> subgraphTargets;
+	private Set<CyNode> subgraphTargets;
 	/** The path result produced by the ksp algorithm */
 	private ArrayList<PathWay> result;
 
 	/**
 	 * Constructor of the model
-	 * @param originalNetwork 			 the original network given by the view
+	 * @param originalNetwork            the original network given by the view
 	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
-	 * @param includePathScoreTies		 the option to include all paths of equal length
-	 * @param sourcesTextField 			 source node names in string
-	 * @param targetsTextField 			 target node names in string
+	 * @param includePathScoreTies       the option to include all paths of equal length
+	 * @param sourceNames                set of sources in string   
+	 * @param targetNames                set of targets in string
+	 * @param sourcesList                list of sources in CyNode
+	 * @param targetsList                list of targets in CyNode
 	 * @param edgeWeightColumnName       column name that contains the edge weight information
-	 * @param inputK					 input k value
-	 * @param edgeWeightSetting			 edge weight setting
-	 * @param edgePenalty				 edge penalty
+	 * @param inputK                     input k value
+	 * @param edgeWeightSetting          edge weight setting
+	 * @param edgePenalty                edge penalty
+	 * @param cyNodeToId                 map mapping all CyNode to its string name
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
-	        String sourcesTextField, String targetsTextField, String edgeWeightColumnName, 
-			int inputK, EdgeWeightSetting edgeWeightSetting, double edgePenalty) {
+	        Set<String> sourceNames, Set<String> targetNames, List<CyNode> sourcesList, List<CyNode> targetsList, String edgeWeightColumnName, 
+	        int inputK, EdgeWeightSetting edgeWeightSetting, Double edgePenalty, Map<CyNode, String> cyNodeToId) {
 
-		this.originalNetwork 			= originalNetwork;
-		this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
-		this.includePathScoreTies		= includePathScoreTies;
-		this.sourcesTextField 			= sourcesTextField;
-		this.targetsTextField 			= targetsTextField;
-		this.edgeWeightColumnName		= edgeWeightColumnName;
-		this.inputK 					= inputK;
-		this.edgeWeightSetting 			= edgeWeightSetting;
-		this.edgePenalty 				= edgePenalty;
+	    this.originalNetwork 			= originalNetwork;
+	    this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
+	    this.includePathScoreTies		= includePathScoreTies;
+	    this.sourceNames                = sourceNames;
+	    this.targetNames                = targetNames;
+	    this.sourcesList                = sourcesList;
+	    this.targetsList                = targetsList;
+	    this.edgeWeightColumnName		= edgeWeightColumnName;
+	    this.inputK 					= inputK;
+	    this.edgeWeightSetting 			= edgeWeightSetting;
+	    this.edgePenalty 				= edgePenalty;
+	    this.cyNodeToId                 = cyNodeToId;
 
-		// initialize for future use
-		this.idToCyNode 		  = new HashMap<String, CyNode>();
-		this.cyNodeToId			  = new HashMap<CyNode, String>();
-		this.commonSourcesTargets = 0;
+	    this.commonSourcesTargets = 0;
 	}
 
 	/**
-	 * Getter method of originalNetwork
-	 * @return originalNetwork
+	 * Getter method of the subgraph sources
+	 * @return subgraphSources
 	 */
-	public CyNetwork getOriginalNetwork() {
-		return this.originalNetwork;
+	public Set<CyNode> getSubgraphSources() {
+	    return this.subgraphSources;
 	}
 
 	/**
-	 * Getter method of idToCyNode
-	 * @return idToCyNode
+	 * Getter method of the subgraph targets
+	 * @return subgraphTargets
 	 */
-	public HashMap<String, CyNode> getIdToCyNode() {
-		return this.idToCyNode;
-	}
-
-	/**
-	 * Getter method of allowSourcesTargetsInPaths
-	 * @return allowSourcesTargetsInPaths
-	 */
-	public boolean getAllowSourcesTargetsInPaths() {
-		return this.allowSourcesTargetsInPaths;
-	}
-
-	/**
-	 * Getter method of sourcesList
-	 * @return sourcesList
-	 */
-	public ArrayList<CyNode> getSourcesList() {
-		return this.sourcesList;
-	}
-
-	/**
-	 * Getter method of sourceNames
-	 * @return sourceNames
-	 */
-	public HashSet<String> getSourceNames() {
-		return this.sourceNames;
-	}
-
-	/**
-	 * Getter method of sourcesNotInNet
-	 * @return sourcesNotInNet
-	 */
-	public ArrayList<String> getSourcesNotInNet() {
-		return this.sourcesNotInNet;
-	}
-
-	/**
-	 * Getter method of targetsList
-	 * @return targetsList
-	 */
-	public ArrayList<CyNode> getTargetsList() {
-		return this.targetsList;
-	}
-
-	/**
-	 * Getter method of targetNames
-	 * @return targetNames
-	 */
-	public HashSet<String> getTargetNames() {
-		return this.targetNames;
-	}
-
-	/**
-	 * Getter method of targetsNotInNet
-	 * @return targetsNotInNet;
-	 */
-	public ArrayList<String> getTargetsNotInNet() {
-		return this.targetsNotInNet;
-	}
-
-	/**
-	 * Getter method of input k value
-	 * @return input k value
-	 */
-	public int getInputK() {
-		return this.inputK;
+	public Set<CyNode> getSubgraphTargets() {
+	    return this.subgraphTargets;
 	}
 
 	/**
@@ -199,151 +126,11 @@ public class PathLinkerModel {
 	}
 
 	/**
-	 * Getter method of edge penalty
-	 * @return edgePenalty
-	 */
-	public double getEdgePenalty() {
-		return this.edgePenalty;
-	}
-
-	/**
-	 * Getter method of edgeWeightSetting
-	 * @return edgeWeightSetting
-	 */
-	public EdgeWeightSetting getEdgeWeightSetting() {
-		return this.edgeWeightSetting;
-	}
-
-	/**
-	 * Getter method of edgeWeightColumnName
-	 * @return edgeWeightColumnName
-	 */
-	public String getEdgeWeightColumnName() {
-	    return this.edgeWeightColumnName;
-	}
-
-	/**
-	 * Getter method of kspSubgraph
-	 * @return kspSubgraph
-	 */
-	public CyNetwork getKspSubgraph() {
-		return this.kspSubgraph;
-	}
-
-	/**
-	 * Getter method of ksp subgraph sources
-	 * @return subgraphSources
-	 */
-	public HashSet<CyNode> getSubgraphSources() {
-		return this.subgraphSources;
-	}
-
-	/**
-	 * Getter method of ksp subgraph targets
-	 * @return subgraphTargets
-	 */
-	public HashSet<CyNode> getSubgraphTargets() {
-		return this.subgraphTargets;
-	}
-
-	/**
 	 * Getter method of the result
 	 * @return result
 	 */
 	public ArrayList<PathWay> getResult() {
 	    return this.result;
-	}
-
-	/**
-	 * Setter method for sourcesList, sourceNames, and sourcesNotInNet
-	 */
-	public void setSources() {
-		// stores the sources that were inputted but are not actually in the network, may have been mistyped
-		sourcesNotInNet = new ArrayList<String>();
-        // initialize the sourcesList here in case the text field is empty
-        sourcesList = new ArrayList<CyNode>(); 
-
-        // if nothing was entered, then return
-        if (sourcesTextField.length() == 0){
-            return;
-        }
-
-		// splits the names by spaces
-		String[] rawSourceNames = sourcesTextField.split(" ");
-
-		sourceNames = new HashSet<String>(Arrays.asList(rawSourceNames));
-
-		// checks for mistyped source names
-		for (String sourceName : sourceNames) {
-			if (!idToCyNode.containsKey(sourceName))
-				sourcesNotInNet.add(sourceName);
-		}
-
-		// generates a list of the valid source nodes to be used in the graph
-		sourceNames.removeAll(sourcesNotInNet);
-		sourcesList = stringsToNodes(sourceNames);
-	}
-
-	/**
-	 * Setter method for targetsList, targetNames, and targetsNotInNet
-	 */
-	public void setTargets() {
-		// stores the targets that were inputted but are not actually in the network, may have been mistyped
-		targetsNotInNet = new ArrayList<String>();
-        // initialize the targetsList here in case the text field is empty
-        targetsList = new ArrayList<CyNode>(); 
-
-        // if nothing was entered, then return
-        if (targetsTextField.length() == 0){
-            return;
-        }
-
-		// splits the names by spaces
-		String[] rawTargetNames = targetsTextField.split(" ");
-
-		targetNames = new HashSet<String>(Arrays.asList(rawTargetNames));
-
-		// checks for mistyped target  names
-		for (String targetName : targetNames) {
-			if (!idToCyNode.containsKey(targetName))
-				targetsNotInNet.add(targetName);
-		}
-
-		// generates a list of the valid target nodes to be used in the graph
-		targetNames.removeAll(targetsNotInNet);
-		targetsList = stringsToNodes(targetNames);
-	}
-
-	/**
-	 * Setter method for edgePenalty
-	 * @param edgePenalty
-	 */
-	public void setEdgePenalty(double edgePenalty) {
-		this.edgePenalty = edgePenalty;
-	}
-
-	/**
-	 * Setter method for edgeWeightSetting
-	 * @param setting passed from the PathLinkerPanel
-	 */
-	public void setEdgeWeightSetting (EdgeWeightSetting setting) {
-		this.edgeWeightSetting = setting;
-	}
-
-	/**
-	 * set up the following variables:
-	 * 		sourcesList, sourceNames, sourcesNotInNet
-	 * 		targetsList, targetNames, targetsNoInNet
-	 * 		idToCyNode
-	 */
-	public void prepareIdSourceTarget() {
-		// populates a mapping from the name of a node to the actual node object
-		// used for converting user input to node objects. populates the map named _idToCyNode
-		populateIdCyNodePair();
-
-		// sets source and target
-		setSources();
-		setTargets();
 	}
 
 	/**
@@ -401,18 +188,6 @@ public class PathLinkerModel {
 
 		// set the number of paths the subgraph contains
 		outputK = result.size();
-	}
-
-	/**
-	 * Populates idToCyNode, the map of node names to their objects
-	 * Populates cyNodeToId, the map of node objects to their names
-	 */
-	private void populateIdCyNodePair() {
-		for (CyNode node : originalNetwork.getNodeList()) {
-			String nodeName = originalNetwork.getRow(node).get(CyNetwork.NAME, String.class);
-			idToCyNode.put(nodeName, node);
-			cyNodeToId.put(node, nodeName);
-		}
 	}
 
 	/**
@@ -769,22 +544,5 @@ public class PathLinkerModel {
 			double w = edgeWeight + edgePenalty;
 			edgeWeights.put(edge, w);
 		}
-	}
-
-	/**
-	 * Converts an array of node names to a list of the actual corresponding nodes
-	 * @param names the names of the nodes that we want
-	 * @return a list of the actual node objects with the given names
-	 */
-	private ArrayList<CyNode> stringsToNodes(HashSet<String> names) {
-		ArrayList<CyNode> nodes = new ArrayList<CyNode>();
-
-		for (String name : names) {
-			if (idToCyNode.containsKey(name)) {
-				nodes.add(idToCyNode.get(name));
-			}
-		}
-
-		return nodes;
 	}
 }

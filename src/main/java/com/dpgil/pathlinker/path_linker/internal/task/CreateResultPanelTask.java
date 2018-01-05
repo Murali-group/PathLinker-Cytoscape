@@ -1,6 +1,6 @@
 package com.dpgil.pathlinker.path_linker.internal.task;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -32,7 +32,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
     /** the network manager the result panel instance used to access networks */
     private CyNetworkManager networkManager;
     /** the result paths that the result panel is constructed from */
-    private ArrayList<PathWay> results;
+    private List<PathWay> results;
     /** service registrar to register result panel */
     private CyServiceRegistrar serviceRegistrar;
     /** swing application to set the status of the result panel */
@@ -55,7 +55,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
             CyNetwork network,
             String title,
             CyNetworkManager networkManager,
-            ArrayList<PathWay> results,
+            List<PathWay> results,
             CyServiceRegistrar serviceRegistrar,
             CySwingApplication cySwingApp) {
 

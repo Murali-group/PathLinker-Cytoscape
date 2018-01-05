@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
-
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 import org.cytoscape.model.CyEdge;
@@ -28,7 +29,7 @@ public class Algorithms
 	private static final double            INFINITY = Integer.MAX_VALUE;
 	private static HashSet<CyEdge>         initialHiddenEdges;
 	private static HashSet<CyEdge>         hiddenEdges;
-	private static HashMap<CyEdge, Double> _edgeWeights;
+	private static Map<CyEdge, Double>     _edgeWeights;
 
 
 	/**
@@ -68,7 +69,7 @@ public class Algorithms
 		/** the total weight of the path */
 		public double            weight;
 		/** the map of node names in the nodeList*/
-		public HashMap<CyNode, String> nodeIdMap;
+		public Map<CyNode, String> nodeIdMap;
 
 		/**
 		 * Constructor for the path class
@@ -80,7 +81,7 @@ public class Algorithms
 		 * @param weight
 		 *            the total weight of the path
 		 */
-		public PathWay(ArrayList<CyNode> nodeList, HashMap<CyNode, String> map, double weight)
+		public PathWay(ArrayList<CyNode> nodeList, Map<CyNode, String> map, double weight)
 		{
 			this.nodeList = nodeList;
 			this.weight = weight;
@@ -175,7 +176,7 @@ public class Algorithms
 	 */
 	public static ArrayList<PathWay> ksp(
 			CyNetwork network,
-			HashMap<CyNode, String> cyNodeToId,
+			Map<CyNode, String> cyNodeToId,
 			CyNode source,
 			CyNode target,
 			int maxK,
@@ -389,7 +390,7 @@ public class Algorithms
 	 */
 	public static PathWay shortestPathAStar(
 			CyNetwork network,
-			HashMap<CyNode, String> cyNodeToId,
+			Map<CyNode, String> cyNodeToId,
 			CyNode source,
 			CyNode target,
 			final HashMap<CyNode, Double> minDists)
@@ -663,7 +664,7 @@ public class Algorithms
 	 *            the target node of the graph
 	 * @return the path from source to target
 	 */
-	public static PathWay dijkstra(CyNetwork network, HashMap<CyNode, String> cyNodeToId, CyNode source, CyNode target)
+	public static PathWay dijkstra(CyNetwork network, Map<CyNode, String> cyNodeToId, CyNode source, CyNode target)
 	{
 		final HashMap<CyNode, Double> distances = new HashMap<CyNode, Double>();
 		HashMap<CyNode, CyNode> previous = new HashMap<CyNode, CyNode>();
@@ -739,7 +740,7 @@ public class Algorithms
 	 * @param weights
 	 *            a map of the edge to its value
 	 */
-	public static void setEdgeWeights(HashMap<CyEdge, Double> weights)
+	public static void setEdgeWeights(Map<CyEdge, Double> weights)
 	{
 		_edgeWeights = weights;
 	}
@@ -874,7 +875,7 @@ public class Algorithms
 	 * @param edges
 	 *            the initial hidden edges
 	 */
-	public static void initializeHiddenEdges(HashSet<CyEdge> edges)
+	public static void initializeHiddenEdges(Set<CyEdge> edges)
 	{
 		initialHiddenEdges = new HashSet<CyEdge>();
 		initialHiddenEdges.addAll(edges);

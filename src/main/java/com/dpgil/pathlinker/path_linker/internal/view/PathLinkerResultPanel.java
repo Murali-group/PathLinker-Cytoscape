@@ -10,7 +10,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.GroupLayout;
@@ -54,7 +53,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
     /** the network manager for the app */
     private CyNetworkManager _networkManager;
     /** The k shortest paths generated from the network */
-    private final ArrayList<PathWay> _results;
+    private final List<PathWay> _results;
     /** The current network associated with the result panel */
     private final CyNetwork _currentNetwork;
     /** The tab title of the result panel */
@@ -78,7 +77,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             String title,
             CyNetworkManager networkManager,
             CyNetwork currentNetwork,
-            ArrayList<PathWay> results)
+            List<PathWay> results)
     {
         this._controlPanel = controlPanel;
         this._title = title;

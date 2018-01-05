@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal.util;
+package com.dpgil.pathlinker.path_linker.internal.view;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;

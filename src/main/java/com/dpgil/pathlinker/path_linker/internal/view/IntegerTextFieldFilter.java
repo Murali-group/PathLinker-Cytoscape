@@ -1,4 +1,4 @@
-package com.dpgil.pathlinker.path_linker.internal.util;
+package com.dpgil.pathlinker.path_linker.internal.view;
 
 /**
  * TextFieldInputFilter class specifically validate for data type Integer

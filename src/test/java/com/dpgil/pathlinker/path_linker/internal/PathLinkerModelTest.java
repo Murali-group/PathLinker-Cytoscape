@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
+import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModelParams;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
@@ -44,6 +45,8 @@ public class PathLinkerModelTest {
 
 	/** model for running the algorithms on different networks */
 	private PathLinkerModel testModel;
+	/** model parameters for storing the input values */
+	private PathLinkerModelParams modelParams;
 	/** Whether or not to treat all paths with same weight as one "k" path */
 	private boolean includePathScoreTies;
 	/** original test input strings that contains sources */
@@ -74,16 +77,16 @@ public class PathLinkerModelTest {
 	 */
 	@Before
 	public void setUp() throws IOException, URISyntaxException {
-		//setting up the general required objects for each test cases
-		support = new NetworkTestSupport();
-		setUpNetwork();
+	    //setting up the general required objects for each test cases
+	    support = new NetworkTestSupport();
+	    setUpNetwork();
 
-		//setting up the required variables for generating the result (same throughout the test cases)
-		includePathScoreTies = false;
-		source = "P35968 P00533 Q02763";
-		target = "Q15797 Q14872 Q16236 P14859 P36956";
-		edgeWeightColumnName = "edge_weight";
-		edgePenalty = 1;
+	    //setting up the required variables for generating the result (same throughout the test cases)
+	    includePathScoreTies = false;
+	    source = "P35968 P00533 Q02763";
+	    target = "Q15797 Q14872 Q16236 P14859 P36956";
+	    edgeWeightColumnName = "edge_weight";
+	    edgePenalty = 1;
 	}
 
 	/**
@@ -118,7 +121,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -145,7 +147,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 31, EdgeWeightSetting.ADDITIVE, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -172,7 +173,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkDir, 13, EdgeWeightSetting.PROBABILITIES, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -215,7 +215,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 2.0 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 37, EdgeWeightSetting.UNWEIGHTED, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -242,7 +241,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 4.088853 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 47, EdgeWeightSetting.ADDITIVE, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -269,7 +267,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.4574040000000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkUndir, 21, EdgeWeightSetting.PROBABILITIES, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -313,7 +310,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -340,7 +336,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 31, EdgeWeightSetting.ADDITIVE, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -367,7 +362,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelSetUp(originalNetworkMixed, 13, EdgeWeightSetting.PROBABILITIES, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -388,14 +382,12 @@ public class PathLinkerModelTest {
 	public void testDiff() throws IOException {
 		//construct paths for direct graph
 		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultDir); //sort the lists before comparison
 
 		//construct paths for undirect graph
 		modelSetUp(originalNetworkUndir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		testModel.prepareIdSourceTarget();
 		testModel.runKSP();
 		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultUndir); //sort the lists before comparison
@@ -428,13 +420,32 @@ public class PathLinkerModelTest {
 		}
 		
 		// set up custom source and target to ensure that graph contains source and targets in paths
-		source = "P35968 P16333";
-		target = "P14859 P51610";
-		
-		//create the model for algorithm with k = 26 to ensure relatively small output
-		testModel = new PathLinkerModel(originalNetworkDir, true, false, source, target, 
-		        edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
-		testModel.prepareIdSourceTarget();
+		// create the model for algorithm with k = 26 to ensure relatively small output
+		modelParams = new PathLinkerModelParams();
+		modelParams.allowSourcesTargetsInPaths = true;
+		modelParams.includeTiedPaths = includePathScoreTies;
+		modelParams.sources = "P35968 P16333";
+		modelParams.targets = "P14859 P51610";
+		modelParams.k = 26;
+		modelParams.edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+		modelParams.edgeWeightColumnName = edgeWeightColumnName;
+		modelParams.edgePenalty = edgePenalty;
+
+		modelParams.validate(originalNetworkDir, "test");
+		testModel = new PathLinkerModel(
+		        originalNetworkDir, 
+		        modelParams.allowSourcesTargetsInPaths, 
+		        modelParams.includeTiedPaths, 
+		        modelParams.getSourceNames(), 
+		        modelParams.getTargetNames(),
+		        modelParams.getSourcesList(),
+		        modelParams.getTargetsList(),
+		        modelParams.edgeWeightColumnName,
+		        modelParams.k,
+		        modelParams.edgeWeightSetting, 
+		        modelParams.edgePenalty,
+		        modelParams.getCyNodeToId());
+
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -472,10 +483,31 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with source = target and k = 37
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		boolean allowSourceTargetInPaths = true;
-		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, 
-				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
-		testModel.prepareIdSourceTarget();
+		modelParams = new PathLinkerModelParams();
+		modelParams.allowSourcesTargetsInPaths = true;
+		modelParams.includeTiedPaths = includePathScoreTies;
+		modelParams.sources = source;
+		modelParams.targets = source;
+		modelParams.k = 37;
+		modelParams.edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+		modelParams.edgeWeightColumnName = edgeWeightColumnName;
+		modelParams.edgePenalty = edgePenalty;
+
+		modelParams.validate(originalNetworkDir, "test");
+		testModel = new PathLinkerModel(
+		        originalNetworkDir, 
+		        modelParams.allowSourcesTargetsInPaths, 
+		        modelParams.includeTiedPaths, 
+		        modelParams.getSourceNames(), 
+		        modelParams.getTargetNames(),
+		        modelParams.getSourcesList(),
+		        modelParams.getTargetsList(),
+		        modelParams.edgeWeightColumnName,
+		        modelParams.k,
+		        modelParams.edgeWeightSetting, 
+		        modelParams.edgePenalty,
+		        modelParams.getCyNodeToId());
+
 		testModel.runKSP();
 		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
@@ -603,8 +635,31 @@ public class PathLinkerModelTest {
 	 * Sets up the test model before testing
 	 */
 	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
-		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, 
-				source, target, edgeWeightColumnName, k, edgeWeightSetting, edgePenalty); //construct model
+	    modelParams = new PathLinkerModelParams();
+	    modelParams.allowSourcesTargetsInPaths = allowSourceTargetInPaths;
+	    modelParams.includeTiedPaths = includePathScoreTies;
+	    modelParams.sources = source;
+	    modelParams.targets = target;
+	    modelParams.k = k;
+	    modelParams.edgeWeightSetting = edgeWeightSetting;
+	    modelParams.edgeWeightColumnName = edgeWeightColumnName;
+	    modelParams.edgePenalty = edgePenalty;
+
+	    modelParams.validate(network, "test");
+
+	    testModel = new PathLinkerModel(
+	            network, 
+	            modelParams.allowSourcesTargetsInPaths, 
+	            modelParams.includeTiedPaths, 
+	            modelParams.getSourceNames(), 
+	            modelParams.getTargetNames(),
+	            modelParams.getSourcesList(),
+	            modelParams.getTargetsList(),
+	            modelParams.edgeWeightColumnName,
+	            modelParams.k,
+	            modelParams.edgeWeightSetting, 
+	            modelParams.edgePenalty,
+	            modelParams.getCyNodeToId());
 	}
 
 	/**

@@ -1,14 +1,13 @@
 package com.dpgil.pathlinker.path_linker.internal.view;
 
 import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
-import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerModelParams;
+import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModelParams;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
-import com.dpgil.pathlinker.path_linker.internal.util.IntegerTextFieldFilter;
+import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerError;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
-import com.dpgil.pathlinker.path_linker.internal.util.DoubleTextFieldInputFilter;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -47,7 +46,6 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
-import org.cytoscape.ci.model.CIError;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
@@ -110,6 +108,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 	/** The model that runs ksp algorithm from the user input */
 	private PathLinkerModel _model;
+	/** model parameters to be pass for running ksp algorithm */
+	private PathLinkerModelParams _modelParams;
     /** The about dialog box object */
     private PathLinkerAboutMenuDialog _aboutMenuDialog;
     /** the version of the current PathLinker app */
@@ -124,14 +124,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private CyNetwork _originalNetwork;
 	/** The sub-network created by the algorithm */
 	private CyNetwork _kspSubgraph = null;
-	/** column name that links to the edge weight values */
-	private String _edgeWeightColumnName;
-	/** The k value to be used in the algorithm */
-	private int _kValue;
-	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
-	private EdgeWeightSetting _edgeWeightSetting;
-	/** The value by which to penalize each edge weight */
-	private double _edgePenalty;
 	/** The string representation of the edge weight button selection user selected */
 	private String _savedEdgeWeightSelection;
     /** The StringBuilder that construct error messages if any to the user */
@@ -579,54 +571,26 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * generate result panel and/or sub network graph for the user
 	 */
 	private boolean callRunKSP() {
-		// Check to see if network exists before starting reading the values from the panel
-		_originalNetwork = _applicationManager.getCurrentNetwork();
-		if (_originalNetwork == null) {
-            JOptionPane.showMessageDialog(null, 
-                    "Network not found. Please load or select a cytoscape network", 
-                    "Error Message", JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
+	    // reads the raw values from the panel and converts them into parameters for the model
+        // terminates the process if user decides to fix the error manually
+        if (!readValuesFromPanel("runPathLinker")) return false;
 
-		// reads the raw values from the panel and converts them into paramters for the model
-		// terminates the process if user decides to fix the error manually
-		if (!readValuesFromPanel()) return false;
-
-		// create synchronous task manager to run the task on creating KSP subgraph and etc.
+        // create synchronous task manager to run the task on creating KSP subgraph and etc.
         SynchronousTaskManager<?> synTaskMan = _adapter.getCyServiceRegistrar().getService(SynchronousTaskManager.class);
 
-		// initialize the params from user inputs
-		PathLinkerModelParams params = new PathLinkerModelParams();
-		params.allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
-		params.includeTiedPaths = _includePathScoreTiesOption.isSelected();
-		params.sources = _sourcesTextField.getText().trim();
-		params.targets = _targetsTextField.getText().trim();
-		params.edgeWeightColumnName = _edgeWeightColumnName;
-		params.k = _kValue;
-		params.edgeWeightSetting = _edgeWeightSetting;
-		params.edgePenalty = _edgePenalty;
-
 		// performs KSP algorithm by creating the runKSPTask
-		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, params);
+		RunKSPTask runKSPTask = new RunKSPTask(_originalNetwork, _modelParams);
 		synTaskMan.execute(new TaskIterator(runKSPTask));
+		// obtain results from the runKSPTask
+		_model = runKSPTask.getResults(PathLinkerModel.class);
 
-		// obtain validation to check if any error occurs
-		@SuppressWarnings("unchecked")
-        List<CIError> errorList = (List<CIError>) runKSPTask.getResults(CIError.class);
-
-		// check if runKSPTask is terminated due to errors, if true construct error messages
-		if (errorList.size() > 0) {
-		    errorMessage = new StringBuilder();
-		    for (int i = 0; i < errorList.size(); i++)
-		        errorMessage.append(errorList.get(i).message);
-
-		    JOptionPane.showMessageDialog(null, errorMessage.toString(), 
+		// check for not path found error
+		if (_model.getOutputK() == 0) { 
+		    JOptionPane.showMessageDialog(null, 
+		            "No paths found", 
 		            "Error Message", JOptionPane.ERROR_MESSAGE);
 		    return false;
 		}
-
-		// obtain results from the runKSPTask
-		_model = runKSPTask.getResults(PathLinkerModel.class);
 
 		// obtain result computed from the model
 		ArrayList<PathWay> result = _model.getResult();
@@ -652,102 +616,75 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	 * @return true if user decides to continue with the warning,
 	 *         otherwise false
 	 */
-	private boolean readValuesFromPanel() {
-		// error message to report errors to the user if they occur
-		errorMessage = new StringBuilder();
-		boolean skip = false;
+	private boolean readValuesFromPanel(String resourcePath) {
+	    // Access current network
+        _originalNetwork = _applicationManager.getCurrentNetwork();
 
-		// parses the value inputted for k
-		// if it is an invalid value, uses 200 by default and also appends the
-		// error to the error message
-		String kInput = _kTextField.getText().trim();
-		try {
-			_kValue = Integer.parseInt(kInput);
+        // initialize the params from user inputs
+        _modelParams = new PathLinkerModelParams();
+        _modelParams.allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
+        _modelParams.includeTiedPaths = _includePathScoreTiesOption.isSelected();
+        _modelParams.sources = _sourcesTextField.getText().trim();
+        _modelParams.targets = _targetsTextField.getText().trim();
+        _modelParams.k = _kTextField.getText().trim().isEmpty() ? null : Integer.parseInt(_kTextField.getText());
+        _modelParams.edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : _edgeWeightColumnBox.getSelectedItem().toString();
+        _modelParams.edgePenalty = _edgePenaltyTextField.getText().trim().isEmpty() ? null : Double.parseDouble(_edgePenaltyTextField.getText());
 
-			// throw exception if _kValue is a integer but less than 1
-			if (_kValue < 1)
-			    throw new NumberFormatException();
+        // gets the option for edge weight setting
+        if (_unweighted.isSelected()) {
+            _modelParams.edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+        } else if (_weightedAdditive.isSelected()) {
+            _modelParams.edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
+        } else {
+            _modelParams.edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+        }
 
-		} catch (NumberFormatException exception) {
-			errorMessage.append("Invalid text entered for k: '" + kInput + "'.\n  - Must be a positive integer. " +
-                    "\n  - Setting to default: 50.\n");
-			_kValue = 50;
-            _kTextField.setText("50");
-		}
+        // validate the modelParams setting
+	    List<PathLinkerError> errorList = _modelParams.validate(_originalNetwork, resourcePath);
 
-		// gets the option for edge weight setting
-		if (_unweighted.isSelected()) {
-			_edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
-            // skip the rest of the code for getting the penalty and edge weight column
-            skip = true;
-		} else if (_weightedAdditive.isSelected()) {
-			_edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
-		} else if (_weightedProbabilities.isSelected()) {
-			_edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
-		}
+	    if (errorList.isEmpty()) return true;
 
-		// skip the following checks if user uses unweighted setting
-		if (!skip) {
-		    // parses the value inputted for edge penalty
-		    // if it is an invalid value, uses 1.0 by default for multiplicative
-		    // option or 0.0 by default for additive option and also appends the
-		    // error to the error message
-		    String edgePenaltyInput = _edgePenaltyTextField.getText().trim();
-		    // try to parse the user's input
-		    try {
-		        _edgePenalty = Double.parseDouble(edgePenaltyInput);
-		        // throw exception if the edge penalty is a double but less than 0
-		        if (_edgePenalty < 0)
-		            throw new NumberFormatException();
-		        // or if the option is probabilities and the edge penalty is less than 1
-		        // this is because dividing by a number less than 1 could cause the edge weights to be > 1, 
-		        // which would cause them to be negative after taking the -log.
-		        if (_edgePenalty < 1 && _edgeWeightSetting == EdgeWeightSetting.PROBABILITIES)
-		            throw new NumberFormatException();
+	    // look for network not found error
+	    if (errorList.get(0).status == PathLinkerError.CY_NETWORK_NOT_FOUND_CODE) {
+	        JOptionPane.showMessageDialog(null, 
+	                "Network not found. Please load or select a cytoscape network", 
+	                "Error Message", JOptionPane.ERROR_MESSAGE);
+	        return false;
+	    }
 
-		    } catch (NumberFormatException exception) {
-		        errorMessage.append("Invalid text entered for edge penalty: '" + edgePenaltyInput + "'.\n");
-		        // invalid number was entered, invoked an exception
-		        if (_edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-		            errorMessage.append("  - Must be a number >= 1.0 for the probability/multiplicative setting." + 
-		                    "\n  - Setting to default: 1.0.\n");
-		            _edgePenalty = 1.0;
-		            _edgePenaltyTextField.setText("1");
-		        }
+	    // error message to report errors to the user if they occur
+	    errorMessage = new StringBuilder();
 
-		        if (_edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
-		            errorMessage.append("  - Must be a number >= 0 for the additive setting." +
-		                    "\n  - Setting to default: 0.0\n");
-		            _edgePenalty = 0;
-		            _edgePenaltyTextField.setText("0");
-		        }
-		    }
+	    for (int i = 0; i < errorList.size(); i++) {
+	        errorMessage.append(errorList.get(i).getUIMessage());
+	    }
 
-		    // set _edgeWeightColumnName to empty string if no item is selected in _edgeWeightColumnBox
-		    _edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : 
-		        _edgeWeightColumnBox.getSelectedItem().toString();
-		}
+	    // check if user is able to continue with the error
+	    if (!_modelParams.continueStatus()) {
+            JOptionPane.showMessageDialog(null, errorMessage.toString(), 
+                    "Error Message", JOptionPane.ERROR_MESSAGE);
+            return false;
+	    }
 
-		// there is some error but PathLinker can continue, tell the user
-		if (errorMessage.length() > 0) {
-		    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
-		            "\nOr continue and run PathLinker with ");
-		    if (_edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
-		        errorMessage.append("k = " + _kValue + ", and edge penalty = " + _edgePenalty + "?");
-		    else
-		        errorMessage.append("and k = " + _kValue + "?");
+	    // construct dialog panel to ask if user wants to continue
+	    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
+	            "\nOr continue and run PathLinker with " + 
+	            _modelParams.getSourcesList().size() + " sources, " + _modelParams.getTargetsList().size() + " targets, ");
+	    if (_modelParams.edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+	        errorMessage.append("k = " + _modelParams.k + ", and edge penalty = " + _modelParams.edgePenalty + "?");
+	    else
+	        errorMessage.append("and k = " + _modelParams.k + "?");
 
-		    String[] options = {"Continue", "Cancel"};
+	    String[] options = {"Continue", "Cancel"};
 
-		    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
-		            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+	    int choice = JOptionPane.showOptionDialog(null, errorMessage.toString(), 
+	            "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
-		    if (choice != 0) // quit if they say cancel
-		        return false;
-		}
+	    if (choice != 0) // quit if they say cancel
+	        return false;
 
-        // successful parsing
-        return true;
+	    // successful parsing
+	    return true;
 	}
 
 	/**
@@ -988,12 +925,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_kLabel = new JLabel("k (# of paths): ");
 
 		_kTextField = new JTextField(5);
-		_kTextField.setText("50");
 		_kTextField.setMaximumSize(_kTextField.getPreferredSize());
         _kTextField.setToolTipText("Number of shortest paths to compute");
 
+        // create text field filter for k text field
         PlainDocument inputKDoc = (PlainDocument) _kTextField.getDocument();
         inputKDoc.setDocumentFilter(new IntegerTextFieldFilter());
+        _kTextField.setText("50");
 
 		_includePathScoreTiesOption = new JCheckBox("Include tied paths");
 		_includePathScoreTiesOption.setToolTipText("Include more than k paths if the path length/score "
@@ -1006,6 +944,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _edgePenaltyTextField.setToolTipText("Penalize additional edges according to the edge weight type. " +
                 "The higher the penalty, the more short paths of high cost will appear before long paths of low cost");
 
+        // create text field filter for edge penalty text field
         PlainDocument edgePenaltyDoc = (PlainDocument) _edgePenaltyTextField.getDocument();
         edgePenaltyDoc.setDocumentFilter(new DoubleTextFieldInputFilter());
 

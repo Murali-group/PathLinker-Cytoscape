@@ -14,7 +14,6 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
-import org.cytoscape.ci.CIErrorFactory;
 import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -52,7 +51,6 @@ public class CyActivator extends AbstractCyActivator
     private CySwingApplication cySwingApp;
 
     private CIExceptionFactory ciExceptionFactory;
-    private CIErrorFactory ciErrorFactory;
     private PathLinkerImpl cyRestClient;
 
     @Override
@@ -66,7 +64,6 @@ public class CyActivator extends AbstractCyActivator
         cySwingApp = getService(context, CySwingApplication.class);
 
         ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
-        ciErrorFactory = this.getService(context, CIErrorFactory.class);
 
         controlPanel = new PathLinkerControlPanel();
 
@@ -96,7 +93,7 @@ public class CyActivator extends AbstractCyActivator
                 controlPanel,
                 cyApplicationManager, networkManager, adapter,
                 serviceRegistrar, cySwingApp,
-                ciExceptionFactory, ciErrorFactory);
+                ciExceptionFactory);
 
         // starts off the panel in a closed state
         controlPanel.getParent().remove(controlPanel);
