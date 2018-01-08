@@ -166,91 +166,6 @@ public class PathLinkerModelParams {
         // initialize source and target properties for validation
         prepareIdSourceTarget(network);
 
-        // validate input k value
-        if (k == null || k < 1) {
-            String errorMsg = "Invalid k. K value cannot be less than 1";
-            String uiErrorMessage = "Invalid value entered for k: " + k + ".\n  - Must be a positive integer. " +
-                    "\n  - Setting to default: 50.\n";
-            k = 50;
-
-            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                    errorMsg, uiErrorMessage);
-
-            errorList.add(error);
-        }
-
-        // check user input for edgeWeightSetting
-        if (edgeWeightSetting == null) {
-            String errorMsg = "Invalid edgeWeightSetting. edgeWeightSetting must be UNWEIGHTED, ADDITIVE, or PROBABILITIES" ;
-            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                    errorMsg, null);
-
-            errorList.add(error);
-
-            return errorList;
-        }
-        // skip validation for other parameters if edge weight setting is unweighted
-        if (edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED) {
-            // validation for edge penalty
-            if (edgePenalty == null || edgePenalty < 1 && edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-                String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight setting PROBABILITIES";
-                String uiErrorMsg = "Invalid value entered for edge penalty: " + edgePenalty + 
-                        ".\n  - Must be a number >= 1.0 for the probability/multiplicative setting.\n  - Setting to default: 1.0.\n";
-
-                edgePenalty = 1.0;
-
-                PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                        PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                        errorMsg, uiErrorMsg);
-
-                errorList.add(error);
-            }
-
-            else if (edgePenalty == null || edgePenalty < 0) {
-                String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 0";
-                String uiErrorMsg = "Invalid value entered for edge penalty: " + edgePenalty + 
-                        ".\n  - Must be a number >= 0 for the additive setting." + "\n  - Setting to default: 0.0\n";
-
-                edgePenalty = 0.0;
-
-                PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                        PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                        errorMsg, uiErrorMsg);
-
-                errorList.add(error);
-            }
-
-            if (edgeWeightColumnName == null) {
-                String errorMsg  = "edgeWeightColumnName is empty, " + edgeWeightSetting + " requires edgeWeightColumnName";
-
-                PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                        PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                        errorMsg, null);
-
-                errorList.add(error);
-            }
-
-            // validation for edge weight column name
-            Collection<CyColumn> columns = network.getDefaultEdgeTable().getColumns();  
-            for (CyColumn column : columns) {
-                if (column.getName().equals(edgeWeightColumnName) && (column.getType() == Double.class 
-                        || column.getType() == Integer.class || column.getType() == Float.class 
-                        || column.getType() == Long.class))
-                    return errorList; // column name exists
-            }
-
-            // column name does not exist
-            String errorMsg  = "Invalid edgeWeightColumnName. Column name must point to a valid edge column with numerical type";
-
-            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                    errorMsg, null);
-
-            errorList.add(error); 
-        }
-
         if (sourcesList.size() == 1 && sourcesList.equals(targetsList)) { 
             String errorMsg = "The only source node is the same as the only target node.\n"
                     + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n";
@@ -261,6 +176,22 @@ public class PathLinkerModelParams {
 
             errorList.add(0, error);
             quit = true;
+        }
+
+        // insert all missing sources/targets to the error message
+        if (!sourcesNotInNet.isEmpty()) {
+            int totalSources = sourcesList.size() + sourcesNotInNet.size();
+            String errorMsg = sourcesList.size() + " out of " + totalSources + " sources are found in the network." +
+                    "\n  - Sources not found: " + sourcesNotInNet.toString() +
+                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n";
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg.replace("\n", ""), errorMsg);
+
+            quit = sourcesList.isEmpty();
+
+            errorList.add(0, error);
         }
 
         // insert all missing targets/targets to the error message
@@ -280,43 +211,131 @@ public class PathLinkerModelParams {
             errorList.add(0, error);
         }
 
-        // insert all missing sources/targets to the error message
-        if (!sourcesNotInNet.isEmpty()) {
-            int totalSources = sourcesList.size() + sourcesNotInNet.size();
-            String errorMsg = sourcesList.size() + " out of " + totalSources + " sources are found in the network." +
-                    "\n  - Sources not found: " + sourcesNotInNet.toString() +
-                    "\n  - Please ensure the entered node names match the 'name' column of the Node Table.\n";
-
-            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                    errorMsg.replace("\n", ""), errorMsg);
-
-            quit = sourcesList.isEmpty();
-
-            errorList.add(0, error);
-        }
-
         // checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
-        // if a weighted option was selected, but not all edges have weights
-        // then we say something to the user.
-        if (edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED) {
+        // Error exists if a weighted option was selected, but not all edges have weights.
+        PathLinkerError edgeWeightError = null;
+        if (edgeWeightSetting != null && edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED) {
             for (CyEdge edge : network.getEdgeList()) {
                 try {
                     Double.parseDouble(network.getRow(edge).getRaw(edgeWeightColumnName).toString());
                 } catch (NullPointerException  e) {
                     String errorMsg = "Weighted option is selected, but at least one edge does not have a weight in the selected edge weight column '" + 
-                            edgeWeightColumnName + "'. Please either select the Unweighted option, or ensure all edges have a weight to run PathLinker.\n";
+                            edgeWeightColumnName + "'.\nPlease either select the Unweighted option, or ensure all edges have a weight to run PathLinker.\n";
 
-                    PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    edgeWeightError = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
                             PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
                             errorMsg.replace("\n", ""), errorMsg);
 
-                    errorList.add(error);
                     quit = true;
                     break;
                 }
             }
         }
+
+        // validate input k value
+        if (k == null || k < 1) {
+            String errorMsg = "Invalid k. K value cannot be less than 1";
+            String uiErrorMsg = "Invalid value entered for k: " + k + ".\n  - Must be a positive integer.\n";
+
+            if (!quit) {
+                uiErrorMsg += "  - Setting to default: 50.\n";
+                k = 50;
+            }
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, uiErrorMsg);
+
+            errorList.add(error);
+        }
+
+        // check user input for edgeWeightSetting
+        if (edgeWeightSetting == null) {
+            String errorMsg = "Invalid edgeWeightSetting. edgeWeightSetting must be UNWEIGHTED, ADDITIVE, or PROBABILITIES" ;
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, null);
+
+            errorList.add(error);
+
+            return errorList;
+        }
+
+        // skip validation for other parameters if edge weight setting is unweighted
+        if (edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
+            return errorList;
+
+        // validation for edge penalty
+        if (edgePenalty == null || edgePenalty < 1 && edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight setting PROBABILITIES";
+            String uiErrorMsg = "Invalid value entered for edge penalty: " + edgePenalty + 
+                    ".\n  - Must be a number >= 1.0 for the probability/multiplicative setting.\n";
+
+            if (!quit) {
+                uiErrorMsg += "  - Setting to default: 1.0.\n";
+                edgePenalty = 1.0;
+            }
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, uiErrorMsg);
+
+            errorList.add(error);
+        }
+
+        else if (edgePenalty == null || edgePenalty < 0) {
+            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 0";
+            String uiErrorMsg = "Invalid value entered for edge penalty: " + edgePenalty + 
+                    ".\n  - Must be a number >= 0 for the additive setting.\n";
+
+            if (!quit) {
+                uiErrorMsg += "  - Setting to default: 0.0\n";
+                edgePenalty = 1.0;
+            }
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, uiErrorMsg);
+
+            errorList.add(error);
+        }
+
+        if (edgeWeightColumnName == null) {
+            String errorMsg  = "edgeWeightColumnName is empty, " + edgeWeightSetting + " requires edgeWeightColumnName";
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, null);
+
+            errorList.add(error);
+        }
+
+        // validation for edge weight column name
+        boolean columnNameError = true;
+        Collection<CyColumn> columns = network.getDefaultEdgeTable().getColumns();  
+        for (CyColumn column : columns) {
+            if (column.getName().equals(edgeWeightColumnName) && (column.getType() == Double.class 
+                    || column.getType() == Integer.class || column.getType() == Float.class 
+                    || column.getType() == Long.class)) {
+                columnNameError = false; // column name exists
+                break;
+            }
+        }
+
+        // column name does not exist
+        if (columnNameError) {
+            String errorMsg  = "Invalid edgeWeightColumnName. Column name must point to a valid edge column with numerical type";
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg, null);
+
+            errorList.add(error);
+        }
+
+        // add edge weight column error in the end of the list for parsing purposes
+        if (edgeWeightError != null)
+            errorList.add(edgeWeightError);
 
         return errorList;
     }

@@ -682,6 +682,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	    if (choice != 0) // quit if they say cancel
 	        return false;
 
+	    // update k and edge penalty text field if modification to model params were made
+	    _kTextField.setText(Integer.toString(_modelParams.k));
+	    _edgePenaltyTextField.setText(Double.toString(_modelParams.edgePenalty));
+
 	    // successful parsing
 	    return true;
 	}
