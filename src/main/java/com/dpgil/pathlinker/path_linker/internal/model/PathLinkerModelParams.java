@@ -44,7 +44,7 @@ public class PathLinkerModelParams {
     public Integer k = 50;
 
     @ApiModelProperty(value = "Edge weight setting name. Default set to UNWEIGHTED", 
-            example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
+            example = "UNWEIGHTED", required = true, allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
     public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
 
     @ApiModelProperty(value = "Edge Penality. Default set to 1", example = "1")
@@ -86,6 +86,7 @@ public class PathLinkerModelParams {
      * Getter method of cyNodeToId
      * @return cyNodeToId
      */
+    @ApiModelProperty(hidden = true)
     public Map<CyNode, String> getCyNodeToId() {
         return this.cyNodeToId;
     }
@@ -94,6 +95,7 @@ public class PathLinkerModelParams {
      * Getter method of sourcesList
      * @return sourcesList
      */
+    @ApiModelProperty(hidden = true)
     public List<CyNode> getSourcesList() {
         return this.sourcesList;
     }
@@ -102,6 +104,7 @@ public class PathLinkerModelParams {
      * Getter method of sourceNames
      * @return sourceNames
      */
+    @ApiModelProperty(hidden = true)
     public Set<String> getSourceNames() {
         return this.sourceNames;
     }
@@ -110,6 +113,7 @@ public class PathLinkerModelParams {
      * Getter method of targetsList
      * @return targetsList
      */
+    @ApiModelProperty(hidden = true)
     public List<CyNode> getTargetsList() {
         return this.targetsList;
     }
@@ -118,6 +122,7 @@ public class PathLinkerModelParams {
      * Getter method of targetNames
      * @return targetNames
      */
+    @ApiModelProperty(hidden = true)
     public Set<String> getTargetNames() {
         return this.targetNames;
     }
@@ -127,6 +132,7 @@ public class PathLinkerModelParams {
      * @return true if quit is false
      *          otherwise false
      */
+    @ApiModelProperty(hidden = true)
     public boolean continueStatus() {
         return !quit;
     }
@@ -139,6 +145,7 @@ public class PathLinkerModelParams {
      * @param resourcePath the resource path for error construction
      * @return list of PathLinkerError as result of the validation
      */
+    @ApiModelProperty(hidden = true)
     public List<PathLinkerError> validate(CyNetwork network, String resourcePath) {
         // initialize errorList, resourcePath, and quit property
         errorList = new ArrayList<PathLinkerError>();

@@ -96,7 +96,13 @@ public class PathLinkerImpl implements PathLinkerResource {
         // throw exception if error found
         List<PathLinkerError> errorList = modelParams.validate(cyNetwork, "runPathLinker");
         if (!errorList.isEmpty()) {
-            if (errorList.get(0).status == 404)
+
+            // manually remove the uiMessages from the response
+            for (int i = 0; i < errorList.size(); i++) {
+                errorList.get(i).setUIMessage(null);
+            }
+
+            if (errorList.get(0).status == PathLinkerError.CY_NETWORK_NOT_FOUND_CODE)
                 throw ciExceptionFactory.getCIException(PathLinkerError.CY_NETWORK_NOT_FOUND_CODE,
                         errorList.toArray(new CIError[errorList.size()]));
             else
@@ -119,7 +125,7 @@ public class PathLinkerImpl implements PathLinkerResource {
 
         // check for error where no path is found
         if (pathLinkerModel.getOutputK() == 0) {
-            throw ciExceptionFactory.getCIException(404, 
+            throw ciExceptionFactory.getCIException(PathLinkerError.PATH_NOT_FOUND_CODE, 
                     new CIError[]{new PathLinkerError(PathLinkerError.PATH_NOT_FOUND_CODE, 
                             PathLinkerError.RESOURCE_ERROR_ROOT + ":runPathLinker:" + PathLinkerError.PATH_NOT_FOUND_ERROR, 
                             "No path found", null)

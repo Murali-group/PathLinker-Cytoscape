@@ -46,4 +46,12 @@ public class PathLinkerError extends CIError {
     public String getUIMessage() {
         return this.uiMessage;
     }
+
+    /**
+     * Setter method for uiMessage
+     * @param uiMessage
+     */
+    public void setUIMessage(String uiMessage) {
+        this.uiMessage = uiMessage;
+    }
 }
