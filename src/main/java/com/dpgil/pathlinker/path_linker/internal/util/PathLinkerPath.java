@@ -41,7 +41,8 @@ public class PathLinkerPath {
      * Getter method for path index
      * @return the pathIndex
      */
-    @ApiModelProperty(value = "The total score/lengths the path consists.")
+    @ApiModelProperty(value = "The index of the path in the given list of PathLinkerPath. The index is indicated by path score", 
+            example = "1", required = true)
     public int getPathIndex() {
         return pathIndex;
     }
@@ -50,7 +51,7 @@ public class PathLinkerPath {
      * Getter method for path score
      * @return the pathScore
      */
-    @ApiModelProperty(value = "The index of the path in the given list of PathLinkerPath. The index is indicated by path score.")
+    @ApiModelProperty(value = "The total score/lengths the path consists", example = "2", required = true)
     public double getPathScore() {
         return pathScore;
     }
@@ -59,7 +60,9 @@ public class PathLinkerPath {
      * Getter method for the path list
      * @return the path
      */
-    @ApiModelProperty(value = "The name of the vertices that constructs the path, The name matchs to the name column in the Node Table.")
+    @ApiModelProperty(value = "The path is given as an array of node names which represent the edges used in the path. "
+            + "The node names match the name column in the Node Table", 
+            example = "[Node1, Node2, Node3]", required = true)
     public ArrayList<String> getPath() {
         return path;
     }

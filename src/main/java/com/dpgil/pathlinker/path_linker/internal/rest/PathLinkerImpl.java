@@ -96,12 +96,6 @@ public class PathLinkerImpl implements PathLinkerResource {
         // throw exception if error found
         List<PathLinkerError> errorList = modelParams.validate(cyNetwork, "runPathLinker");
         if (!errorList.isEmpty()) {
-
-            // manually remove the uiMessages from the response
-            for (int i = 0; i < errorList.size(); i++) {
-                errorList.get(i).setUIMessage(null);
-            }
-
             if (errorList.get(0).status == PathLinkerError.CY_NETWORK_NOT_FOUND_CODE)
                 throw ciExceptionFactory.getCIException(PathLinkerError.CY_NETWORK_NOT_FOUND_CODE,
                         errorList.toArray(new CIError[errorList.size()]));
@@ -135,7 +129,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         List<PathWay> paths = pathLinkerModel.getResult(); // obtain result path
 
         // only generate subgraph/view if user agrees to
-        if (modelParams.generateKSPSubgraph) {
+        if (!modelParams.skipKSPSubgraphGeneration) {
             // construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
             CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(controlPanel, cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
             synTaskMan.execute(new TaskIterator(createKSPViewTask));

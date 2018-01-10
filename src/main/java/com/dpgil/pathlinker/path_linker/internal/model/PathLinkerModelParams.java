@@ -26,36 +26,37 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value="PathLinker Parameters", description="Parameters for PathLinkerModel")
 public class PathLinkerModelParams {
 
-    @ApiModelProperty(value = "Source node names seperate by spaces. Must match the name column in the Node Table.", example = "S1 S2 S3", required = true)
+    @ApiModelProperty(value = "Source node names separated by spaces. Must match the name column in the Node Table", example = "S1 S2 S3", required = true)
     public String sources; 
 
-    @ApiModelProperty(value = "target node names seperate by spaces. Must match the name column in the Node Table.", example = "T1 T2 T3", required = true)
+    @ApiModelProperty(value = "target node names separated by spaces. Must match the name column in the Node Table", example = "T1 T2 T3", required = true)
     public String targets;
 
-    @ApiModelProperty(value = "Allow sources and targets in computed path. Default set to false.", 
-            example = "false", required = true, allowableValues = "true,false", dataType = "boolean")
+    @ApiModelProperty(value = "Allow source/target nodes to appear as intermediate nodes in computed paths",
+            example = "false", dataType = "boolean")
     public boolean allowSourcesTargetsInPaths = false;
 
-    @ApiModelProperty(value = "Include all paths with same score/lengths. Default set to false.", 
-            example = "false", required = true, allowableValues = "true,false", dataType = "boolean")
+    @ApiModelProperty(value = "Include more than k paths if the path length/score is equal to the kth path’s length/score", 
+            example = "false", dataType = "boolean")
     public boolean includeTiedPaths = false;
 
-    @ApiModelProperty(value = "Number of paths to be generated. Default set to 50.", example = "50", required = true)
+    @ApiModelProperty(value = "Number of paths to compute. Default set to 50", example = "50")
     public Integer k = 50;
 
-    @ApiModelProperty(value = "Edge weight setting name. Default set to UNWEIGHTED", 
-            example = "UNWEIGHTED", required = true, allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
+    @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost of a path . Default set to UNWEIGHTED", 
+            example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
     public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
 
-    @ApiModelProperty(value = "Edge Penality. Default set to 1", example = "1")
-    public Double edgePenalty = 1.0;
+    @ApiModelProperty(value = "Edge Penality. Default set to 0", example = "0")
+    public Double edgePenalty = 0.0;
 
-    @ApiModelProperty(value = "Edge weight column name. Must match the column name in the Edge Table.", example = "weight")
+    @ApiModelProperty(value = "The name of the edge column in the Edge Table that contains the edge weight values. "
+            + "Must be numerical type values", example = "weight")
     public String edgeWeightColumnName;
 
-    @ApiModelProperty(value = "Generate KSP subgraph/subgraph view, pathlinker index, and result panel in Cytoscape."
-            + " Default set to true", example = "true", required = true, allowableValues = "true,false", dataType = "boolean")
-    public Boolean generateKSPSubgraph = true;
+    @ApiModelProperty(value = "Skip the generation of the KSP subgraph/subgraph view, pathlinker path index, and result panel in Cytoscape", 
+            example = "false", dataType = "boolean")
+    public Boolean skipKSPSubgraphGeneration = false;
 
     /** A mapping of the name of a node to the actual node object */
     private Map<String, CyNode> idToCyNode;
@@ -166,18 +167,6 @@ public class PathLinkerModelParams {
         // initialize source and target properties for validation
         prepareIdSourceTarget(network);
 
-        if (sourcesList.size() == 1 && sourcesList.equals(targetsList)) { 
-            String errorMsg = "The only source node is the same as the only target node.\n"
-                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n";
-
-            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
-                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
-                    errorMsg.replace("\n", ""), errorMsg);
-
-            errorList.add(0, error);
-            quit = true;
-        }
-
         // insert all missing sources/targets to the error message
         if (!sourcesNotInNet.isEmpty()) {
             int totalSources = sourcesList.size() + sourcesNotInNet.size();
@@ -189,9 +178,10 @@ public class PathLinkerModelParams {
                     PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
                     errorMsg.replace("\n", ""), errorMsg);
 
-            quit = sourcesList.isEmpty();
+            if (targetsList.isEmpty()) 
+                quit = true;
 
-            errorList.add(0, error);
+            errorList.add(error);
         }
 
         // insert all missing targets/targets to the error message
@@ -206,9 +196,22 @@ public class PathLinkerModelParams {
                     PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
                     errorMsg.replace("\n", ""), errorMsg);
 
-            quit = targetsList.isEmpty();
+            if (targetsList.isEmpty()) 
+                quit = true;
 
-            errorList.add(0, error);
+            errorList.add(error);
+        }
+
+        if (sourcesList.size() == 1 && sourcesList.equals(targetsList)) { 
+            String errorMsg = "The only source node is the same as the only target node.\n"
+                    + "PathLinker will not compute any paths. Please add more nodes to the sources or targets.\n\n";
+
+            PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
+                    PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
+                    errorMsg.replace("\n", ""), errorMsg);
+
+            errorList.add(error);
+            quit = true;
         }
 
         // checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
@@ -375,7 +378,7 @@ public class PathLinkerModelParams {
      * Setter method for sourcesList, sourceNames, and sourcesNotInNet
      */
     private void setSources() {
-        // stores the sources that were inputted but are not actually in the network, may have been mistyped
+        // stores the sources that were inputed but are not actually in the network, may have been mistyped
         sourcesNotInNet = new ArrayList<String>();
         // initialize the sourcesList here in case the text field is empty
         sourcesList = new ArrayList<CyNode>(); 
@@ -411,7 +414,7 @@ public class PathLinkerModelParams {
      * Setter method for targetsList, targetNames, and targetsNotInNet
      */
     private void setTargets() {
-        // stores the targets that were inputted but are not actually in the network, may have been mistyped
+        // stores the targets that were inputed but are not actually in the network, may have been mistyped
         targetsNotInNet = new ArrayList<String>();
         // initialize the targetsList here in case the text field is empty
         targetsList = new ArrayList<CyNode>(); 

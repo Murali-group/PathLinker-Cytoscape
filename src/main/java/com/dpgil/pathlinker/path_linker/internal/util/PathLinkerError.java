@@ -18,12 +18,12 @@ public class PathLinkerError extends CIError {
     /** Error code for Network Not Found */
     public static final int CY_NETWORK_NOT_FOUND_CODE = 404;
     /** Error code for invalid user input */
-    public static final int INVALID_INPUT_CODE = 422;
+    public static final int INVALID_INPUT_CODE = 400;
     /** Error code for path not found  */
-    public static final int PATH_NOT_FOUND_CODE = 204;
+    public static final int PATH_NOT_FOUND_CODE = 422;
 
     /** Message specifically used for generating error message on UI */
-    private String uiMessage;
+    public transient String uiMessage;
 
     /**
      * Default constructor
@@ -39,19 +39,4 @@ public class PathLinkerError extends CIError {
         this.uiMessage = uiMessage;
     }
 
-    /**
-     * Getter method for uiMessage
-     * @return uiMessage
-     */
-    public String getUIMessage() {
-        return this.uiMessage;
-    }
-
-    /**
-     * Setter method for uiMessage
-     * @param uiMessage
-     */
-    public void setUIMessage(String uiMessage) {
-        this.uiMessage = uiMessage;
-    }
 }

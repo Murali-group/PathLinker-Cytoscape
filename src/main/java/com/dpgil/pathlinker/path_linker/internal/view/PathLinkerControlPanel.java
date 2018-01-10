@@ -655,7 +655,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	    errorMessage = new StringBuilder();
 
 	    for (int i = 0; i < errorList.size(); i++) {
-	        errorMessage.append(errorList.get(i).getUIMessage());
+	        errorMessage.append(errorList.get(i).uiMessage);
 	    }
 
 	    // check if user is able to continue with the error
