@@ -6,3 +6,4 @@ target/
 .repo
 .uuid
 .gitignore/bin/
+.ipynb_checkpoints
