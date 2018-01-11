@@ -42,7 +42,7 @@ input_data["k"] = 50
 input_data["edgeWeightSetting"] = "ADDITIVE"
 input_data["edgePenalty"] = 1
 input_data["edgeWeightColumnName"] = "weight"
-input_data["generateKSPSubgraph"] = True
+input_data["skipKSPSubgraphGeneration"] = False
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 result = requests.request("POST",
