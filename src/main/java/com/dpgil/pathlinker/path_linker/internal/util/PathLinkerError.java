@@ -8,7 +8,7 @@ import org.cytoscape.ci.model.CIError;
 public class PathLinkerError extends CIError {
 
     /** Response String for error origin */
-    public final static String RESOURCE_ERROR_ROOT = "urn:cytoscape:ci:pathlinker-app:v1";
+    public final static String RESOURCE_ERROR_ROOT = "urn:cytoscape:ci:pathlinker-app:v1.4";
     /** Error message for Network Not Found */
     public static final String CY_NETWORK_NOT_FOUND_ERROR = "CY_NETWORK_NOT_FOUND_ERROR";
     /** Error message for invalid user input */
