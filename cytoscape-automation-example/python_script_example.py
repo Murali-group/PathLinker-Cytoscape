@@ -2,14 +2,12 @@
 Thescript creates an simple CytoScape network using data from the test text file
     and run PathLinker via API request to generate new sub-graph/view and k-number paths in JSON format
 '''
-from py2cytoscape.data.cynetwork import CyNetwork
 from py2cytoscape.data.cyrest_client import CyRestClient
 
 import networkx as nx
 import pandas as pd
 import json
 import requests
-from requests.status_codes import codes
 
 # create an instance of cyRest client
 cy = CyRestClient()
@@ -36,12 +34,12 @@ cy_network_suid = cy_network.get_id() # obtain network object SUID
 input_data = {}
 input_data["sources"] = "P35968 P00533 Q02763"
 input_data["targets"] = "Q15797 Q14872 Q16236 P14859 P36956"
-input_data["allowSourcesTargetsInPaths"] = False
-input_data["includeTiedPaths"] = False
 input_data["k"] = 50
 input_data["edgeWeightSetting"] = "ADDITIVE"
 input_data["edgePenalty"] = 1
 input_data["edgeWeightColumnName"] = "weight"
+input_data["allowSourcesTargetsInPaths"] = False
+input_data["includeTiedPaths"] = False
 input_data["skipKSPSubgraphGeneration"] = False
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}

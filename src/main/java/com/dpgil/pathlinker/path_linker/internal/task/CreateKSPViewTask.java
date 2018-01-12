@@ -46,6 +46,8 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
     private CyNetwork kspSubgraph;
     /** the sub graph view created */
     private CyNetworkView kspSubgraphView;
+    /** The name of the path rank column correspond to the ksp subnetwork */
+    private String pathRankColumnName;
 
     /**
      * Default constructor
@@ -71,8 +73,8 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
     }
 
     /**
-     * Used to access the ksp subgraph/view created by the task
-     * @return the subgraph/view created
+     * Used to access the ksp subgraph/view and path rank column name created by the task
+     * @return the subgraph/view and column name created
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -83,11 +85,14 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         if (type.equals(CyNetworkView.class))
             return (R) kspSubgraphView;
 
+        if (type.equals(String.class))
+            return (R) pathRankColumnName;
+
         return null;
     }
 
     /**
-     * Runs the task to create the ksp subgraph, subgraphview, and path index
+     * Runs the task to create the ksp subgraph, subgraphview, and path rank
      */
     @Override
     public void run(TaskMonitor taskMonitor) {
@@ -98,7 +103,7 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         // disable the action to update the network combo box while creating the new network
         PathLinkerNodeSelectionListener.setActive(false);
 
-        // increment the index use for creating the network, path index column, and result panel
+        // increment the index use for creating the network, path rank column, and result panel
         controlPanel.nameIndex++;
 
         // generates a subgraph of the nodes and edges involved in the resulting paths and displays it to the user
@@ -110,8 +115,8 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
         // manually updates the network combo box after creating the new network
         controlPanel.initializeNetworkCmb();
 
-        // update the table path index attribute
-        updatePathIndexAttribute(model.getResult());
+        // update the table path rank attribute
+        updatePathRankAttribute(model.getResult());
 
         // update the ksp subgraph name
         updateNetworkName();
@@ -212,19 +217,19 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
     }
 
     /**
-     * Creates a path index attribute to the network edge tables
+     * Creates a path rank attribute to the network edge tables
      * that rank each edge in the newly generated paths according to its weight
      * @param paths 
      *          the sorted paths of the network generated from the algorithm
      */
-    public void updatePathIndexAttribute(ArrayList<PathWay> paths) {
-        // Use nameIndex to create a new attribute "path index n"
+    public void updatePathRankAttribute(ArrayList<PathWay> paths) {
+        // Use nameIndex to create a new attribute "path rank n"
         // in the network edge table, where n is an unique number
-        while (network.getDefaultEdgeTable().getColumn("path index " + controlPanel.nameIndex) != null)
+        while (network.getDefaultEdgeTable().getColumn("path rank " + controlPanel.nameIndex) != null)
             controlPanel.nameIndex++;
 
-        String columnName = "path index " + controlPanel.nameIndex;
-        network.getDefaultEdgeTable().createColumn(columnName, Integer.class, false);
+        pathRankColumnName = "path rank " + controlPanel.nameIndex;
+        network.getDefaultEdgeTable().createColumn(pathRankColumnName, Integer.class, false);
 
         for (int i = 0; i < paths.size(); i++) {
             PathWay currPath = paths.get(i);
@@ -238,21 +243,21 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
                 List<CyEdge> edges = network.getConnectingEdgeList(node1, node2, CyEdge.Type.DIRECTED);
                 for (CyEdge edge : edges)
                 {
-                    if (network.getRow(edge).get(columnName, Integer.class) == null &&
+                    if (network.getRow(edge).get(pathRankColumnName, Integer.class) == null &&
                             edge.getSource().equals(node1) && edge.getTarget().equals(node2)) // verifies the edges direction
-                        network.getRow(edge).set(columnName, i + 1);
+                        network.getRow(edge).set(pathRankColumnName, i + 1);
                 }
                 // also add all of the undirected edges from node1 to node2
                 edges = network.getConnectingEdgeList(node1, node2, CyEdge.Type.UNDIRECTED);
                 for (CyEdge edge : edges) 
-                    if (network.getRow(edge).get(columnName, Integer.class) == null)
-                        network.getRow(edge).set(columnName,  i + 1);
+                    if (network.getRow(edge).get(pathRankColumnName, Integer.class) == null)
+                        network.getRow(edge).set(pathRankColumnName,  i + 1);
             }
         }
 
         // add the newly created column into the maps
-        controlPanel._pathIndexToSuidMap.put(columnName, kspSubgraph.getSUID());
-        controlPanel._suidToPathIndexMap.put(kspSubgraph.getSUID(), columnName);
+        controlPanel._pathRankToSuidMap.put(pathRankColumnName, kspSubgraph.getSUID());
+        controlPanel._suidToPathRankMap.put(kspSubgraph.getSUID(), pathRankColumnName);
     }
 
     /**

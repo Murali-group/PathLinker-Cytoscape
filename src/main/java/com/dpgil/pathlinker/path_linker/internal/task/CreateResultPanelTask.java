@@ -101,7 +101,7 @@ public class CreateResultPanelTask extends AbstractNetworkTask implements Observ
      */
     private void createResultPanel() {
         // create and register a new panel in result panel with specific title
-        // the result panel name will be sync with network and path index using nameIndex
+        // the result panel name will be sync with network and path rank using nameIndex
         resultPanel = new PathLinkerResultPanel(controlPanel, title, networkManager, network, results);
         serviceRegistrar.registerService(resultPanel, CytoPanelComponent.class, new Properties());
 

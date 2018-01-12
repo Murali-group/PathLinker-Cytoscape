@@ -18,8 +18,8 @@ import io.swagger.annotations.ApiModelProperty;
 description="Path object consists of path index, path score, and the name of vertices that constructs the path")
 public class PathLinkerPath {
 
-    /** the path index */
-    private int pathIndex;
+    /** the path rank */
+    private int pathRank;
     /** the total score of the path */
     private double  pathScore;
     /** the list of nodes in string in order in the path */
@@ -27,12 +27,12 @@ public class PathLinkerPath {
 
     /**
      * Default constructor
-     * @param pathIndex     the path index
+     * @param pathRank     the path rank
      * @param pathScore    the path score
-     * @param path      the path list
+     * @param path         the path list
      */
-    public PathLinkerPath (int pathIndex, double pathScore, ArrayList<String> path) {
-        this.pathIndex = pathIndex;
+    public PathLinkerPath (int pathRank, double pathScore, ArrayList<String> path) {
+        this.pathRank = pathRank;
         this.pathScore = pathScore;
         this.path = path;
     }
@@ -41,10 +41,10 @@ public class PathLinkerPath {
      * Getter method for path index
      * @return the pathIndex
      */
-    @ApiModelProperty(value = "The index of the path in the given list of PathLinkerPath. The index is indicated by path score", 
+    @ApiModelProperty(value = "The rank of the path in the given list of PathLinkerPath. The rank is indicated by path score", 
             example = "1", required = true)
-    public int getPathIndex() {
-        return pathIndex;
+    public int getPathRank() {
+        return pathRank;
     }
 
     /**

@@ -32,6 +32,20 @@ public class PathLinkerModelParams {
     @ApiModelProperty(value = "target node names separated by spaces. Must match the name column in the Node Table", example = "T1 T2 T3", required = true)
     public String targets;
 
+    @ApiModelProperty(value = "Number of paths to compute. Default = 50", example = "50")
+    public Integer k = 50;
+
+    @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost of a path. Default set to UNWEIGHTED", 
+            example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
+    public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+
+    @ApiModelProperty(value = "Edge Penalty. Default = 0", example = "0")
+    public Double edgePenalty = 0.0;
+
+    @ApiModelProperty(value = "The name of the edge column in the Edge Table that contains the edge weight values. "
+            + "Must be numerical type values", example = "weight")
+    public String edgeWeightColumnName;
+
     @ApiModelProperty(value = "Allow source/target nodes to appear as intermediate nodes in computed paths",
             example = "false", dataType = "boolean")
     public boolean allowSourcesTargetsInPaths = false;
@@ -40,21 +54,7 @@ public class PathLinkerModelParams {
             example = "false", dataType = "boolean")
     public boolean includeTiedPaths = false;
 
-    @ApiModelProperty(value = "Number of paths to compute. Default set to 50", example = "50")
-    public Integer k = 50;
-
-    @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost of a path . Default set to UNWEIGHTED", 
-            example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
-    public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
-
-    @ApiModelProperty(value = "Edge Penality. Default set to 0", example = "0")
-    public Double edgePenalty = 0.0;
-
-    @ApiModelProperty(value = "The name of the edge column in the Edge Table that contains the edge weight values. "
-            + "Must be numerical type values", example = "weight")
-    public String edgeWeightColumnName;
-
-    @ApiModelProperty(value = "Skip the generation of the KSP subgraph/subgraph view, pathlinker path index, and result panel in Cytoscape", 
+    @ApiModelProperty(value = "Skip the generation of the KSP subgraph/subgraph view, Pathlinker path rank, and result panel in Cytoscape", 
             example = "false", dataType = "boolean")
     public Boolean skipKSPSubgraphGeneration = false;
 

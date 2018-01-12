@@ -130,13 +130,14 @@ public class PathLinkerImpl implements PathLinkerResource {
 
         // only generate subgraph/view if user agrees to
         if (!modelParams.skipKSPSubgraphGeneration) {
-            // construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
+            // construct createKSPViewTask to create KSP subgraph, subgraph view, path rank, and update related properties
             CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(controlPanel, cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
 
-            // store subgraph/view suids to the response
+            // store subgraph/view suids and path rank column name to the response
             response.setKspSubNetworkSUID(createKSPViewTask.getResults(CyNetwork.class).getSUID());
             response.setKspSubNetworkViewSUID(createKSPViewTask.getResults(CyNetworkView.class).getSUID());
+            response.setPathRankColumnName(createKSPViewTask.getResults(String.class));
 
             // writes the result of the algorithm to a table
             CreateResultPanelTask createResultPanelTask = new CreateResultPanelTask(controlPanel,

@@ -133,10 +133,10 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
     public Map<Integer, Long> _indexToSUIDMap;
     /** The map stores the SUID-index pair of each network inside the networkCmb */
     public Map<Long, Integer> _suidToIndexMap;
-	/** The map stores the SUID to path index column name pair of each network */
-    public Map<Long, String> _suidToPathIndexMap;
-    /** The map stores path index column name to SUID pair of each network */
-    public Map<String, Long> _pathIndexToSuidMap;
+	/** The map stores the SUID to path rank column name pair of each network */
+    public Map<Long, String> _suidToPathRankMap;
+    /** The map stores path raml column name to SUID pair of each network */
+    public Map<String, Long> _pathRankToSuidMap;
     /** Global sync index number to sync network, Path Index, and result names upon creation */
     public int nameIndex;
 
@@ -219,9 +219,9 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_buildDate = buildDate;
 		_parent = this.getParent();
 
-		// initialize the maps for path index columns
-		_suidToPathIndexMap = new HashMap<Long, String>();
-		_pathIndexToSuidMap = new HashMap<String, Long>();
+		// initialize the maps for path rank columns
+		_suidToPathRankMap = new HashMap<Long, String>();
+		_pathRankToSuidMap = new HashMap<String, Long>();
 
 		// initialize the name index field
 		nameIndex = 0;
@@ -594,7 +594,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// obtain result computed from the model
 		ArrayList<PathWay> result = _model.getResult();
 
-		// construct createKSPViewTask to create KSP subgraph, subgraph view, path index, and update related properties
+		// construct createKSPViewTask to create KSP subgraph, subgraph view, path rank, and update related properties
 		CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(this, _originalNetwork, _model, _adapter, _applicationManager);
 		synTaskMan.execute(new TaskIterator(createKSPViewTask));
 		_kspSubgraph = createKSPViewTask.getResults(CyNetwork.class);

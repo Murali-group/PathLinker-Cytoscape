@@ -20,6 +20,8 @@ public class PathLinkerAppResponse {
     private Long kspSubNetworkSUID;
     /** SUID of the ksp subnetwork view */
     private Long kspSubNetworkViewSUID;
+    /** The name of the path rank column correspond to the ksp subnetwork */
+    private String pathRankColumnName;
     /** List of PathLinkerPath objects */
     private List<PathLinkerPath> paths;
 
@@ -55,6 +57,24 @@ public class PathLinkerAppResponse {
      */
     public void setKspSubNetworkViewSUID(Long kspSubNetworkViewSUID) {
         this.kspSubNetworkViewSUID = kspSubNetworkViewSUID;
+    }
+
+    /**
+     * Getter method of the pathRankColumnName
+     * @return the pathRankColumnName
+     */
+    @ApiModelProperty(value = "The name of the edge column containing the index of the first path in which a given edge appears.",
+                        example = "path rank 1")
+    public String getPathRankColumnName() {
+        return pathRankColumnName;
+    }
+
+    /**
+     * Setter method of the pathRankColumnName
+     * @param pathRankColumnName
+     */
+    public void setPathRankColumnName(String pathRankColumnName) {
+        this.pathRankColumnName = pathRankColumnName;
     }
 
     /**

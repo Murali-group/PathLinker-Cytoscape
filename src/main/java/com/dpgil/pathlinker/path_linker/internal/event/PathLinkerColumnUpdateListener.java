@@ -31,17 +31,17 @@ public class PathLinkerColumnUpdateListener implements ColumnCreatedListener, Co
     public void handleEvent(ColumnNameChangedEvent e) {
         controlPanel.updateEdgeWeightColumn();
 
-        long suid = controlPanel._pathIndexToSuidMap.remove(e.getOldColumnName());
-        controlPanel._suidToPathIndexMap.put(suid, e.getNewColumnName());
-        controlPanel._pathIndexToSuidMap.put(e.getNewColumnName(), suid);
+        long suid = controlPanel._pathRankToSuidMap.remove(e.getOldColumnName());
+        controlPanel._suidToPathRankMap.put(suid, e.getNewColumnName());
+        controlPanel._pathRankToSuidMap.put(e.getNewColumnName(), suid);
     }
 
     @Override
     public void handleEvent(ColumnDeletedEvent e) {
         controlPanel.updateEdgeWeightColumn();
 
-        controlPanel._suidToPathIndexMap.remove(
-                controlPanel._pathIndexToSuidMap.remove(
+        controlPanel._suidToPathRankMap.remove(
+                controlPanel._pathRankToSuidMap.remove(
                         e.getColumnName()));
     }
 

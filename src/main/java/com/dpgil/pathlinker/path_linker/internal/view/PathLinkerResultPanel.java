@@ -127,10 +127,10 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
             // obtain the PathLinker index column if network exists or column exists
             CyColumn pathIndexColumn = null;
             if (_networkManager.getNetwork(_currentNetwork.getSUID()) != null
-                    && _controlPanel._suidToPathIndexMap
+                    && _controlPanel._suidToPathRankMap
                     .get(_currentNetwork.getSUID()) != null) {
                 pathIndexColumn = _currentNetwork.getDefaultEdgeTable()
-                        .getColumn(_controlPanel._suidToPathIndexMap
+                        .getColumn(_controlPanel._suidToPathRankMap
                                 .get(_currentNetwork.getSUID()));
             }
 
@@ -146,7 +146,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
 
             if (choice != 0) return; // quit if select cancel
 
-            // remove network and path index column if exist
+            // remove network and path rank column if exist
             if (pathIndexColumn != null)
                 _currentNetwork.getDefaultEdgeTable().deleteColumn(pathIndexColumn.getName());
 
@@ -155,8 +155,8 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
                 _networkManager.destroyNetwork(_currentNetwork);
 
             // clean up the suid-pathindex and pathindex-suid maps
-            _controlPanel._pathIndexToSuidMap.remove(
-                    _controlPanel._suidToPathIndexMap.remove(
+            _controlPanel._pathRankToSuidMap.remove(
+                    _controlPanel._suidToPathRankMap.remove(
                             _currentNetwork.getSUID()));
 
             Container btnParent = _deleteBtn.getParent();
@@ -268,7 +268,7 @@ public class PathLinkerResultPanel extends JPanel implements CytoPanelComponent 
      */
     private void setupTable()
     {
-        Object[] columnNames = new Object[] { "Path index", "Path score", "Path" };
+        Object[] columnNames = new Object[] { "Path rank", "Path score", "Path" };
         Object[][] rowData = new Object[_results.size()][columnNames.length];
 
         // A decimal formatter to round path score up to 6 decimal places
