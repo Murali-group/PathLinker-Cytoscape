@@ -106,7 +106,7 @@ public class Algorithms
 		 * Returns the ith node in the path
 		 *
 		 * @param i
-		 *            the index of the node to get
+		 *            the rank of the node to get
 		 * @return the ith node in the path
 		 */
 		public CyNode get(int i)

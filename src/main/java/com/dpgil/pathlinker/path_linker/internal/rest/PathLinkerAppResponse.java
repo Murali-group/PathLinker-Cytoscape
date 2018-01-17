@@ -63,7 +63,7 @@ public class PathLinkerAppResponse {
      * Getter method of the pathRankColumnName
      * @return the pathRankColumnName
      */
-    @ApiModelProperty(value = "The name of the edge column containing the index of the first path in which a given edge appears.",
+    @ApiModelProperty(value = "The name of the edge column containing the rank of the first path in which a given edge appears.",
                         example = "path rank 1")
     public String getPathRankColumnName() {
         return pathRankColumnName;
