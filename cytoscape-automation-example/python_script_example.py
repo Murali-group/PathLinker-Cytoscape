@@ -16,9 +16,10 @@ cy = CyRestClient()
 cy.session.delete()
 
 # create a new network from the input txt file using pandas
-network_csv = pd.read_csv('../src/test/resources/input/graph-undir_human-interactome.txt', header=None, sep='\t', lineterminator='\n')
+csv_dir = "example_attachment/graph-dir_human-interactome.txt"
+network_csv = pd.read_csv(csv_dir, header=None, sep='\t', lineterminator='\n')
 
-# create an empty undirected graph from networkx
+# create an empty directed graph from networkx
 nx_network = nx.Graph()
 
 # fill the empty network with source, target, and corresponding edge weight
@@ -35,16 +36,16 @@ input_data = {}
 input_data["sources"] = "P35968 P00533 Q02763"
 input_data["targets"] = "Q15797 Q14872 Q16236 P14859 P36956"
 input_data["k"] = 50
-input_data["edgeWeightSetting"] = "ADDITIVE"
+input_data["edgeWeightType"] = "PROBABILITIES"
 input_data["edgePenalty"] = 1
 input_data["edgeWeightColumnName"] = "weight"
 input_data["allowSourcesTargetsInPaths"] = False
 input_data["includeTiedPaths"] = False
-input_data["skipKSPSubgraphGeneration"] = False
+input_data["skipSubnetworkGeneration"] = False
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 result = requests.request("POST",
-                            "http://localhost:1234/pathlinker/v1.4/" + str(cy_network_suid) + "/runPathLinker",
+                            "http://localhost:1234/pathlinker/v1/" + str(cy_network_suid) + "/run",
                             data = json.dumps(input_data),
                             params = None,
                             headers = headers)
