@@ -77,7 +77,7 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
                 modelParams.getTargetsList(),
                 modelParams.edgeWeightColumnName,
                 modelParams.k,
-                modelParams.edgeWeightSetting, 
+                modelParams.edgeWeightType, 
                 modelParams.edgePenalty,
                 modelParams.getCyNodeToId());
 

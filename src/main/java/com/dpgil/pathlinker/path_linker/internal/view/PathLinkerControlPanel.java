@@ -5,7 +5,7 @@ import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModelParams;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateKSPViewTask;
 import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
-import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightType;
 import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerError;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
@@ -419,7 +419,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		_edgeWeightColumnBox.removeAllItems(); //remove all items for update
 
-		//keep box empty if no network found or user selected unweighted as edge weight setting
+		//keep box empty if no network found or user selected unweighted as edge weight type
 		if (_applicationManager == null || _applicationManager.getCurrentNetwork() == null || _unweighted.isSelected()) {
 			_edgeWeightColumnBox.setEnabled(false); //disables the drop-down box
 			return;
@@ -629,13 +629,13 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _modelParams.edgeWeightColumnName = _edgeWeightColumnBox.getSelectedIndex() == -1 ? "" : _edgeWeightColumnBox.getSelectedItem().toString();
         _modelParams.edgePenalty = _edgePenaltyTextField.getText().trim().isEmpty() ? null : Double.parseDouble(_edgePenaltyTextField.getText());
 
-        // gets the option for edge weight setting
+        // gets the option for edge weight type
         if (_unweighted.isSelected()) {
-            _modelParams.edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+            _modelParams.edgeWeightType = EdgeWeightType.UNWEIGHTED;
         } else if (_weightedAdditive.isSelected()) {
-            _modelParams.edgeWeightSetting = EdgeWeightSetting.ADDITIVE;
+            _modelParams.edgeWeightType = EdgeWeightType.ADDITIVE;
         } else {
-            _modelParams.edgeWeightSetting = EdgeWeightSetting.PROBABILITIES;
+            _modelParams.edgeWeightType = EdgeWeightType.PROBABILITIES;
         }
 
         // validate the modelParams setting
@@ -669,7 +669,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	    errorMessage.append("\nWould you like to cancel and correct the inputs?" + 
 	            "\nOr continue and run PathLinker with " + 
 	            _modelParams.getSourcesList().size() + " sources, " + _modelParams.getTargetsList().size() + " targets, ");
-	    if (_modelParams.edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED)
+	    if (_modelParams.edgeWeightType != EdgeWeightType.UNWEIGHTED)
 	        errorMessage.append("k = " + _modelParams.k + ", and edge penalty = " + _modelParams.edgePenalty + "?");
 	    else
 	        errorMessage.append("and k = " + _modelParams.k + "?");

@@ -27,7 +27,7 @@ import com.dpgil.pathlinker.path_linker.internal.task.CreateResultPanelTask;
 import com.dpgil.pathlinker.path_linker.internal.task.RunKSPTask;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerError;
-import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerPath;
+import com.dpgil.pathlinker.path_linker.internal.util.Path;
 import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
 /**
@@ -129,14 +129,14 @@ public class PathLinkerImpl implements PathLinkerResource {
         List<PathWay> paths = pathLinkerModel.getResult(); // obtain result path
 
         // only generate subgraph/view if user agrees to
-        if (!modelParams.skipKSPSubgraphGeneration) {
+        if (!modelParams.skipSubnetworkGeneration) {
             // construct createKSPViewTask to create KSP subgraph, subgraph view, path rank, and update related properties
             CreateKSPViewTask createKSPViewTask = new CreateKSPViewTask(controlPanel, cyNetwork, pathLinkerModel , adapter, cyApplicationManager);
             synTaskMan.execute(new TaskIterator(createKSPViewTask));
 
             // store subgraph/view suids and path rank column name to the response
-            response.setKspSubNetworkSUID(createKSPViewTask.getResults(CyNetwork.class).getSUID());
-            response.setKspSubNetworkViewSUID(createKSPViewTask.getResults(CyNetworkView.class).getSUID());
+            response.setSubNetworkSUID(createKSPViewTask.getResults(CyNetwork.class).getSUID());
+            response.setSubnetworkViewSUID(createKSPViewTask.getResults(CyNetworkView.class).getSUID());
             response.setPathRankColumnName(createKSPViewTask.getResults(String.class));
 
             // writes the result of the algorithm to a table
@@ -148,7 +148,7 @@ public class PathLinkerImpl implements PathLinkerResource {
         }
 
         // the result that stores all paths in string format
-        ArrayList<PathLinkerPath> result = new ArrayList<PathLinkerPath>();
+        ArrayList<Path> result = new ArrayList<Path>();
 
         // A decimal formatter to round path score up to 6 decimal places
         DecimalFormat df = new DecimalFormat("#.######");
@@ -163,7 +163,7 @@ public class PathLinkerImpl implements PathLinkerResource {
                 currentPath.add(path.nodeIdMap.get(path.get(j)));
             }
 
-            result.add(new PathLinkerPath(i + 1, Double.valueOf(df.format(paths.get(i).weight)), currentPath));
+            result.add(new Path(i + 1, Double.valueOf(df.format(paths.get(i).weight)), currentPath));
         }
 
         // store results into response

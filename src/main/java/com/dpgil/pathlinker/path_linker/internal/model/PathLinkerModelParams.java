@@ -14,7 +14,7 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 
-import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightType;
 import com.dpgil.pathlinker.path_linker.internal.util.PathLinkerError;
 
 import io.swagger.annotations.ApiModel;
@@ -37,7 +37,7 @@ public class PathLinkerModelParams {
 
     @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost of a path. Default set to UNWEIGHTED", 
             example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
-    public EdgeWeightSetting edgeWeightSetting = EdgeWeightSetting.UNWEIGHTED;
+    public EdgeWeightType edgeWeightType = EdgeWeightType.UNWEIGHTED;
 
     @ApiModelProperty(value = "Edge Penalty. Default = 0", example = "0")
     public Double edgePenalty = 0.0;
@@ -54,9 +54,10 @@ public class PathLinkerModelParams {
             example = "false", dataType = "boolean")
     public boolean includeTiedPaths = false;
 
-    @ApiModelProperty(value = "Skip the generation of the KSP subgraph/subgraph view, Pathlinker path rank, and result panel in Cytoscape", 
+    @ApiModelProperty(value = "Skip the generation of the subnetwork/subnetwork view, the path rank column, "
+            + "and the result panel in Cytoscape", 
             example = "false", dataType = "boolean")
-    public Boolean skipKSPSubgraphGeneration = false;
+    public Boolean skipSubnetworkGeneration = false;
 
     /** A mapping of the name of a node to the actual node object */
     private Map<String, CyNode> idToCyNode;
@@ -214,10 +215,10 @@ public class PathLinkerModelParams {
             quit = true;
         }
 
-        // checks if all the edges in the graph have weights. Skip the check if edge weight setting is unweighted
+        // checks if all the edges in the graph have weights. Skip the check if edge weight type is unweighted
         // Error exists if a weighted option was selected, but not all edges have weights.
         PathLinkerError edgeWeightError = null;
-        if (edgeWeightSetting != null && edgeWeightSetting != EdgeWeightSetting.UNWEIGHTED) {
+        if (edgeWeightType != null && edgeWeightType != EdgeWeightType.UNWEIGHTED) {
             for (CyEdge edge : network.getEdgeList()) {
                 try {
                     Double.parseDouble(network.getRow(edge).getRaw(edgeWeightColumnName).toString());
@@ -252,9 +253,9 @@ public class PathLinkerModelParams {
             errorList.add(error);
         }
 
-        // check user input for edgeWeightSetting
-        if (edgeWeightSetting == null) {
-            String errorMsg = "Invalid edgeWeightSetting. edgeWeightSetting must be UNWEIGHTED, ADDITIVE, or PROBABILITIES" ;
+        // check user input for edgeWeightType
+        if (edgeWeightType == null) {
+            String errorMsg = "Invalid edgeWeightType. edgeWeightType must be UNWEIGHTED, ADDITIVE, or PROBABILITIES" ;
             PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
                     PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 
                     errorMsg, null);
@@ -264,15 +265,15 @@ public class PathLinkerModelParams {
             return errorList;
         }
 
-        // skip validation for other parameters if edge weight setting is unweighted
-        if (edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED)
+        // skip validation for other parameters if edge weight type is unweighted
+        if (edgeWeightType == EdgeWeightType.UNWEIGHTED)
             return errorList;
 
         // validation for edge penalty
-        if (edgePenalty == null || edgePenalty < 1 && edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
-            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight setting PROBABILITIES";
+        if (edgePenalty == null || edgePenalty < 1 && edgeWeightType == EdgeWeightType.PROBABILITIES) {
+            String errorMsg  = "Invalid edgePenalty. Edge penalty must be greater than or equal to 1 for edge weight type PROBABILITIES";
             String uiErrorMsg = "Invalid value entered for edge penalty: " + edgePenalty + 
-                    ".\n  - Must be a number >= 1.0 for the probability/multiplicative setting.\n";
+                    ".\n  - Must be a number >= 1.0 for the probability/multiplicative type.\n";
 
             if (!quit) {
                 uiErrorMsg += "  - Setting to default: 1.0.\n";
@@ -304,7 +305,7 @@ public class PathLinkerModelParams {
         }
 
         if (edgeWeightColumnName == null) {
-            String errorMsg  = "edgeWeightColumnName is empty, " + edgeWeightSetting + " requires edgeWeightColumnName";
+            String errorMsg  = "edgeWeightColumnName is empty, " + edgeWeightType + " requires edgeWeightColumnName";
 
             PathLinkerError error = new PathLinkerError(PathLinkerError.INVALID_INPUT_CODE, 
                     PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.INVALID_INPUT_ERROR, 

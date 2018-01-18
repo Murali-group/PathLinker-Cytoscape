@@ -14,7 +14,7 @@ import org.cytoscape.model.subnetwork.CyRootNetwork;
 import org.cytoscape.model.subnetwork.CySubNetwork;
 
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms;
-import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightSetting;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightType;
 import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
 /** Back end model for the PathLinker plugin */
@@ -44,7 +44,7 @@ public class PathLinkerModel {
 	/** The value by which to penalize each edge weight */
 	private Double edgePenalty;
 	/** Perform algo unweighted, weighted (probs), or weighted (p-values) */
-	private EdgeWeightSetting edgeWeightSetting;
+	private EdgeWeightType edgeWeightType;
 	/** Weight of edges to be used by the algorithm */
 	private Map<CyEdge, Double> edgeWeights;
 	/** Edges that we hide from the algorithm */
@@ -77,13 +77,13 @@ public class PathLinkerModel {
 	 * @param targetsList                list of targets in CyNode
 	 * @param edgeWeightColumnName       column name that contains the edge weight information
 	 * @param inputK                     input k value
-	 * @param edgeWeightSetting          edge weight setting
+	 * @param edgeWeightType             edge weight type
 	 * @param edgePenalty                edge penalty
 	 * @param cyNodeToId                 map mapping all CyNode to its string name
 	 */
 	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
 	        Set<String> sourceNames, Set<String> targetNames, List<CyNode> sourcesList, List<CyNode> targetsList, String edgeWeightColumnName, 
-	        int inputK, EdgeWeightSetting edgeWeightSetting, Double edgePenalty, Map<CyNode, String> cyNodeToId) {
+	        int inputK, EdgeWeightType edgeWeightType, Double edgePenalty, Map<CyNode, String> cyNodeToId) {
 
 	    this.originalNetwork 			= originalNetwork;
 	    this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
@@ -94,7 +94,7 @@ public class PathLinkerModel {
 	    this.targetsList                = targetsList;
 	    this.edgeWeightColumnName		= edgeWeightColumnName;
 	    this.inputK 					= inputK;
-	    this.edgeWeightSetting 			= edgeWeightSetting;
+	    this.edgeWeightType 			= edgeWeightType;
 	    this.edgePenalty 				= edgePenalty;
 	    this.cyNodeToId                 = cyNodeToId;
 
@@ -244,7 +244,7 @@ public class PathLinkerModel {
 
 			// a hack for unweighted edge to avoid calling getNetworkTableWeight
 			// should be edit in the future to avoid constant checks
-			Double w = edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED ? 1 : getNetworkTableWeight(e);
+			Double w = edgeWeightType == EdgeWeightType.UNWEIGHTED ? 1 : getNetworkTableWeight(e);
 
 			// check if this source-target was already added as an edge. If it was, keep track of the 
 			// multiple weights. If not, add it as a new edge
@@ -306,7 +306,7 @@ public class PathLinkerModel {
 	 */
 	private void setEdgeWeights() {
 
-		if (edgeWeightSetting == EdgeWeightSetting.UNWEIGHTED){
+		if (edgeWeightType == EdgeWeightType.UNWEIGHTED){
 			for (CyEdge edge : network.getEdgeList()) {
 				edgeWeights.put(edge, 1.);
 			}
@@ -314,13 +314,13 @@ public class PathLinkerModel {
 
 		// applies edge penalty and then log transforms the edge weights for the
 		// probability option
-		else if (edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+		else if (edgeWeightType == EdgeWeightType.PROBABILITIES) {
 			applyMultiplicativeEdgePenalty(edgePenalty);
 			logTransformEdgeWeights();
 		}
 
 		// applies edge penalty for the additive option
-		else if (edgeWeightSetting == EdgeWeightSetting.ADDITIVE) {
+		else if (edgeWeightType == EdgeWeightType.ADDITIVE) {
 			applyAdditiveEdgePenalty(edgePenalty);
 		}
 
@@ -515,7 +515,7 @@ public class PathLinkerModel {
 	 */
 	private void undoLogTransformPathLength(ArrayList<PathWay> paths) {
 		// weighted probabilities option sets the weight to 2 ^ (-weight)
-		if (edgeWeightSetting == EdgeWeightSetting.PROBABILITIES) {
+		if (edgeWeightType == EdgeWeightType.PROBABILITIES) {
 			for (PathWay p : paths) {
 				p.weight = Math.pow(10, -1 * p.weight);
 			}
