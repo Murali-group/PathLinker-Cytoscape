@@ -26,24 +26,25 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value="PathLinker Parameters", description="Parameters for PathLinkerModel")
 public class PathLinkerModelParams {
 
-    @ApiModelProperty(value = "Source node names separated by spaces. Must match the name column in the Node Table", example = "S1 S2 S3", required = true)
+    @ApiModelProperty(value = "Source node names separated by spaces. Must match the \"name\" column in the Node Table", example = "S1 S2 S3", required = true)
     public String sources; 
 
-    @ApiModelProperty(value = "target node names separated by spaces. Must match the name column in the Node Table", example = "T1 T2 T3", required = true)
+    @ApiModelProperty(value = "target node names separated by spaces. Must match the \"name\" column in the Node Table", example = "T1 T2 T3", required = true)
     public String targets;
 
     @ApiModelProperty(value = "Number of paths to compute. Default = 50", example = "50")
     public Integer k = 50;
 
     @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost/weight of a path. "
-            + "Default set to UNWEIGHTED.", 
+            + "Default set to UNWEIGHTED", 
             example = "UNWEIGHTED")
     public EdgeWeightType edgeWeightType = EdgeWeightType.UNWEIGHTED;
 
-    @ApiModelProperty(value = "Edge Penalty. Default = 0", example = "0")
+    @ApiModelProperty(value = "Cost of using additional edges in a path, essentially trading off longer, low-cost "
+            + "paths with shorter, high-cost paths. Default = 0", example = "0")
     public Double edgePenalty = 0.0;
 
-    @ApiModelProperty(value = "The name of the edge column in the Edge Table that contains the edge weight values. "
+    @ApiModelProperty(value = "The name of the column in the Edge Table that contains the edge weight values. "
             + "Must be numerical type values", example = "weight")
     public String edgeWeightColumnName;
 

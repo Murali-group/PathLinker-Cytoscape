@@ -29,7 +29,7 @@ public class PathLinkerAppResponse {
      * Getter method of the subnetworkSUID
      * @return subnetworkSUID
      */
-    @ApiModelProperty(value = "SUID of the subnetwork created. Only given if user set skipSubnetworkGeneration to false")
+    @ApiModelProperty(value = "SUID of the subnetwork created")
     public Long getSubnetworkSUID() {
         return subnetworkSUID;
     }
@@ -46,7 +46,7 @@ public class PathLinkerAppResponse {
      * Getter method of the subnetworkViewSUID
      * @return subnetworkViewSUID
      */
-    @ApiModelProperty(value = "SUID of the subnetwork view created. Only given if user set skipSubnetworkGeneration to false")
+    @ApiModelProperty(value = "SUID of the subnetwork view created")
     public Long getSubnetworkViewSUID() {
         return subnetworkViewSUID;
     }
@@ -64,7 +64,7 @@ public class PathLinkerAppResponse {
      * @return the pathRankColumnName
      */
     @ApiModelProperty(value = "The name of the edge column containing the rank of the first path in which a given edge appears",
-                        example = "path rank 1")
+            example = "path rank 1")
     public String getPathRankColumnName() {
         return pathRankColumnName;
     }

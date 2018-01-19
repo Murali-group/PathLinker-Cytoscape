@@ -41,7 +41,7 @@ public class Path {
      * Getter method for rank
      * @return rank
      */
-    @ApiModelProperty(value = "The rank of the path; e.g. The path rank is 100 if it is the 100th shortest path"
+    @ApiModelProperty(value = "The rank of the path; e.g. The path rank is 100 if it is the 100th shortest path "
             + "computed by the algorithm", 
             example = "1", required = true)
     public int getRank() {
@@ -62,7 +62,7 @@ public class Path {
      * @return nodeList
      */
     @ApiModelProperty(value = "The list of nodes in the path. "
-            + "The node \"name\" matches to the \"name column\" in the Node Table", 
+            + "The node \"name\" matches the \"name column\" in the Node Table", 
             example = "[Node1, Node2, Node3]", required = true)
     public ArrayList<String> getNodeList() {
         return nodeList;

@@ -68,7 +68,7 @@ public interface PathLinkerResource {
     @Produces("application/json")
     @Consumes("application/json")
     @Path("currentView/run")
-    @ApiOperation(value = "Run PathLinker on Current Network with Options", 
+    @ApiOperation(value = "Run PathLinker on Selected Network with Options", 
     notes = PathLinkerDocumentation.RUN_CURRENT_NETWORK_SWAGGER_NOTES,
     response = PathLinkerAppResponse.class)
     @ApiResponses(value = { 
