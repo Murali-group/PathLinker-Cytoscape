@@ -61,7 +61,6 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @param serviceRegistrar      service registrar
      * @param cySwingApp            swing app
      * @param ciExceptionFactory    CIException factory
-     * @param ciErrorFactory        CIError factory
      */
     public PathLinkerImpl(
             PathLinkerControlPanel controlPanel,

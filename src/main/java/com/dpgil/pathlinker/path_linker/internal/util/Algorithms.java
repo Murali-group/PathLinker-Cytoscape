@@ -159,11 +159,13 @@ public class Algorithms
 	 * edge between any two nodes). A* is used as the pathfinding subroutine,
 	 * with the distances in the input graph as a heuristic. Because the
 	 * algorithm computes paths over subsets of the initial heuristic is valid
-	 * and effective. If the graph contains n < k paths, n paths will be
+	 * and effective. If the graph contains n less than k paths, n paths will be
 	 * returned.
 	 *
 	 * @param network
 	 *            the supplied network
+	 * @param cyNodeToId
+     *            the map that maps CyNode object to its string name
 	 * @param source
 	 *            the source node
 	 * @param target
@@ -380,6 +382,8 @@ public class Algorithms
 	 *
 	 * @param network
 	 *            the supplied network
+	 * @param cyNodeToId
+     *            the map that maps CyNode object to its string name
 	 * @param source
 	 *            the source node
 	 * @param target
@@ -658,6 +662,8 @@ public class Algorithms
 	 *
 	 * @param network
 	 *            the network
+	 * @param cyNodeToId
+     *            the map that maps CyNode object to its string name
 	 * @param source
 	 *            the source node of the graph
 	 * @param target
