@@ -157,7 +157,7 @@ public class PathLinkerModelParams {
 
         // check if network exists
         if (network == null) {
-            String errorMsg = "The given network does not exist";
+            String errorMsg = "Network does not exist";
             PathLinkerError error = new PathLinkerError(PathLinkerError.CY_NETWORK_NOT_FOUND_CODE, 
                     PathLinkerError.RESOURCE_ERROR_ROOT + ":" + resourcePath + ":" + PathLinkerError.CY_NETWORK_NOT_FOUND_ERROR, 
                     errorMsg, null);

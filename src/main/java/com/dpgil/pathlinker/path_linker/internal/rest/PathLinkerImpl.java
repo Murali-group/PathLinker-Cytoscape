@@ -37,8 +37,9 @@ public class PathLinkerImpl implements PathLinkerResource {
 
     /** the PathLinker control panel associated with */
     private PathLinkerControlPanel controlPanel;
-    /** CytoScape application manager */
+    /** Cytoscape application manager */
     private CyApplicationManager cyApplicationManager;
+    /** Cytoscape network manager */
     private CyNetworkManager cyNetworkManager;
     /** adapter to create necessary tasks to create the sub network */
     private CyAppAdapter adapter;
@@ -80,21 +81,45 @@ public class PathLinkerImpl implements PathLinkerResource {
     }
 
     /**
-     * Implementation of runPathLinker method from PathLinkerResource
-     * Runs PathLinker on the input network and user parameters
+     * Implementation of run method from PathLinkerResource
+     * Runs algorithm on the input network SUID and user parameters
      * 
      * @param networkSUID the SUID of the network to run PathLinker
      * @param modelParams user inputs
+     * @return appropriate JSON response on the result
      */
     @Override
     public Response run(long networkSUID, PathLinkerModelParams modelParams) {
-
         // access the network of the given network SUID
         CyNetwork cyNetwork = cyNetworkManager.getNetwork(networkSUID);
 
+        return runPathLinker(cyNetwork, modelParams);
+    }
+
+    /**
+     * Implementation of run method from PathLinkerResource
+     * Runs algorithm on the currently selected network and user parameters
+     * 
+     * @param modelParams user inputs
+     * @return appropriate JSON response on the result
+     */
+    @Override
+    public Response run(PathLinkerModelParams modelParams) {
+        // access the currently selected network
+        CyNetwork cyNetwork = cyApplicationManager.getCurrentNetwork();
+        return runPathLinker(cyNetwork, modelParams);
+    }
+
+    /**
+     * Performs PathLinker algorithm on the input network with modelParams
+     * @param cyNetwork the input network to run the algorithm on
+     * @param modelParams user input
+     * @return appropriate JSON response on the result
+     */
+    private Response runPathLinker(CyNetwork cyNetwork, PathLinkerModelParams modelParams) {
         // process validation for input parameters
         // throw exception if error found
-        List<PathLinkerError> errorList = modelParams.validate(cyNetwork, "runPathLinker");
+        List<PathLinkerError> errorList = modelParams.validate(cyNetwork, "run");
         if (!errorList.isEmpty()) {
             if (errorList.get(0).status == PathLinkerError.CY_NETWORK_NOT_FOUND_CODE)
                 throw ciExceptionFactory.getCIException(PathLinkerError.CY_NETWORK_NOT_FOUND_CODE,
