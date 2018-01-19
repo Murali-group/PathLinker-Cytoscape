@@ -41,7 +41,8 @@ public class Path {
      * Getter method for rank
      * @return rank
      */
-    @ApiModelProperty(value = "The order of the path as computed by the algorithm", 
+    @ApiModelProperty(value = "The rank of the path; e.g. The path rank is 100 if it is the 100th shortest path"
+            + "computed by the algorithm", 
             example = "1", required = true)
     public int getRank() {
         return rank;
@@ -51,7 +52,7 @@ public class Path {
      * Getter method for score
      * @return score
      */
-    @ApiModelProperty(value = "The total score/lengths the path consists", example = "2", required = true)
+    @ApiModelProperty(value = "The total weight of the path", example = "2", required = true)
     public double getScore() {
         return score;
     }
@@ -60,7 +61,7 @@ public class Path {
      * Getter method for the node list
      * @return nodeList
      */
-    @ApiModelProperty(value = "A list of nodes which represent the edges used in the path. "
+    @ApiModelProperty(value = "The list of nodes in the path. "
             + "The node \"name\" matches to the \"name column\" in the Node Table", 
             example = "[Node1, Node2, Node3]", required = true)
     public ArrayList<String> getNodeList() {

@@ -50,7 +50,7 @@ public interface PathLinkerResource {
                             + "PathLinker cannot find a sequence of edges (path) connecting the source(s) to the target(s) in the given network.", 
                     response = CIResponse.class),
     })
-    public Response runPathLinker(
+    public Response run(
             @ApiParam(value="Network SUID") 
             @PathParam("networkSUID") long networkSUID,
 

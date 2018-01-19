@@ -35,8 +35,9 @@ public class PathLinkerModelParams {
     @ApiModelProperty(value = "Number of paths to compute. Default = 50", example = "50")
     public Integer k = 50;
 
-    @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost of a path. Default set to UNWEIGHTED", 
-            example = "UNWEIGHTED", allowableValues = "UNWEIGHTED,ADDITIVE,PROBABILITIES")
+    @ApiModelProperty(value = "The type of edge weights PathLinker will use to compute the cost/weight of a path. "
+            + "Default set to UNWEIGHTED.", 
+            example = "UNWEIGHTED")
     public EdgeWeightType edgeWeightType = EdgeWeightType.UNWEIGHTED;
 
     @ApiModelProperty(value = "Edge Penalty. Default = 0", example = "0")

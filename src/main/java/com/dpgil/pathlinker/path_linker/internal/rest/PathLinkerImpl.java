@@ -87,7 +87,7 @@ public class PathLinkerImpl implements PathLinkerResource {
      * @param modelParams user inputs
      */
     @Override
-    public Response runPathLinker(long networkSUID, PathLinkerModelParams modelParams) {
+    public Response run(long networkSUID, PathLinkerModelParams modelParams) {
 
         // access the network of the given network SUID
         CyNetwork cyNetwork = cyNetworkManager.getNetwork(networkSUID);
