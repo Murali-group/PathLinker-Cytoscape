@@ -14,9 +14,17 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.osgi.framework.BundleContext;
+
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerColumnUpdateListener;
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNetworkEventListener;
+import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNodeSelectionListener;
+import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerImpl;
+import com.dpgil.pathlinker.path_linker.internal.rest.PathLinkerResource;
+import com.dpgil.pathlinker.path_linker.internal.view.PathLinkerControlPanel;
 
 /**
  * // -------------------------------------------------------------------------
@@ -26,68 +34,91 @@ import org.osgi.framework.BundleContext;
  * @author Daniel Gil
  * @version Apr 23, 2015
  */
-public class CyActivator
-extends AbstractCyActivator
+public class CyActivator extends AbstractCyActivator
 {
-	@Override
-	public void start(BundleContext context) throws Exception {
-		// sets up pathlinker menu option
-		CyApplicationManager cyApplicationManager =
-				getService(context, CyApplicationManager.class);
+    private PathLinkerControlPanel controlPanel;
 
-		// initializes the panel with the necessary components
-		PathLinkerControlPanel panel = new PathLinkerControlPanel();
-		CyServiceRegistrar serviceRegistrar = 
-				getService(context, CyServiceRegistrar.class);
-		CyNetworkManager networkManager =
-				getService(context, CyNetworkManager.class);
-		CyAppAdapter adapter = getService(context, CyAppAdapter.class);
-		CySwingApplication cySwingApp = getService(context, CySwingApplication.class);
-		registerService(
-				context,
-				panel,
-				CytoPanelComponent.class,
-				new Properties());
+    PathLinkerMenuAction panelMenuAction;
 
-		// sets up the pathlinker menu option
-		PathLinkerMenuAction panelMenuAction =
-				new PathLinkerMenuAction(panel, cyApplicationManager);
-		registerAllServices(context, panelMenuAction, new Properties());
+    private PathLinkerNodeSelectionListener nodeViewEventListener;
+    private PathLinkerColumnUpdateListener columnUpdateListener;
+    private PathLinkerNetworkEventListener networkEventListener;
 
-		// initializes panel
-		panel.initialize(
-				cySwingApp,
-				serviceRegistrar,
-				cyApplicationManager,
-				networkManager,
-				adapter,
-				"1.3", 
-				"Oct. 25, 2017");
+    private CyApplicationManager cyApplicationManager;
+    private CyServiceRegistrar serviceRegistrar;
+    private CyNetworkManager networkManager;
+    private CyAppAdapter adapter;
+    private CySwingApplication cySwingApp;
 
-		// starts off the panel in a closed state
-		panel.getParent().remove(panel);
+    private CIExceptionFactory ciExceptionFactory;
+    private PathLinkerImpl cyRestClient;
 
-		// register all necessary services to the bundle
-	    registerService(context, adapter, CyAppAdapter.class, new Properties());
-		registerService(context, cySwingApp, CySwingApplication.class, new Properties());
-		registerService(context, networkManager, CyNetworkManager.class, new Properties());
-		registerService(context, serviceRegistrar, CyServiceRegistrar.class, new Properties());
-		registerService(context, cyApplicationManager, CyApplicationManager.class, new Properties());
+    @Override
+    public void start(BundleContext context) throws Exception {
 
-		// handle load node to source/target button enable/disable events
-		PathLinkerNodeSelectionListener nodeViewEventListener = new PathLinkerNodeSelectionListener();
-		registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
+        // initializes all necessary components
+        cyApplicationManager = getService(context, CyApplicationManager.class);
+        serviceRegistrar = getService(context, CyServiceRegistrar.class);
+        networkManager = getService(context, CyNetworkManager.class);
+        adapter = getService(context, CyAppAdapter.class);
+        cySwingApp = getService(context, CySwingApplication.class);
 
-		// handle events triggered by editing table columns
-		PathLinkerColumnUpdateListener columnUpdateListener = new PathLinkerColumnUpdateListener();
-		registerService(context, columnUpdateListener, ColumnCreatedListener.class, new Properties());
-		registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
-		registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
+        ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
 
-		// handle events triggered by changing, add, delete current network
-		PathLinkerNetworkEventListener networkEventListener = new PathLinkerNetworkEventListener();
-		registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
-		registerService(context, networkEventListener, NetworkAddedListener.class, new Properties());
-		registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
-	}
+        controlPanel = new PathLinkerControlPanel();
+
+        nodeViewEventListener = new PathLinkerNodeSelectionListener(controlPanel, cyApplicationManager);
+        columnUpdateListener = new PathLinkerColumnUpdateListener(controlPanel);
+        networkEventListener = new PathLinkerNetworkEventListener(controlPanel);
+
+        // register control panel
+        registerService(context, controlPanel, CytoPanelComponent.class, new Properties());
+
+        // sets up the PathLinker menu option
+        panelMenuAction = new PathLinkerMenuAction(controlPanel, cyApplicationManager);
+        registerAllServices(context, panelMenuAction, new Properties());
+
+        // initializes control panel
+        controlPanel.initialize(
+                cySwingApp,
+                serviceRegistrar,
+                cyApplicationManager,
+                networkManager,
+                adapter,
+                "1.4", 
+                "Oct. 25, 2017");
+
+        // Create PathLinker CyRest implementations
+        cyRestClient = new PathLinkerImpl(
+                controlPanel,
+                cyApplicationManager, networkManager, adapter,
+                serviceRegistrar, cySwingApp,
+                ciExceptionFactory);
+
+        // starts off the panel in a closed state
+        controlPanel.getParent().remove(controlPanel);
+
+        // register all necessary services to the bundle
+        registerService(context, adapter, CyAppAdapter.class, new Properties());
+        registerService(context, cySwingApp, CySwingApplication.class, new Properties());
+        registerService(context, networkManager, CyNetworkManager.class, new Properties());
+        registerService(context, serviceRegistrar, CyServiceRegistrar.class, new Properties());
+        registerService(context, cyApplicationManager, CyApplicationManager.class, new Properties());
+
+        // handle load node to source/target button enable/disable events
+        registerService(context, nodeViewEventListener, RowsSetListener.class, new Properties());
+
+        // handle events triggered by editing table columns
+        registerService(context, columnUpdateListener, ColumnCreatedListener.class, new Properties());
+        registerService(context, columnUpdateListener, ColumnDeletedListener.class, new Properties());
+        registerService(context, columnUpdateListener, ColumnNameChangedListener.class, new Properties());
+
+        // handle events triggered by changing, add, delete current network
+        registerService(context, networkEventListener, SetCurrentNetworkListener.class, new Properties());
+        registerService(context, networkEventListener, NetworkAddedListener.class, new Properties());
+        registerService(context, networkEventListener, NetworkDestroyedListener.class, new Properties());
+
+        // register CyRest service
+        registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
+    }
 }

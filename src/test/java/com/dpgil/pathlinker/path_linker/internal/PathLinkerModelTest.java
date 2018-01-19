@@ -21,7 +21,10 @@ import org.cytoscape.model.CyNode;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dpgil.pathlinker.path_linker.internal.Algorithms.Path;
+import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModel;
+import com.dpgil.pathlinker.path_linker.internal.model.PathLinkerModelParams;
+import com.dpgil.pathlinker.path_linker.internal.util.EdgeWeightType;
+import com.dpgil.pathlinker.path_linker.internal.util.Algorithms.PathWay;
 
 /** JUnit Test class for the PathLinker */
 public class PathLinkerModelTest {
@@ -42,6 +45,8 @@ public class PathLinkerModelTest {
 
 	/** model for running the algorithms on different networks */
 	private PathLinkerModel testModel;
+	/** model parameters for storing the input values */
+	private PathLinkerModelParams modelParams;
 	/** Whether or not to treat all paths with same weight as one "k" path */
 	private boolean includePathScoreTies;
 	/** original test input strings that contains sources */
@@ -72,16 +77,16 @@ public class PathLinkerModelTest {
 	 */
 	@Before
 	public void setUp() throws IOException, URISyntaxException {
-		//setting up the general required objects for each test cases
-		support = new NetworkTestSupport();
-		setUpNetwork();
+	    //setting up the general required objects for each test cases
+	    support = new NetworkTestSupport();
+	    setUpNetwork();
 
-		//setting up the required variables for generating the result (same throughout the test cases)
-		includePathScoreTies = false;
-		source = "P35968 P00533 Q02763";
-		target = "Q15797 Q14872 Q16236 P14859 P36956";
-		edgeWeightColumnName = "edge_weight";
-		edgePenalty = 1;
+	    //setting up the required variables for generating the result (same throughout the test cases)
+	    includePathScoreTies = false;
+	    source = "P35968 P00533 Q02763";
+	    target = "Q15797 Q14872 Q16236 P14859 P36956";
+	    edgeWeightColumnName = "edge_weight";
+	    edgePenalty = 1;
 	}
 
 	/**
@@ -97,7 +102,7 @@ public class PathLinkerModelTest {
 	@Test
 	public void testDir() throws IOException, URISyntaxException {
 
-		//================================= Test unweighted edge weight setting ====================================
+		//================================= Test unweighted edge weight type ====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-unweighted_human-interactome.txt");
 		file = new File(url.toURI());
@@ -115,8 +120,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 23
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkDir, 23, EdgeWeightType.UNWEIGHTED, false);
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -124,7 +130,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultDir); //test the result
 
-		//================================= Test additive edge weight setting =====================================
+		//================================= Test additive edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-additive_human-interactome.txt");
 		file = new File(url.toURI());
@@ -140,8 +146,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 31
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkDir, 31, EdgeWeightSetting.ADDITIVE, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkDir, 31, EdgeWeightType.ADDITIVE, false);
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -149,7 +156,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultDir); //test the result
 
-		//================================= Test probabilities edge weight setting =====================================
+		//================================= Test probabilities edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-probabilities_human-interactome.txt");
 		file = new File(url.toURI());
@@ -165,8 +172,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 13
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkDir, 13, EdgeWeightSetting.PROBABILITIES, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkDir, 13, EdgeWeightType.PROBABILITIES, false);
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -188,7 +196,7 @@ public class PathLinkerModelTest {
 	@Test
 	public void testUndir() throws IOException, URISyntaxException {
 
-		//================================= Test unweighted edge weight setting =====================================
+		//================================= Test unweighted edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-unweighted_human-interactome.txt");
 		file = new File(url.toURI());
@@ -206,8 +214,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 13
 		//k value is set to enumerate all paths of length to 2.0 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkUndir, 37, EdgeWeightSetting.UNWEIGHTED, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkUndir, 37, EdgeWeightType.UNWEIGHTED, false);
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -215,7 +224,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultUndir); //test the result
 
-		//================================= Test additive edge weight setting =====================================
+		//================================= Test additive edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-additive_human-interactome.txt");
 		file = new File(url.toURI());
@@ -231,8 +240,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 47
 		//k value is set to enumerate all paths of length to 4.088853 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkUndir, 47, EdgeWeightSetting.ADDITIVE, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkUndir, 47, EdgeWeightType.ADDITIVE, false);
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -240,7 +250,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultUndir); //test the result
 
-		//================================= Test probabilities edge weight setting =====================================
+		//================================= Test probabilities edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-undir-output-probabilities_human-interactome.txt");
 		file = new File(url.toURI());
@@ -256,8 +266,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 21
 		//k value is set to enumerate all paths of length to 0.4574040000000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkUndir, 21, EdgeWeightSetting.PROBABILITIES, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkUndir, 21, EdgeWeightType.PROBABILITIES, false);
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -280,7 +291,7 @@ public class PathLinkerModelTest {
 	@Test
 	public void testMixed() throws IOException, URISyntaxException {
 
-		//================================= Test unweighted edge weight setting =====================================
+		//================================= Test unweighted edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-unweighted_human-interactome.txt");
 		file = new File(url.toURI());
@@ -298,8 +309,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 23
 		//k value is set to enumerate all paths of length 2.0 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkMixed, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkMixed, 23, EdgeWeightType.UNWEIGHTED, false);
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -307,7 +319,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultMixed); //test the result
 
-		//================================= Test additive edge weight setting =====================================
+		//================================= Test additive edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-additive_human-interactome.txt");
 		file = new File(url.toURI());
@@ -323,8 +335,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 31
 		//k value is set to enumerate all paths of length 4.088853 to ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkMixed, 31, EdgeWeightSetting.ADDITIVE, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkMixed, 31, EdgeWeightType.ADDITIVE, false);
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -332,7 +345,7 @@ public class PathLinkerModelTest {
 
 		assertEquals(ans, resultMixed); //test the result
 
-		//================================= Test probabilities edge weight setting =====================================
+		//================================= Test probabilities edge weight type =====================================
 		//access output file
 		url = this.getClass().getResource("/output/graph-dir-output-probabilities_human-interactome.txt");
 		file = new File(url.toURI());
@@ -348,8 +361,9 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with k = 13
 		//k value is set to enumerate all paths of length to 0.47223675000000004 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		modelSetUp(originalNetworkMixed, 13, EdgeWeightSetting.PROBABILITIES, false);
-		resultMixed = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkMixed, 13, EdgeWeightType.PROBABILITIES, false);
+		testModel.runKSP();
+		resultMixed = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -360,20 +374,22 @@ public class PathLinkerModelTest {
 
 	/**
 	 * Test: to test that undir graph and dir graph produces different results given the same input
-	 * 		 Both model contains same edge weight setting and k value = 23
+	 * 		 Both model contains same edge weight type and k value = 23
 	 * 	     k is set to enumerate all paths of length to 2.0 for directed graph
 	 * @throws IOException
 	 */
 	@Test
 	public void testDiff() throws IOException {
 		//construct paths for direct graph
-		modelSetUp(originalNetworkDir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkDir, 23, EdgeWeightType.UNWEIGHTED, false);
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultDir); //sort the lists before comparison
 
 		//construct paths for undirect graph
-		modelSetUp(originalNetworkUndir, 23, EdgeWeightSetting.UNWEIGHTED, false);
-		resultUndir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelSetUp(originalNetworkUndir, 23, EdgeWeightType.UNWEIGHTED, false);
+		testModel.runKSP();
+		resultUndir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 		Collections.sort(resultUndir); //sort the lists before comparison
 
 		assertThat(resultDir, not(resultUndir));
@@ -404,14 +420,34 @@ public class PathLinkerModelTest {
 		}
 		
 		// set up custom source and target to ensure that graph contains source and targets in paths
-		source = "P35968 P16333";
-		target = "P14859 P51610";
-		
-		//create the model for algorithm with k = 26 to ensure relatively small output
-		testModel = new PathLinkerModel(originalNetworkDir, true, false, source, target, 
-		        edgeWeightColumnName, 26, EdgeWeightSetting.PROBABILITIES, edgePenalty); //construct model
-		testModel.prepareIdSourceTarget();
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		// create the model for algorithm with k = 26 to ensure relatively small output
+		modelParams = new PathLinkerModelParams();
+		modelParams.allowSourcesTargetsInPaths = true;
+		modelParams.includeTiedPaths = includePathScoreTies;
+		modelParams.sources = "P35968 P16333";
+		modelParams.targets = "P14859 P51610";
+		modelParams.k = 26;
+		modelParams.edgeWeightType = EdgeWeightType.PROBABILITIES;
+		modelParams.edgeWeightColumnName = edgeWeightColumnName;
+		modelParams.edgePenalty = edgePenalty;
+
+		modelParams.validate(originalNetworkDir, "test");
+		testModel = new PathLinkerModel(
+		        originalNetworkDir, 
+		        modelParams.allowSourcesTargetsInPaths, 
+		        modelParams.includeTiedPaths, 
+		        modelParams.getSourceNames(), 
+		        modelParams.getTargetNames(),
+		        modelParams.getSourcesList(),
+		        modelParams.getTargetsList(),
+		        modelParams.edgeWeightColumnName,
+		        modelParams.k,
+		        modelParams.edgeWeightType, 
+		        modelParams.edgePenalty,
+		        modelParams.getCyNodeToId());
+
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -447,12 +483,33 @@ public class PathLinkerModelTest {
 		//create the model for algorithm with source = target and k = 37
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
-		boolean allowSourceTargetInPaths = true;
-		testModel = new PathLinkerModel(originalNetworkDir, allowSourceTargetInPaths, includePathScoreTies, 
-				source, source, edgeWeightColumnName, 37, EdgeWeightSetting.PROBABILITIES, edgePenalty);
-		testModel.prepareIdSourceTarget();
+		modelParams = new PathLinkerModelParams();
+		modelParams.allowSourcesTargetsInPaths = true;
+		modelParams.includeTiedPaths = includePathScoreTies;
+		modelParams.sources = source;
+		modelParams.targets = source;
+		modelParams.k = 37;
+		modelParams.edgeWeightType = EdgeWeightType.PROBABILITIES;
+		modelParams.edgeWeightColumnName = edgeWeightColumnName;
+		modelParams.edgePenalty = edgePenalty;
 
-		resultDir = pathListToStringList(testModel.runKSP()); //construct list of paths as string to compare with ans list
+		modelParams.validate(originalNetworkDir, "test");
+		testModel = new PathLinkerModel(
+		        originalNetworkDir, 
+		        modelParams.allowSourcesTargetsInPaths, 
+		        modelParams.includeTiedPaths, 
+		        modelParams.getSourceNames(), 
+		        modelParams.getTargetNames(),
+		        modelParams.getSourcesList(),
+		        modelParams.getTargetsList(),
+		        modelParams.edgeWeightColumnName,
+		        modelParams.k,
+		        modelParams.edgeWeightType, 
+		        modelParams.edgePenalty,
+		        modelParams.getCyNodeToId());
+
+		testModel.runKSP();
+		resultDir = pathListToStringList(testModel.getResult()); //construct list of paths as string to compare with ans list
 
 		//sort the lists before comparison
 		Collections.sort(ans);
@@ -577,10 +634,32 @@ public class PathLinkerModelTest {
 	/**
 	 * Sets up the test model before testing
 	 */
-	private void modelSetUp(CyNetwork network, int k, EdgeWeightSetting edgeWeightSetting, boolean allowSourceTargetInPaths) {
-		testModel = new PathLinkerModel(network, allowSourceTargetInPaths, includePathScoreTies, 
-				source, target, edgeWeightColumnName, k, edgeWeightSetting, edgePenalty); //construct model
-		testModel.prepareIdSourceTarget();
+	private void modelSetUp(CyNetwork network, int k, EdgeWeightType edgeWeightType, boolean allowSourceTargetInPaths) {
+	    modelParams = new PathLinkerModelParams();
+	    modelParams.allowSourcesTargetsInPaths = allowSourceTargetInPaths;
+	    modelParams.includeTiedPaths = includePathScoreTies;
+	    modelParams.sources = source;
+	    modelParams.targets = target;
+	    modelParams.k = k;
+	    modelParams.edgeWeightType = edgeWeightType;
+	    modelParams.edgeWeightColumnName = edgeWeightColumnName;
+	    modelParams.edgePenalty = edgePenalty;
+
+	    modelParams.validate(network, "test");
+
+	    testModel = new PathLinkerModel(
+	            network, 
+	            modelParams.allowSourcesTargetsInPaths, 
+	            modelParams.includeTiedPaths, 
+	            modelParams.getSourceNames(), 
+	            modelParams.getTargetNames(),
+	            modelParams.getSourcesList(),
+	            modelParams.getTargetsList(),
+	            modelParams.edgeWeightColumnName,
+	            modelParams.k,
+	            modelParams.edgeWeightType, 
+	            modelParams.edgePenalty,
+	            modelParams.getCyNodeToId());
 	}
 
 	/**
@@ -589,7 +668,7 @@ public class PathLinkerModelTest {
 	 * @param p the path to convert to a string
 	 * @return the concatenation of the node names
 	 */
-	private String pathAsString(Path p) {
+	private String pathAsString(PathWay p) {
 		//builds the path string without supersource/supertarget [1,len-1]
 		StringBuilder currPath = new StringBuilder();
 		for (int i = 1; i < p.size() - 1; i++)
@@ -605,7 +684,7 @@ public class PathLinkerModelTest {
 	 * @param p list of paths
 	 * @return list of string
 	 */
-	private ArrayList<String> pathListToStringList(ArrayList<Path> result) {
+	private ArrayList<String> pathListToStringList(ArrayList<PathWay> result) {
 		ArrayList<String> output = new ArrayList<String>();
 
 		for (int i = 0; i < result.size(); i++) 
