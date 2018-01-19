@@ -12,7 +12,7 @@ public class PathLinkerDocumentation {
             + "(http://pathlinker-cytoscape-app.readthedocs.io/en/latest/PathLinker_Cytoscape.html).";
 
     public static final String RUN_CURRENT_NETWORK_SWAGGER_NOTES = "This function sends the "
-            + "currently selected network; user input source and target nodes, and a set of parameters "
+            + "currently selected network, user input source and target nodes, and a set of parameters "
             + "(see the Parameters section below) to the PathLinker Cytoscape App "
             + "which computes the k-shortest simple paths "
             + "connecting the sources to the targets in the network. " + '\n' + '\n'
