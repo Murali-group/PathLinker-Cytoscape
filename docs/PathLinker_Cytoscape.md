@@ -1,6 +1,12 @@
 PathLinker Cytoscape
 ====================
 
+Welcome to the documentation for the PathLinker Cytoscape App.
+
+Helpful links:
+- [PathLinker app on the Cytoscape App Store](http://apps.cytoscape.org/apps/pathlinker)
+- [PathLinker-Cytoscape GitHub repository](https://github.com/Murali-group/PathLinker-Cytoscape)
+
 ## Description
 
 This app implements the PathLinker algorithm for reconstructing signalling pathways from protein interaction networks<sup>2</sup>.
@@ -184,6 +190,10 @@ It could be that not all of the sources and targets you entered were used in the
 ### Not all edges have weight
 In order for PathLinker to work properly, all edges must have weights when using a weighted option. You can either fix the empty edge weight rows, add a column by uploding another file with edge weights, or just use the unweighted option.
 
+
+## Cytoscape Automation / cyREST API
+
+We added cyREST API functionality to the PathLinker app! Cytoscape automation is a new feature as of Cytoscape 3.6. Check out our [example jupyter notebook](https://github.com/Murali-group/PathLinker-Cytoscape/tree/master/cytoscape-automation-example/jupyter_notebook_example.ipynb) to see how to use it. More details coming soon.
 
 ## How to Cite PathLinker
 
