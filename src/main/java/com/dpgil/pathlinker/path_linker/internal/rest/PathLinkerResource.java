@@ -23,9 +23,10 @@ import io.swagger.annotations.ApiResponses;
 public interface PathLinkerResource {
 
     /**
-     * Post Function that takes user input, and runs PathLinker on specific network;
+     * Post Function that takes user input, and runs PathLinker on specific network; 
      *      generate new network/network view, 
      *      and return network/view SUIDs and k-number sorted path list
+     * @param networkSUID the SUID of the network the function will run on
      * @param modelParams parameters needed to generate a network
      * @return k-number sorted path list in JSON Array format
      */

@@ -30,7 +30,7 @@ abstract class TextFieldInputFilter extends DocumentFilter {
     /**
      * Validate method
      *      To be implemented depend on the data type for the validation
-     * @param input text from the text field
+     * @param text input text from the text field
      * @return true if validate pass, otherwise false
      */
     public abstract boolean validate(String text);
