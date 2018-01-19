@@ -6,6 +6,7 @@ Welcome to the documentation for the PathLinker Cytoscape App.
 Helpful links:
 - [PathLinker app on the Cytoscape App Store](http://apps.cytoscape.org/apps/pathlinker)
 - [PathLinker-Cytoscape GitHub repository](https://github.com/Murali-group/PathLinker-Cytoscape)
+- [PathLinker Cytoscape Automation example Jupyter Notebook](http://nbviewer.jupyter.org/github/Murali-group/PathLinker-Cytoscape/blob/master/cytoscape-automation-example/jupyter_notebook_example.ipynb)
 
 ## Description
 
