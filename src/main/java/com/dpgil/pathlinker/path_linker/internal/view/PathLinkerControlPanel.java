@@ -909,7 +909,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
-                .addGroup(sourceTargetPanelLayout.createSequentialGroup()
+				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
 						.addComponent(_loadNodeToSourceButton))
@@ -918,7 +918,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						.addComponent(_targetsTextField)
 						.addComponent(_loadNodeToTargetButton))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
-						.addComponent(_treatNetworkAsUndirectedOption)
 						.addComponent(_allowSourcesTargetsInPathsOption)
 						.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 								.addComponent(_targetsSameAsSourcesOption)
@@ -926,7 +925,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
-                .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
+				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
 						.addComponent(_loadNodeToSourceButton))
@@ -937,7 +936,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						.addComponent(_loadNodeToTargetButton))
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
-						.addComponent(_treatNetworkAsUndirectedOption)
 						.addComponent(_allowSourcesTargetsInPathsOption)
 						.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 								.addComponent(_targetsSameAsSourcesOption)
@@ -1140,6 +1138,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_titlePanel)
+				.addComponent(_networkPanel)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
@@ -1152,6 +1151,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_titlePanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_networkPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_sourceTargetPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
