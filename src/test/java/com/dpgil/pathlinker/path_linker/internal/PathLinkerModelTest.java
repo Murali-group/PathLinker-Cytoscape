@@ -422,7 +422,6 @@ public class PathLinkerModelTest {
 		// set up custom source and target to ensure that graph contains source and targets in paths
 		// create the model for algorithm with k = 26 to ensure relatively small output
 		modelParams = new PathLinkerModelParams();
-		modelParams.treatNetworkAsUndirected = true;
 		modelParams.allowSourcesTargetsInPaths = true;
 		modelParams.includeTiedPaths = includePathScoreTies;
 		modelParams.sources = "P35968 P16333";
@@ -486,7 +485,6 @@ public class PathLinkerModelTest {
 		//k value is set to enumerate all paths of length to 0.5329432500000001 ensure the results will be same,
 		//otherwise results could be correct but different due to the random nature of which paths PathLinker finds first
 		modelParams = new PathLinkerModelParams();
-		modelParams.treatNetworkAsUndirected = true;
 		modelParams.allowSourcesTargetsInPaths = true;
 		modelParams.includeTiedPaths = includePathScoreTies;
 		modelParams.sources = source;
