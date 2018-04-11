@@ -69,6 +69,7 @@ public class RunKSPTask extends AbstractNetworkTask implements ObservableTask {
         // initialize the PathLinkerModel to run ksp
         pathLinkerModel = new PathLinkerModel(
                 network, 
+                modelParams.treatNetworkAsUndirected, 
                 modelParams.allowSourcesTargetsInPaths, 
                 modelParams.includeTiedPaths, 
                 modelParams.getSourceNames(), 

@@ -25,6 +25,8 @@ public class PathLinkerModel {
 	private CyNetwork network;
 	/** A mapping of the node object to its name*/
 	private Map<CyNode, String> cyNodeToId;
+	/** Whether or not to created a bi-directed copy of the network and run PathLinker on that */
+	private boolean treatNetworkAsUndirected;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
 	/** column name that links to the edge weight values */
@@ -69,6 +71,7 @@ public class PathLinkerModel {
 	/**
 	 * Constructor of the model
 	 * @param originalNetwork            the original network given by the view
+	 * @param treatNetworkAsUndirected   the option to run PathLinker on a bi-directed copy of the network
 	 * @param allowSourcesTargetsInPaths boolean deciding if sources and targets should be allow in the result path
 	 * @param includePathScoreTies       the option to include all paths of equal length
 	 * @param sourceNames                set of sources in string   
@@ -81,11 +84,12 @@ public class PathLinkerModel {
 	 * @param edgePenalty                edge penalty
 	 * @param cyNodeToId                 map mapping all CyNode to its string name
 	 */
-	public PathLinkerModel(CyNetwork originalNetwork, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
+	public PathLinkerModel(CyNetwork originalNetwork, boolean treatNetworkAsUndirected, boolean allowSourcesTargetsInPaths, boolean includePathScoreTies, 
 	        Set<String> sourceNames, Set<String> targetNames, List<CyNode> sourcesList, List<CyNode> targetsList, String edgeWeightColumnName, 
 	        int inputK, EdgeWeightType edgeWeightType, Double edgePenalty, Map<CyNode, String> cyNodeToId) {
 
 	    this.originalNetwork 			= originalNetwork;
+	    this.treatNetworkAsUndirected   = treatNetworkAsUndirected;
 	    this.allowSourcesTargetsInPaths = allowSourcesTargetsInPaths;
 	    this.includePathScoreTies		= includePathScoreTies;
 	    this.sourceNames                = sourceNames;
@@ -250,7 +254,8 @@ public class PathLinkerModel {
 			// multiple weights. If not, add it as a new edge
 			checkAddEdge(sourcetargetToEdge, edgeMultiWeights, source, target, w);
 			// also add the reverse direction if the original edge was undirected
-			if (!e.isDirected())
+            // or if the treatNetworkAsUndirected option is checked
+			if (!e.isDirected() || treatNetworkAsUndirected)
 				checkAddEdge(sourcetargetToEdge, edgeMultiWeights, target, source, w);
 		}
 
@@ -452,6 +457,9 @@ public class PathLinkerModel {
 				for (CyEdge edge : edges){
 					// verifies the edges direction
 					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
+						originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
+                    // also check the reverse direction if the network is treated as undirected
+					if (edge.getSource().equals(node2) && edge.getTarget().equals(node1))
 						originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
 				}
 				// also add all of the undirected edges from node1 to node2

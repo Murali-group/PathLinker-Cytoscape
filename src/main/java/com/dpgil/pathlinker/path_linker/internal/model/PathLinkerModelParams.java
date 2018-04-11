@@ -48,6 +48,10 @@ public class PathLinkerModelParams {
             + "Must be numerical type values", example = "weight")
     public String edgeWeightColumnName;
 
+    @ApiModelProperty(value = "Ignore directionality of edges when computing paths",
+            example = "false", dataType = "boolean")
+    public boolean treatNetworkAsUndirected = false;
+
     @ApiModelProperty(value = "Allow source/target nodes to appear as intermediate nodes in computed paths",
             example = "false", dataType = "boolean")
     public boolean allowSourcesTargetsInPaths = false;
