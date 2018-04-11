@@ -53,6 +53,11 @@ public class CyActivator extends AbstractCyActivator
     private CIExceptionFactory ciExceptionFactory;
     private PathLinkerImpl cyRestClient;
 
+	/** the version of the current PathLinker app */
+	private String _version = "1.4.1";
+	/** the build date of the current PathLinker app */
+	private String _buildDate = "Apr. 11, 2018";
+
     @Override
     public void start(BundleContext context) throws Exception {
 
@@ -85,8 +90,8 @@ public class CyActivator extends AbstractCyActivator
                 cyApplicationManager,
                 networkManager,
                 adapter,
-                "1.4", 
-                "Oct. 25, 2017");
+                _version,
+                _buildDate);
 
         // Create PathLinker CyRest implementations
         cyRestClient = new PathLinkerImpl(

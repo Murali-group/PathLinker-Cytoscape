@@ -10,7 +10,7 @@
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
-	<version>1.4</version>
+	<version>1.4.1</version>
 
 			<name>${bundle.symbolicName}</name>
 
