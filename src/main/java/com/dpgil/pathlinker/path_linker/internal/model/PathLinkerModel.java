@@ -459,7 +459,7 @@ public class PathLinkerModel {
 					if (edge.getSource().equals(node1) && edge.getTarget().equals(node2))
 						originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
                     // also check the reverse direction if the network is treated as undirected
-					if treatNetworkAsUndirected && (edge.getSource().equals(node2) && edge.getTarget().equals(node1))
+					if (treatNetworkAsUndirected && (edge.getSource().equals(node2) && edge.getTarget().equals(node1)))
 						originalNetwork.getRow(edge).set(CyNetwork.SELECTED, true);
 				}
 				// also add all of the undirected edges from node1 to node2
