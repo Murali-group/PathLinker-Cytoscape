@@ -434,6 +434,7 @@ public class PathLinkerModelTest {
 		modelParams.validate(originalNetworkDir, "test");
 		testModel = new PathLinkerModel(
 		        originalNetworkDir, 
+                modelParams.treatNetworkAsUndirected,
 		        modelParams.allowSourcesTargetsInPaths, 
 		        modelParams.includeTiedPaths, 
 		        modelParams.getSourceNames(), 
@@ -496,6 +497,7 @@ public class PathLinkerModelTest {
 		modelParams.validate(originalNetworkDir, "test");
 		testModel = new PathLinkerModel(
 		        originalNetworkDir, 
+                modelParams.treatNetworkAsUndirected,
 		        modelParams.allowSourcesTargetsInPaths, 
 		        modelParams.includeTiedPaths, 
 		        modelParams.getSourceNames(), 
@@ -634,8 +636,11 @@ public class PathLinkerModelTest {
 	/**
 	 * Sets up the test model before testing
 	 */
-	private void modelSetUp(CyNetwork network, int k, EdgeWeightType edgeWeightType, boolean allowSourceTargetInPaths) {
+	private void modelSetUp(CyNetwork network, int k, EdgeWeightType edgeWeightType, 
+            boolean allowSourceTargetInPaths) {
 	    modelParams = new PathLinkerModelParams();
+        // for now, just leave all of the edges as their current edge type
+		modelParams.treatNetworkAsUndirected = false;
 	    modelParams.allowSourcesTargetsInPaths = allowSourceTargetInPaths;
 	    modelParams.includeTiedPaths = includePathScoreTies;
 	    modelParams.sources = source;
@@ -649,6 +654,7 @@ public class PathLinkerModelTest {
 
 	    testModel = new PathLinkerModel(
 	            network, 
+                modelParams.treatNetworkAsUndirected,
 	            modelParams.allowSourcesTargetsInPaths, 
 	            modelParams.includeTiedPaths, 
 	            modelParams.getSourceNames(), 

@@ -60,6 +60,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	/** UI components of the panel */
     private JPanel _innerPanel;
 	private JPanel _titlePanel;
+	private JPanel _networkPanel;
 	private JPanel _sourceTargetPanel;
 	private JPanel _algorithmPanel;
 	private JPanel _graphPanel;
@@ -94,6 +95,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	private JRadioButton _weightedAdditive;
 	private JRadioButton _weightedProbabilities;
 
+	private JCheckBox _treatNetworkAsUndirectedOption;
 	private JCheckBox _allowSourcesTargetsInPathsOption;
 	public JCheckBox _targetsSameAsSourcesOption;
 	private JCheckBox _includePathScoreTiesOption;
@@ -621,6 +623,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
         // initialize the params from user inputs
         _modelParams = new PathLinkerModelParams();
+        _modelParams.treatNetworkAsUndirected = _treatNetworkAsUndirectedOption.isSelected();
         _modelParams.allowSourcesTargetsInPaths = _allowSourcesTargetsInPathsOption.isSelected();
         _modelParams.includeTiedPaths = _includePathScoreTiesOption.isSelected();
         _modelParams.sources = _sourcesTextField.getText().trim();
@@ -779,24 +782,24 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	}
 
 	/**
-	 * Sets up source target panel
-	 * contains input field for source and target
-	 * contains allow Sources Targets In Paths Option check box
+	 * Sets up network panel
+	 * contains drop-down to select network
+	 * contains treat Network As Undirected check box
 	 * contains targets Same As Sources Option check box
 	 */
-	private void setUpSourceTargetPanel() {
-		if (_sourceTargetPanel != null) // stops if panel already created
+	private void setUpNetworkPanel() {
+		if (_networkPanel != null) // stops if panel already created
 			return;
 
 		// initialize the JPanel, panel border, and group layout
-		_sourceTargetPanel = new JPanel();
-		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
-		_sourceTargetPanel.setBorder(sourceTargetBorder);
+		_networkPanel = new JPanel();
+		TitledBorder networkBorder = BorderFactory.createTitledBorder("Network");
+		_networkPanel.setBorder(networkBorder);
 
-		final GroupLayout sourceTargetPanelLayout = new GroupLayout(_sourceTargetPanel);
-		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
-		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
-		sourceTargetPanelLayout.setAutoCreateGaps(true);
+		final GroupLayout networkPanelLayout = new GroupLayout(_networkPanel);
+		_networkPanel.setLayout(networkPanelLayout);
+		networkPanelLayout.setAutoCreateContainerGaps(true);
+		networkPanelLayout.setAutoCreateGaps(true);
 		
 		_networkCmbLabel = new JLabel("Select network: ");
         _networkCmbLabel.setToolTipText("The network to run PathLinker on");
@@ -823,6 +826,47 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
             }
         });
 
+		_treatNetworkAsUndirectedOption = new JCheckBox("<html>Treat network as undirected</html>", false);
+		_treatNetworkAsUndirectedOption.setToolTipText("Ignore directionality of edges when computing paths");
+		// _treatNetworkAsUndirectedOption.addItemListener(new CheckBoxListener());
+
+		// add all components into the horizontal and vertical group of the GroupLayout
+		networkPanelLayout.setHorizontalGroup(networkPanelLayout.createParallelGroup()
+                .addGroup(networkPanelLayout.createSequentialGroup()
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
+				.addGroup(networkPanelLayout.createParallelGroup(Alignment.LEADING, true)
+						.addComponent(_treatNetworkAsUndirectedOption))
+				);
+		networkPanelLayout.setVerticalGroup(networkPanelLayout.createSequentialGroup()
+                .addGroup(networkPanelLayout.createParallelGroup(Alignment.LEADING, true)
+                        .addComponent(_networkCmbLabel)
+                        .addComponent(_networkCmb))
+				.addGroup(networkPanelLayout.createSequentialGroup()
+						.addComponent(_treatNetworkAsUndirectedOption))
+				);
+	}
+
+	/**
+	 * Sets up source target panel
+	 * contains input field for source and target
+	 * contains allow Sources Targets In Paths Option check box
+	 * contains targets Same As Sources Option check box
+	 */
+	private void setUpSourceTargetPanel() {
+		if (_sourceTargetPanel != null) // stops if panel already created
+			return;
+
+		// initialize the JPanel, panel border, and group layout
+		_sourceTargetPanel = new JPanel();
+		TitledBorder sourceTargetBorder = BorderFactory.createTitledBorder("Sources/Targets");
+		_sourceTargetPanel.setBorder(sourceTargetBorder);
+
+		final GroupLayout sourceTargetPanelLayout = new GroupLayout(_sourceTargetPanel);
+		_sourceTargetPanel.setLayout(sourceTargetPanelLayout);
+		sourceTargetPanelLayout.setAutoCreateContainerGaps(true);
+		sourceTargetPanelLayout.setAutoCreateGaps(true);
+		
 		_sourcesLabel = new JLabel("<html>Sources separated by spaces (e.g., S1 S2 S3)" 
                 + "<br>Must match the 'name' column in the Node Table</html>");
 
@@ -865,9 +909,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// add all components into the horizontal and vertical group of the GroupLayout
 		sourceTargetPanelLayout.setHorizontalGroup(sourceTargetPanelLayout.createParallelGroup()
-                .addGroup(sourceTargetPanelLayout.createSequentialGroup()
-                        .addComponent(_networkCmbLabel)
-                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -884,9 +925,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 						)
 				);
 		sourceTargetPanelLayout.setVerticalGroup(sourceTargetPanelLayout.createSequentialGroup()
-                .addGroup(sourceTargetPanelLayout.createParallelGroup(Alignment.LEADING, true)
-                        .addComponent(_networkCmbLabel)
-                        .addComponent(_networkCmb))
 				.addGroup(sourceTargetPanelLayout.createSequentialGroup()
 						.addComponent(_sourcesLabel)
 						.addComponent(_sourcesTextField)
@@ -1072,6 +1110,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 
 		// sets up all the sub panels and its components
 		setUpTitlePanel();
+        setUpNetworkPanel();
 		setUpSourceTargetPanel();
 		setUpAlgorithmPanel();
 		setUpGraphPanel();
@@ -1099,6 +1138,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		// add all components into the horizontal and vertical group of the GroupLayout
 		mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
 				.addComponent(_titlePanel)
+				.addComponent(_networkPanel)
 				.addComponent(_sourceTargetPanel)
 				.addComponent(_algorithmPanel)
 				.addComponent(_graphPanel)
@@ -1111,6 +1151,8 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_titlePanel)
+				.addPreferredGap(ComponentPlacement.RELATED)
+				.addComponent(_networkPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
 				.addComponent(_sourceTargetPanel)
 				.addPreferredGap(ComponentPlacement.RELATED)
