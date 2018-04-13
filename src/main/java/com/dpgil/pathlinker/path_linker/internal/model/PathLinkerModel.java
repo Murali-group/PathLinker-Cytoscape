@@ -26,7 +26,7 @@ public class PathLinkerModel {
 	/** A mapping of the node object to its name*/
 	private Map<CyNode, String> cyNodeToId;
 	/** Whether or not to created a bi-directed copy of the network and run PathLinker on that */
-	private boolean treatNetworkAsUndirected;
+	public boolean treatNetworkAsUndirected;
 	/** Whether or not to allow sources and targets in paths */
 	private boolean allowSourcesTargetsInPaths;
 	/** column name that links to the edge weight values */

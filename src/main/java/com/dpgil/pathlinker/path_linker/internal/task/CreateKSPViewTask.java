@@ -244,7 +244,8 @@ public class CreateKSPViewTask extends AbstractNetworkTask implements Observable
                 for (CyEdge edge : edges)
                 {
                     if (network.getRow(edge).get(pathRankColumnName, Integer.class) == null &&
-                            edge.getSource().equals(node1) && edge.getTarget().equals(node2)) // verifies the edges direction
+                            ((edge.getSource().equals(node1) && edge.getTarget().equals(node2)) ||
+                            (model.treatNetworkAsUndirected && edge.getSource().equals(node2) && edge.getTarget().equals(node1)))) // verifies the edges direction
                         network.getRow(edge).set(pathRankColumnName, i + 1);
                 }
                 // also add all of the undirected edges from node1 to node2
