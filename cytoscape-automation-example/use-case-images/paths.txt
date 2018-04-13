@@ -1,0 +1,4 @@
+path rank	path score	path
+1	2.0	a|f|e
+2	3.0	a|f|g|h
+3	3.0	a|f|i|e
