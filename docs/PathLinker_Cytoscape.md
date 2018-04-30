@@ -6,7 +6,7 @@ Welcome to the documentation for the PathLinker Cytoscape App.
 Helpful links:
 - [PathLinker app on the Cytoscape App Store](http://apps.cytoscape.org/apps/pathlinker)
 - [PathLinker-Cytoscape GitHub repository](https://github.com/Murali-group/PathLinker-Cytoscape)
-- [PathLinker Cytoscape Automation example Jupyter Notebook](http://nbviewer.jupyter.org/github/Murali-group/PathLinker-Cytoscape/blob/master/cytoscape-automation-example/jupyter_notebook_example.ipynb)
+- [PathLinker Cytoscape Automation example Jupyter Notebook](http://nbviewer.jupyter.org/github/Murali-group/PathLinker-Cytoscape/blob/master/cytoscape-automation-example/simple_use_case.ipynb)
 
 ## Description
 
@@ -170,14 +170,13 @@ In our example, including all paths for the set of receptors and TFs for lovasta
 
 
 ## Errors and Warnings
-Here I go over some example errors and warnings you may run into. 
+Here I go over some example errors and warnings you may run into. If you have additional questions or problems/errors, please email us (emails are listed at the bottom), and/or open an issue on our [GitHub repository](https://github.com/Murali-group/PathLinker-Cytoscape/issues) with screenshots describing the problem. 
 
 ### Sources or Targets not in network
 ![sources-targets-not-in-network](_static/img/sources-targets-not-in-network.png)
 
 If you're getting an error that sources or targets are not found in the network, make sure you're using the right names for the nodes. 
 PathLinker uses the 'name' column of the node table which contains UniProt IDs, so the gene names are not found.
-
 
 ![target-not-in-network](_static/img/target-not-found.png)
 
@@ -191,10 +190,15 @@ It could be that not all of the sources and targets you entered were used in the
 ### Not all edges have weight
 In order for PathLinker to work properly, all edges must have weights when using a weighted option. You can either fix the empty edge weight rows, add a column by uploding another file with edge weights, or just use the unweighted option.
 
+### No paths found
+This error message indicates that PathLinker could not find any paths connecting the source(s) to the target(s) in the given network. This error can occur if every source is disconnected from every target, or if the edges connecting them are directed in the target->source direction rather than the source->target direction. 
+
+If the source(s) and target(s) you have selected look like they should be connected, but PathLinker isn't finding any paths, this could be because the edges in the network are being represented as directed edges internally by Cytoscape. In that case, try using the "Treat network as undirected" option.
+
 
 ## Cytoscape Automation / cyREST API
 
-We added cyREST API functionality to the PathLinker app! Cytoscape automation is a new feature as of Cytoscape 3.6. Check out our [example jupyter notebook](https://github.com/Murali-group/PathLinker-Cytoscape/tree/master/cytoscape-automation-example/jupyter_notebook_example.ipynb) to see how to use it. More details coming soon.
+We added cyREST API functionality to the PathLinker app! Cytoscape automation is a new feature as of Cytoscape 3.6. Check out our [example jupyter notebook](https://github.com/Murali-group/PathLinker-Cytoscape/blob/master/cytoscape-automation-example/simple_use_case.ipynb) to see how to use it. You can also try out the PathLinker API using the Swagger UI. In Cytoscape, got to Help -> Automation -> CyREST API. More details coming soon.
 
 ## How to Cite PathLinker
 
