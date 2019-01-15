@@ -70,8 +70,8 @@ public class CyActivator extends AbstractCyActivator
         adapter = getService(context, CyAppAdapter.class);
         cySwingApp = getService(context, CySwingApplication.class);
 
-		ciExceptionFactoryTracker = new ServiceTracker(context, context.createFilter("(objectClass=org.cytoscape.ci.CIExceptionFactory)"), null);
-		ciExceptionFactoryTracker.open();
+        ciExceptionFactoryTracker = new ServiceTracker(context, context.createFilter("(objectClass=org.cytoscape.ci.CIExceptionFactory)"), null);
+        ciExceptionFactoryTracker.open();
         ciExceptionFactory = (CIExceptionFactory) ciExceptionFactoryTracker.getService();
 
         controlPanel = new PathLinkerControlPanel();
@@ -131,12 +131,12 @@ public class CyActivator extends AbstractCyActivator
         registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
     }
 
-	@Override
-	public void shutDown() {
-		if (ciExceptionFactoryTracker != null) {
-			ciExceptionFactoryTracker.close(); 
-		}
+    @Override
+    public void shutDown() {
+        if (ciExceptionFactoryTracker != null) {
+            ciExceptionFactoryTracker.close(); 
+        }
 
-		super.shutDown();
-	}
+        super.shutDown();
+    }
 }
