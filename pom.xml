@@ -5,12 +5,12 @@
 	    <bundle.symbolicName>PathLinker</bundle.symbolicName>
 		<bundle.namespace>com.dpgil.pathlinker.path_linker</bundle.namespace>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<cytoscape.api.version>3.6.0</cytoscape.api.version>
+		<cytoscape.api.version>3.7.0</cytoscape.api.version>
 		<osgi.api.version>4.2.0</osgi.api.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
-	<version>1.4.1</version>
+	<version>1.4.2</version>
 
 			<name>${bundle.symbolicName}</name>
 
