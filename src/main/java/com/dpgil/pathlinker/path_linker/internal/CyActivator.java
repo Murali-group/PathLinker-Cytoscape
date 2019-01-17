@@ -18,6 +18,7 @@ import org.cytoscape.ci.CIExceptionFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.osgi.framework.BundleContext;
+import org.osgi.util.tracker.ServiceTracker;
 
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerColumnUpdateListener;
 import com.dpgil.pathlinker.path_linker.internal.event.PathLinkerNetworkEventListener;
@@ -50,6 +51,7 @@ public class CyActivator extends AbstractCyActivator
     private CyAppAdapter adapter;
     private CySwingApplication cySwingApp;
 
+    private ServiceTracker ciExceptionFactoryTracker;
     private CIExceptionFactory ciExceptionFactory;
     private PathLinkerImpl cyRestClient;
 
@@ -68,7 +70,9 @@ public class CyActivator extends AbstractCyActivator
         adapter = getService(context, CyAppAdapter.class);
         cySwingApp = getService(context, CySwingApplication.class);
 
-        ciExceptionFactory = this.getService(context, CIExceptionFactory.class);
+        ciExceptionFactoryTracker = new ServiceTracker(context, context.createFilter("(objectClass=org.cytoscape.ci.CIExceptionFactory)"), null);
+        ciExceptionFactoryTracker.open();
+        ciExceptionFactory = (CIExceptionFactory) ciExceptionFactoryTracker.getService();
 
         controlPanel = new PathLinkerControlPanel();
 
@@ -125,5 +129,14 @@ public class CyActivator extends AbstractCyActivator
 
         // register CyRest service
         registerService(context, cyRestClient, PathLinkerResource.class, new Properties());
+    }
+
+    @Override
+    public void shutDown() {
+        if (ciExceptionFactoryTracker != null) {
+            ciExceptionFactoryTracker.close(); 
+        }
+
+        super.shutDown();
     }
 }
