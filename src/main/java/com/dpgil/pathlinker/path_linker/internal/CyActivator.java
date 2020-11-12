@@ -39,8 +39,6 @@ public class CyActivator extends AbstractCyActivator
 {
     private PathLinkerControlPanel controlPanel;
 
-    PathLinkerMenuAction panelMenuAction;
-
     private PathLinkerNodeSelectionListener nodeViewEventListener;
     private PathLinkerColumnUpdateListener columnUpdateListener;
     private PathLinkerNetworkEventListener networkEventListener;
@@ -56,9 +54,9 @@ public class CyActivator extends AbstractCyActivator
     private PathLinkerImpl cyRestClient;
 
 	/** the version of the current PathLinker app */
-	private String _version = "1.4.2";
+	private String _version = "1.4.3";
 	/** the build date of the current PathLinker app */
-	private String _buildDate = "Jan. 17, 2019";
+	private String _buildDate = "Nov. 12, 2020";
 
     @Override
     public void start(BundleContext context) throws Exception {
@@ -76,17 +74,6 @@ public class CyActivator extends AbstractCyActivator
 
         controlPanel = new PathLinkerControlPanel();
 
-        nodeViewEventListener = new PathLinkerNodeSelectionListener(controlPanel, cyApplicationManager);
-        columnUpdateListener = new PathLinkerColumnUpdateListener(controlPanel);
-        networkEventListener = new PathLinkerNetworkEventListener(controlPanel);
-
-        // register control panel
-        registerService(context, controlPanel, CytoPanelComponent.class, new Properties());
-
-        // sets up the PathLinker menu option
-        panelMenuAction = new PathLinkerMenuAction(controlPanel, cyApplicationManager);
-        registerAllServices(context, panelMenuAction, new Properties());
-
         // initializes control panel
         controlPanel.initialize(
                 cySwingApp,
@@ -97,15 +84,19 @@ public class CyActivator extends AbstractCyActivator
                 _version,
                 _buildDate);
 
+        nodeViewEventListener = new PathLinkerNodeSelectionListener(controlPanel, cyApplicationManager);
+        columnUpdateListener = new PathLinkerColumnUpdateListener(controlPanel);
+        networkEventListener = new PathLinkerNetworkEventListener(controlPanel);
+
+        // register control panel
+        registerService(context, controlPanel, CytoPanelComponent.class, new Properties());
+
         // Create PathLinker CyRest implementations
         cyRestClient = new PathLinkerImpl(
                 controlPanel,
                 cyApplicationManager, networkManager, adapter,
                 serviceRegistrar, cySwingApp,
                 ciExceptionFactory);
-
-        // starts off the panel in a closed state
-        controlPanel.getParent().remove(controlPanel);
 
         // register all necessary services to the bundle
         registerService(context, adapter, CyAppAdapter.class, new Properties());

@@ -86,7 +86,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 	public JButton _loadNodeToTargetButton;
 	private JButton _clearSourceTargetPanelButton;
 	private JButton _submitButton;
-	private JButton _closeButton;
 
 	public JComboBox<String> _networkCmb;
 	protected JComboBox<String> _edgeWeightColumnBox;
@@ -118,10 +117,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
     private String _version;
     /** the build date of the current PathLinker app */
     private String _buildDate;
-	/** Parent container of the panel to re add to when we call open */
-	private Container _parent;
-	/** State of the panel. Initially null b/c it isn't open or closed yet */
-	private PanelState _state = null;
 	/** The original network selected by the user */
 	private CyNetwork _originalNetwork;
 	/** The sub-network created by the algorithm */
@@ -142,62 +137,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
     /** Global sync index number to sync network, Path Index, and result names upon creation */
     public int nameIndex;
 
-	/** The state of the panel */
-	public enum PanelState {
-		/** The panel is hidden */
-		CLOSED,
-		/** The panel is visible */
-		OPEN
-	};
-
-	/**
-	 * Sets the state of the panel (open or closed).
-	 * @param newState the new state
-	 */
-	public void setPanelState(PanelState newState) {
-		if (newState == _state) {
-			// occurs when panel is already "open" (it's in the cytopanel)
-			// so we don't need to re add it to the panel, just set it as
-			// selected
-			if (newState == PanelState.OPEN) {
-				CytoPanel cytoPanel = _cySwingApp.getCytoPanel(getCytoPanelName());
-				if (cytoPanel.getState() == CytoPanelState.HIDE) {
-					cytoPanel.setState(CytoPanelState.DOCK);
-				}
-				setVisible(true);
-				// The panel is selected upon clicking PathLinker -> Open
-				cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(getComponent()));
-			}
-
-			return;
-		}
-
-		if (newState == PanelState.CLOSED) {
-            // Update: for now, close the app without warning.
-		    //String[] options = {"Yes", "Cancel"};
-		    //int choice = JOptionPane.showOptionDialog(null, "Are you sure you want to exit PathLinker?", 
-		    //        "Warning", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-            //if (choice != 0) return; // quit if they say cancel
-			
-            _state = PanelState.CLOSED;
-			_parent.remove(this);
-		}
-		// only occurs if panel is previously closed
-		else if (newState == PanelState.OPEN) {
-			_state = PanelState.OPEN;
-			((JTabbedPane) _parent).addTab(this.getTitle(), this);
-			CytoPanel cytoPanel = _cySwingApp.getCytoPanel(getCytoPanelName());
-			if (cytoPanel.getState() == CytoPanelState.HIDE) {
-				cytoPanel.setState(CytoPanelState.DOCK);
-			}
-			setVisible(true);
-			// The panel is selected upon clicking PathLinker -> Open
-			cytoPanel.setSelectedIndex(cytoPanel.indexOfComponent(getComponent()));
-		}
-
-		this.revalidate();
-		this.repaint();
-	}
 
 	/**
 	 * Initializer for the panel to reduce the number of parameters in the constructor
@@ -219,7 +158,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
 		_adapter = adapter;
 		_version = version;
 		_buildDate = buildDate;
-		_parent = this.getParent();
 
 		// initialize the maps for path rank columns
 		_suidToPathRankMap = new HashMap<Long, String>();
@@ -1120,15 +1058,6 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
         _submitButton.setEnabled(false);
 		_submitButton.addActionListener(new SubmitButtonListener());
 
-		_closeButton = new JButton("Close");
-		_closeButton.addActionListener(new ActionListener() {
-		    // close the control panel upon clicking
-            @Override
-            public void actionPerformed(ActionEvent arg0) {
-                setPanelState(PanelState.CLOSED);
-            }
-		});
-
 		// initialize the running message
 		// set to invisible and only visible when pathlinker is generating subnetwork
         _runningMessage = new JLabel("<html><b>Generating subnetwork...</b></html>");
@@ -1147,7 +1076,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
 		                .addComponent(_runningMessage)
 		                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, 145)
-				        .addComponent(_closeButton))
+                        )
 				);
 		mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
 				.addComponent(_titlePanel)
@@ -1162,7 +1091,7 @@ public class PathLinkerControlPanel extends JPanel implements CytoPanelComponent
                 .addGroup(mainLayout.createParallelGroup(Alignment.LEADING, true)
                         .addComponent(_submitButton)
                         .addComponent(_runningMessage)
-                        .addComponent(_closeButton))
+                        )
 				);
 
 		// creates scroll panel that creates scroll bar for inner panel
